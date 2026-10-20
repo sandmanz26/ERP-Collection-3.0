@@ -96,3 +96,11 @@ Deferred: real identity provider (SSO, MFA, server sessions), per-user saved pre
 - **Lifecycle bar looked clickable but wasn't** → `Stepper` organism: every stage is selectable and shows when/by whom it was entered (recorded `stageHistory`) or what is still required to reach it. Closed events show the final stage as done.
 - **Archived event offered Postpone/Cancel** → stage-aware actions; closed events get a read-only summary.
 - **Overview too shallow to run an event** → cockpit: next steps with CTAs, key dates with countdown, readiness by area (money, vendors, guests, people, production, tasks), functions, venue & logistics, who's who, vendors on site. Overview is its own phase; event rows are clickable.
+
+## Addendum (#032–#033) — Client panel: project visibility
+- **Client could not see progress** → "Where we are": 8-step client journey (Proposal → Contract → Date secured → Planning → Final details → Final prep → Event day → Wrap-up) with completion dates, target dates, and "what we need from you"; progress tiles (to-dos, paid, vendors confirmed, crew confirmed, guests replied).
+- **No timeline** → road map (Gantt: journey, to-dos, guest deadlines, payments, event sessions; Today/Event markers) + month-by-month list + event-day agenda (guest track only; production cues stay internal).
+- **"What do I prepare?" was scattered** → *To prepare* merges checklist tasks, planning forms, signatures, approvals, payments and guest deadlines into overdue / next 30 days / anytime / later / done.
+- **Payments were a bare table** → summary (total, paid, remaining, next due), payment plan timeline, who-pays-what for multi-payer events, invoices & receipts; payer-scoped users only see their share.
+- **Who are the people?** → planning team with contacts (main contact, day-of coordinator), vendors with arrival time and on-site contact once confirmed, crew by department (counts only — no names or rates), venue facts.
+- Latest-updates feed (stage changes, payments received, vendor confirmations, decisions, forms). Sections respect client permissions (e.g. Nina sees no money; Robert sees only his share).

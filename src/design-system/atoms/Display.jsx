@@ -19,6 +19,22 @@ export function ProgressBar({ value, tone }) {
   return <div className={`progress ${tone || ''}`} role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100}><div style={{ width: `${v}%` }} /></div>;
 }
 
+/** Atom: circular progress (0-100) with the value in the middle. */
+export function ProgressRing({ value, size = 76, stroke = 7, label, tone = 'brand' }) {
+  const v = Math.max(0, Math.min(100, value || 0));
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className={`ring ring-${tone}`} style={{ width: size, height: size }} role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="ring-track" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="ring-value" strokeDasharray={c} strokeDashoffset={c * (1 - v / 100)} strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      </svg>
+      <span className="ring-label">{Math.round(v)}%</span>
+    </div>
+  );
+}
+
 export function Spinner() {
   return <span className="spinner" role="status" aria-label="loading" />;
 }

@@ -17,7 +17,7 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 30 unit/integration tests (node --test)
+npm test         # 31 unit/integration tests (node --test)
 npm run build    # static output in dist/
 ```
 **Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
@@ -60,9 +60,9 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 |---|---|
 | `tokens/` | `tokens.css` (color incl. **full dark palette**, typography, spacing, radius, elevation, motion, z-index — the only place raw values live), `tokens.js` mirror |
 | `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
-| `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), **`Icon`** (47 stroke icons — never emoji), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
+| `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), **`Icon`** (47 stroke icons — never emoji), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, **`ProgressRing`**, `Spinner`, `Avatar`, `QrCode` |
 | `molecules/` | **`Callout`** (tone, icon, title, CTA action, meta), **`AttentionList`**, `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
-| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit) |
+| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit), **`Timeline`** (vertical dated list grouped by period, with a Today divider) |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
 Fonts: self-hosted via `@fontsource` (Fraunces display, Hanken Grotesk UI, JetBrains Mono data), imported in `main.jsx`. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
@@ -94,6 +94,8 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
+| `src/lib/clientView.js` | **client panel selectors (client-safe — no costs, margins, rates, internal notes)**: `clientJourney` (8 plain-language steps), `clientProgress`, `clientTimeline`, `clientRoadmap` (Gantt lanes), `clientAgenda` (guest-track ROS only), `clientPrep` (tasks, forms, signatures, approvals, payments, guest deadlines → overdue / 30 days / anytime / later / done), `clientPayments` (payer-scoped), `clientTeam`, `clientUpdates` |
+| `src/pages/client/ClientPanels.jsx` | client portal panels: Overview, Timeline (road map + month list), Event day agenda, To prepare, Payments, Team, callouts. `ClientPortal.jsx` groups them into sections honoring `clientCan` permissions |
 | `src/lib/eventGuide.js` | **event cockpit logic**: `STAGE_INFO`, `stageDates`, `stepperSteps`, `stageRequirements`, `nextActions` (stage-aware, each with target tab + CTA), `readiness` by area, `keyDates`, role-filtered `priorities` for the dashboard |
 | `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`, `workforce`) |
 | `src/pages/*.jsx` | **Login**, Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
@@ -131,7 +133,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 2. **CRM** → *Simulate marketplace lead* or open *Public inquiry form* → open the lead → *Place hold* → advance → Proposal *Build* → *Send* → *Record acceptance* → *Client PDF* → Contract *Generate* → *Send* → e-sign → Finance *Record payment* → 🔒 date locked → Planning.
 3. **Calendar**: release Stellar's hold #1 → Nguyen promoted, email in Communication → Outbox.
 4. **Carter–Walker Wedding**: seating (deliberate rule violation), budget (multiple payers), Change Orders (CO-102 pending), Vendors (Groove can't be confirmed — COI expired), Run of Show → call sheet, Guests → QR place cards.
-5. **Emily Carter (client)**: approve CO-102, pay, forms, download proposal PDF. **Robert Carter**: only catering invoices. **Nina Patel**: guests only.
+5. **Emily Carter (client)**: Overview (journey stepper, progress tiles, coming up, latest updates, contacts) → Timeline (road map + month list, Event day agenda) → To prepare (one list of everything due) → Payments (summary, payment plan, who pays what, pay invoices) → Team (planner team, vendors with arrival times, crew by department, venue). Approve CO-102, pay, forms, download proposal PDF. **Robert Carter**: only catering invoices. **Nina Patel**: guests only.
 6. **Bloom & Vine (vendor)**: submit an RFQ quote, tick the assigned task, see only its own run-of-show rows.
 7. **Acme Summit**: CO-103 exception → client approval rejected until admin *Grant exception approval*.
 8. **Day-of Mobile**: start/done/+15 min, incident with photo, QR check-in, *simulate offline* → "pending sync" in Activity Log → reconnect.

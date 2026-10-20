@@ -195,3 +195,14 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 - `Login.jsx`: 8 role tiles + *All accounts* dialog. `Dashboard.jsx`: *Today's priorities* callouts. `ClientPortal.jsx` / `VendorPortal.jsx`: action callouts. `Events.jsx`: clickable rows.
 - Tests +2 (stage-aware next actions; stage history recording) → 30/30. Build OK; Playwright smoke 0 runtime errors; priority CTA, stepper click, readiness tile navigation verified; screenshots reviewed.
 - Docs: HANDOFF (file map, design system, demo script, version 5, test count), FEATURE_REVIEW addendum.
+
+### [2026-10-20] #032 — New request: client panel with full project visibility
+- Request: as a client I need to see the progress, the timeline, what I must prepare, how payments stand, and who the people are — project visibility for the end user.
+- Existing: client portal had an Overview with callouts + a few cards, and flat tabs (proposal, contract, payments, CO, forms, guests, seating, checklist, messages, feedback).
+- Plan: `src/lib/clientView.js` (pure, client-safe: never exposes costs, margins, crew rates or internal notes) → client journey (8 plain-language steps), progress by area, merged timeline (milestones, deadlines, to-dos, payments, event sessions), "to prepare" buckets, payment summary (payer-scoped), team (planner team, vendors with arrival times, crew by department, venue), event-day agenda (guest track only), recent-updates feed. Portal regrouped into sections (Overview · Timeline · To prepare · Payments · Team · Guests · Messages) honoring client permissions.
+
+### [2026-10-20] #033 — Implemented: client panel (project visibility)
+- `src/lib/clientView.js` (new, pure, client-safe) and `src/pages/client/ClientPanels.jsx` (new) — see HANDOFF file map.
+- `ClientPortal.jsx`: sections Overview · Timeline (Road map, Event day) · To prepare (Checklist, Planning forms) · Payments (Payments, Change orders, Proposal, Contract) · Team · Guests (Guest list, Seating) · Messages (Messages, Feedback); sections/tabs filtered by `clientCan`; red count badges for open items.
+- Design system: `ProgressRing` atom, `Timeline` organism (+ CSS); client panel styles in templates.css. Fixed a clash where global `.tone-*` legend classes painted timeline rows (timeline uses `vtl-*` tone classes).
+- Tests +1 (journey, payer-scoped payments, prep by permission, no internal money fields in team data, agenda guest-only, timeline sorted) → 31/31. Build OK. Playwright as Emily, Robert, Nina at 1360px and Emily at 400px: every section/sub-tab opened, 0 runtime errors, no horizontal overflow; screenshots reviewed.

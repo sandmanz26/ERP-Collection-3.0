@@ -43,3 +43,13 @@ code, pre { font-family: var(--font-mono); font-size: 12px; }
 pre { white-space: pre-wrap; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); }
 .qr { image-rendering: pixelated; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--sp-table); }
 .icon { flex: none; vertical-align: -0.15em; }
+
+/* ---------- progress ring ---------- */
+.ring { position: relative; display: inline-grid; place-items: center; flex: none; }
+.ring svg { position: absolute; inset: 0; }
+.ring-track { stroke: var(--color-track); }
+.ring-value { stroke: var(--color-brand); transition: stroke-dashoffset 400ms ease; }
+.ring-ok .ring-value { stroke: var(--color-success); }
+.ring-warn .ring-value { stroke: var(--color-warning); }
+.ring-label { font-family: var(--font-display); font-size: 18px; font-weight: var(--weight-semibold); color: var(--color-ink); }
+@media (prefers-reduced-motion: reduce) { .ring-value { transition: none; } }

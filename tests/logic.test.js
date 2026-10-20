@@ -371,3 +371,31 @@ test('reducer records stage history for every stage change', () => {
   assert.equal(h.at(-1).stage, 'qualified');
   assert.equal(h.at(-1).by, 'u_sales');
 });
+
+test('client panel: journey, scoped payments, prep and team are client-safe', async () => {
+  const { clientJourney, clientPayments, clientPrep, clientTeam, clientAgenda, clientTimeline } = await import('../src/lib/clientView.js');
+  const s = buildSeed();
+  const today = todayISO();
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const emily = s.users.find((u) => u.id === 'u_client1');
+  const robert = s.users.find((u) => u.id === 'u_client2');
+  const nina = s.users.find((u) => u.id === 'u_client3');
+  const j = clientJourney(s, ev);
+  assert.equal(j.current.id, 'planning');
+  assert.ok(j.steps.slice(0, 3).every((st) => st.status === 'done'));
+  const all = clientPayments(ev, emily, today);
+  const mine = clientPayments(ev, robert, today);
+  assert.ok(!mine.scoped || mine.rows.every((r) => !r.invoice || r.invoice.payerId === mine.payer.id));
+  assert.ok(mine.total <= all.total);
+  assert.equal(clientPayments(ev, nina, today), null); // no pay / view_all → no money at all
+  const prep = clientPrep(s, ev, emily, today);
+  assert.ok(prep.items.some((i) => i.kind === 'task') && prep.items.some((i) => i.kind === 'payment'));
+  assert.ok(clientPrep(s, ev, robert, today).items.every((i) => i.kind !== 'task'));
+  const team = clientTeam(s, ev);
+  assert.ok(team.core.some((c) => c.primary));
+  const json = JSON.stringify(team);
+  assert.ok(!/"(cost|rate|sellPrice|markupPct|commission\w*)"/.test(json), 'no internal money fields leak');
+  assert.ok(clientAgenda(ev).days.flatMap((d) => d.items).every((i) => !/load-in|load-out|sound check/i.test(i.activity)));
+  const tl = clientTimeline(s, ev, emily, today);
+  assert.ok(tl.some((r) => r.kind === 'event') && tl.every((r, i) => i === 0 || tl[i - 1].date <= r.date));
+});

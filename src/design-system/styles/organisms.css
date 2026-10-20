@@ -209,3 +209,32 @@ tr.clickable:hover td { background: var(--color-row-hover); }
 .stage-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; margin-top: 12px; padding: 12px 14px; background: var(--color-surface-2); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); }
 @media (max-width: 760px) { .stage-detail { grid-template-columns: 1fr; } }
 .quote { margin: 12px 0 0; padding: 8px 14px; border-left: 3px solid var(--color-brand); font-family: var(--font-display); font-size: 16px; color: var(--color-ink-2); }
+
+/* ---------- vertical timeline ---------- */
+.vtl-group + .vtl-group { margin-top: var(--space-4); }
+.vtl-period { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-3); }
+.vtl-list { list-style: none; margin: 0; padding: 0; position: relative; }
+.vtl-list::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: var(--color-border); }
+.vtl-item { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; padding: 3px 0; }
+.vtl-dot { position: relative; z-index: 1; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--color-surface); border: 2px solid var(--color-ink-3); color: var(--color-ink-2); margin-top: 6px; }
+.vtl-item.vtl-brand .vtl-dot { border-color: var(--color-brand); color: var(--color-brand); }
+.vtl-item.vtl-warn .vtl-dot { border-color: var(--color-warning); color: var(--color-warning-ink); }
+.vtl-item.vtl-danger .vtl-dot { border-color: var(--color-danger); background: var(--color-danger); color: var(--color-ink-inverse); }
+.vtl-item.done .vtl-dot { border-color: var(--color-success); background: var(--color-success); color: var(--color-ink-inverse); }
+.vtl-body { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; grid-template-areas: "date title aside" "date detail aside"; column-gap: 12px; align-items: baseline; text-align: left; width: 100%; background: none; border: none; border-radius: var(--radius-md); padding: 6px 8px; font: inherit; color: var(--color-ink); }
+button.vtl-body { cursor: pointer; }
+button.vtl-body:hover { background: var(--color-row-hover); }
+.vtl-date { grid-area: date; font-family: var(--font-mono); font-size: 12px; color: var(--color-ink-2); }
+.vtl-title { grid-area: title; font-weight: var(--weight-medium); }
+.vtl-detail { grid-area: detail; font-size: 12px; color: var(--color-ink-2); }
+.vtl-aside { grid-area: aside; font-size: 12px; color: var(--color-ink-2); white-space: nowrap; }
+.vtl-item.done .vtl-title, .vtl-item.past .vtl-title { color: var(--color-ink-2); }
+.vtl-item.vtl-danger .vtl-title { color: var(--color-danger-ink); }
+.vtl-now { display: flex; align-items: center; gap: 8px; margin: 6px 0; padding-left: 2px; color: var(--color-brand); font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
+.vtl-now::after { content: ''; flex: 1; height: 2px; background: var(--color-brand); opacity: .5; }
+.vtl-now.standalone { margin-top: var(--space-3); }
+@media (max-width: 560px) {
+  .vtl-body { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "date aside" "title title" "detail detail"; }
+}
+.phase .icon, .phase svg { vertical-align: -2px; }
+.phase-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: var(--radius-pill); background: var(--color-danger); color: var(--color-ink-inverse); font-size: 11px; font-weight: var(--weight-semibold); }
