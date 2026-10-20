@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useStore, useEvent } from '../../store/AppStore.jsx';
-import { Tabs, StageBadge, Badge, Empty } from '../../components/ui.jsx';
+import { Tabs, StageBadge, Badge, EmptyState } from '../../design-system/index.js';
 import { fmtDate, diffDays } from '../../lib/dates.js';
 import { clientOf, eventType } from '../../lib/derived.js';
 import Overview from './Overview.jsx';
@@ -25,7 +25,7 @@ export default function EventWorkspace() {
   const [sp, setSp] = useSearchParams();
   const { state, today, user } = useStore();
   const ev = useEvent(id);
-  if (!ev) return <Empty>Event not found. <Link to="/events">Back</Link></Empty>;
+  if (!ev) return <EmptyState>Event not found. <Link to="/events">Back</Link></EmptyState>;
   const et = eventType(state, ev);
   const tab = sp.get('tab') || 'overview';
   const f = et.features;

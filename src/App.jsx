@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout.jsx';
+import AppShell from './components/AppShell.jsx';
 import { useStore } from './store/AppStore.jsx';
 import { navFor, homeFor } from './lib/permissions.js';
 import Dashboard from './pages/Dashboard.jsx';
@@ -34,7 +34,7 @@ export default function App() {
       <Route
         path="*"
         element={
-          <Layout>
+          <AppShell>
             <Routes>
               <Route path="/" element={<Guard path="/"><Dashboard /></Guard>} />
               <Route path="/pipeline" element={<Guard path="/pipeline"><Pipeline /></Guard>} />
@@ -55,7 +55,7 @@ export default function App() {
               <Route path="/vendor-portal" element={<Guard path="/vendor-portal"><VendorPortal /></Guard>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Layout>
+          </AppShell>
         }
       />
     </Routes>

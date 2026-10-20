@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StageBadge, ConfirmButton } from '../components/ui.jsx';
+import { Card, Badge, StageBadge, ConfirmButton, Button } from '../design-system/index.js';
 import { AvailabilityCheck } from '../components/Availability.jsx';
 import { availability } from '../lib/availability.js';
 import { toISODate, parseDate, fmtDate, diffDays } from '../lib/dates.js';
@@ -34,7 +34,7 @@ export default function CalendarPage() {
         </div>
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(300px,1fr)' }}>
-        <Card title={parseDate(`${month}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} actions={<div className="row"><button className="btn sm" onClick={() => shift(-1)}>‹</button><button className="btn sm" onClick={() => setMonth(today.slice(0, 7))}>Today</button><button className="btn sm" onClick={() => shift(1)}>›</button></div>}>
+        <Card title={parseDate(`${month}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} actions={<div className="row"><Button size="sm" onClick={() => shift(-1)}>‹</Button><Button size="sm" onClick={() => setMonth(today.slice(0, 7))}>Today</Button><Button size="sm" onClick={() => shift(1)}>›</Button></div>}>
           <div className="cal">
             {DOW.map((d) => <div key={d} className="dow">{d}</div>)}
             {days.map((d) => {
@@ -64,8 +64,8 @@ export default function CalendarPage() {
                 <div key={h.id} className="card" style={{ padding: 10 }}>
                   <div className="row between"><b>#{h.priority} {e?.name}</b><Badge tone={diffDays(today, h.expiresAt) <= 2 ? 'danger' : 'warn'}>exp. {fmtDate(h.expiresAt)}</Badge></div>
                   <div className="row mt">
-                    <button className="btn sm" onClick={() => act('HOLD_EXTEND', { holdId: h.id, days: 7 })}>Extend 7d</button>
-                    <ConfirmButton className="btn sm danger" message="Release this hold? The next hold in line will be notified." onConfirm={() => act('HOLD_RELEASE', { holdId: h.id, reason: 'Released manually' })}>Release</ConfirmButton>
+                    <Button size="sm" onClick={() => act('HOLD_EXTEND', { holdId: h.id, days: 7 })}>Extend 7d</Button>
+                    <ConfirmButton variant="danger" size="sm" message="Release this hold? The next hold in line will be notified." onConfirm={() => act('HOLD_RELEASE', { holdId: h.id, reason: 'Released manually' })}>Release</ConfirmButton>
                   </div>
                 </div>
               );
@@ -76,7 +76,7 @@ export default function CalendarPage() {
                 <option value="">Select deal…</option>
                 {holdable.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
-              <button className="btn primary" disabled={!holdEvent} onClick={() => act('HOLD_CREATE', { eventId: holdEvent, date: sel })}>Hold</button>
+              <Button variant="primary" disabled={!holdEvent} onClick={() => act('HOLD_CREATE', { eventId: holdEvent, date: sel })}>Hold</Button>
             </div>
           </Card>
           <Card title="All active holds">

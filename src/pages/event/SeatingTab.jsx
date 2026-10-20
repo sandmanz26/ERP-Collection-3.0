@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Alert, download } from '../../components/ui.jsx';
+import { Card, Badge, Alert, download, Button, useDialog } from '../../design-system/index.js';
 
 export function seatingViolations(ev) {
   const all = ev.households.flatMap((h) => h.guests);
@@ -57,6 +57,7 @@ export function SeatingBoard({ ev, readOnly }) {
 }
 
 export default function SeatingTab({ ev }) {
+  const dialog = useDialog();
   const { act } = useStore();
   const [rule, setRule] = useState({ a: '', b: '', type: 'apart', note: '' });
   const all = ev.households.flatMap((h) => h.guests);
@@ -78,9 +79,9 @@ export default function SeatingTab({ ev }) {
   return (
     <div>
       <Card title="Seating chart" actions={<div className="row">
-        <button className="btn" onClick={() => { const n = prompt('Table name', `Table ${ev.tables.length}`); n && act('TABLE_ADD', { eventId: ev.id, name: n, capacity: Number(prompt('Seats', '10')) || 10, shape: 'round' }); }}>+ Table</button>
-        <button className="btn" onClick={escort}>Export escort cards</button>
-        <button className="btn" onClick={cateringByTable}>Catering report per table</button>
+        <Button onClick={async () => { const r = await dialog.form({ title: 'Add table', fields: [{ name: 'name', label: 'Name', defaultValue: `Table ${ev.tables.length}`, required: true }, { name: 'capacity', label: 'Seats', type: 'number', defaultValue: 10, required: true }, { name: 'shape', label: 'Shape', type: 'select', options: ['round', 'rect'], defaultValue: 'round' }] }); r && act('TABLE_ADD', { eventId: ev.id, ...r }); }}>+ Table</Button>
+        <Button onClick={escort}>Export escort cards</Button>
+        <Button onClick={cateringByTable}>Catering report per table</Button>
       </div>}>
         <SeatingBoard ev={ev} />
       </Card>
@@ -90,10 +91,10 @@ export default function SeatingTab({ ev }) {
           <select value={rule.type} onChange={(e) => setRule({ ...rule, type: e.target.value })}><option value="apart">must NOT sit with</option><option value="together">must sit with</option></select>
           <select value={rule.b} onChange={(e) => setRule({ ...rule, b: e.target.value })}><option value="">Guest B…</option>{all.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
           <input placeholder="Note" value={rule.note} onChange={(e) => setRule({ ...rule, note: e.target.value })} />
-          <button className="btn primary" disabled={!rule.a || !rule.b} onClick={() => act('SEATING_RULE_ADD', { eventId: ev.id, guestA: rule.a, guestB: rule.b, type: rule.type, note: rule.note })}>Add rule</button>
+          <Button variant="primary" disabled={!rule.a || !rule.b} onClick={() => act('SEATING_RULE_ADD', { eventId: ev.id, guestA: rule.a, guestB: rule.b, type: rule.type, note: rule.note })}>Add rule</Button>
         </div>
         {ev.seatingRules.map((r) => (
-          <div key={r.id} className="row">• {all.find((g) => g.id === r.guestA)?.name} {r.type === 'apart' ? '≠' : '='} {all.find((g) => g.id === r.guestB)?.name} <span className="faint">{r.note}</span><button className="btn sm ghost" onClick={() => act('SEATING_RULE_REMOVE', { eventId: ev.id, ruleId: r.id })}>✕</button></div>
+          <div key={r.id} className="row">• {all.find((g) => g.id === r.guestA)?.name} {r.type === 'apart' ? '≠' : '='} {all.find((g) => g.id === r.guestB)?.name} <span className="faint">{r.note}</span><Button variant="ghost" size="sm" onClick={() => act('SEATING_RULE_REMOVE', { eventId: ev.id, ruleId: r.id })}>✕</Button></div>
         ))}
       </Card>
     </div>

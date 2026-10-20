@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Modal, Field, Alert, Empty } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, Modal, Field, Alert, EmptyState, Button, useDialog } from '../../design-system/index.js';
 import { fmtDate, fmtDateTime, addDays } from '../../lib/dates.js';
 import { decorSnapshot } from '../../lib/decorApi.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
 
 export function CoCard({ ev, co, portal }) {
+  const dialog = useDialog();
   const { state, act, user } = useStore();
   const [name, setName] = useState('');
   const db = decorSnapshot();
@@ -34,16 +35,16 @@ export function CoCard({ ev, co, portal }) {
       {co.approvals.map((a, i) => <div key={i} className="faint" style={{ fontSize: 12 }}>✔ Client approval: “{a.name}” via {a.method} · {fmtDateTime(a.at)} · IP {a.ip}</div>)}
       {sched && <div className="faint" style={{ fontSize: 12 }}>Payment schedule: {sched.label} due {fmtDate(sched.dueDate)} — {sched.status}</div>}
       <div className="row mt">
-        {!portal && co.status === 'draft' && <button className="btn primary" onClick={() => act('CO_SEND', { eventId: ev.id, coId: co.id })}>Send to client</button>}
-        {!portal && co.isException && !co.specialApproval && co.status !== 'rejected' && ['admin', 'planner'].includes(user.role) && <button className="btn" onClick={() => act('CO_SPECIAL_APPROVE', { eventId: ev.id, coId: co.id, note: prompt('Exception note', 'Vendor capacity confirmed') || '' })}>Grant exception approval</button>}
+        {!portal && co.status === 'draft' && <Button variant="primary" onClick={() => act('CO_SEND', { eventId: ev.id, coId: co.id })}>Send to client</Button>}
+        {!portal && co.isException && !co.specialApproval && co.status !== 'rejected' && ['admin', 'planner'].includes(user.role) && <Button onClick={async () => { const note = await dialog.prompt({ title: `Grant exception for ${co.number}`, label: 'Justification', defaultValue: 'Vendor capacity confirmed' }); note && act('CO_SPECIAL_APPROVE', { eventId: ev.id, coId: co.id, note }); }}>Grant exception approval</Button>}
         {co.status === 'sent' && (
           <>
             <input placeholder="Type full name to sign" value={name} onChange={(e) => setName(e.target.value)} />
-            <button className="btn ok" onClick={() => act('CO_APPROVE', { eventId: ev.id, coId: co.id, method: name ? 'signature' : 'click', typedName: name || undefined })}>{portal ? 'Approve' : 'Record client approval'}</button>
-            <button className="btn danger" onClick={() => act('CO_REJECT', { eventId: ev.id, coId: co.id, reason: prompt('Reason?') || '' })}>Reject</button>
+            <Button variant="success" onClick={() => act('CO_APPROVE', { eventId: ev.id, coId: co.id, method: name ? 'signature' : 'click', typedName: name || undefined })}>{portal ? 'Approve' : 'Record client approval'}</Button>
+            <Button variant="danger" onClick={async () => { const reason = await dialog.prompt({ title: `Reject ${co.number}`, label: 'Reason', required: false }); reason !== null && act('CO_REJECT', { eventId: ev.id, coId: co.id, reason }); }}>Reject</Button>
           </>
         )}
-        {!portal && sched && sched.status === 'scheduled' && ['admin', 'finance', 'planner'].includes(user.role) && <button className="btn" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: sched.id })}>Invoice now</button>}
+        {!portal && sched && sched.status === 'scheduled' && ['admin', 'finance', 'planner'].includes(user.role) && <Button onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: sched.id })}>Invoice now</Button>}
       </div>
     </div>
   );
@@ -51,11 +52,11 @@ export function CoCard({ ev, co, portal }) {
 
 export default function ChangeOrdersTab({ ev }) {
   const [add, setAdd] = useState(false);
-  if (!ev.contract?.immutable) return <Card><Empty>Change Orders become available after the contract is signed. Before that, revise the proposal instead.</Empty></Card>;
+  if (!ev.contract?.immutable) return <Card><EmptyState>Change Orders become available after the contract is signed. Before that, revise the proposal instead.</EmptyState></Card>;
   const approved = ev.changeOrders.filter((c) => c.status === 'approved');
   return (
     <div>
-      <Card title="Change Orders" actions={<button className="btn primary" onClick={() => setAdd(true)}>+ Change Order</button>}>
+      <Card title="Change Orders" actions={<Button variant="primary" onClick={() => setAdd(true)}>+ Change Order</Button>}>
         <Alert tone="info">Every post-contract change must be a Change Order. Once the client approves (portal signature/click with audit trail), the contract total, payment schedule, budget and the Decor Inventory request update automatically. Original contract <Money value={ev.contract.originalTotal} currency={ev.currency} /> → current <Money value={ev.contract.total} currency={ev.currency} /> ({approved.length} approved).</Alert>
         <div className="stack mt">{ev.changeOrders.slice().reverse().map((co) => <CoCard key={co.id} ev={ev} co={co} />)}</div>
       </Card>
@@ -77,7 +78,7 @@ function NewCo({ ev, onClose }) {
     onClose();
   };
   return (
-    <Modal wide title="New Change Order" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.title || !lines.some((l) => l.name)} onClick={submit}>Create draft</button></>}>
+    <Modal wide title="New Change Order" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.title || !lines.some((l) => l.name)} onClick={submit}>Create draft</Button></>}>
       <div className="grid g2">
         <Field label="Title"><input value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} /></Field>
         <Field label="Guest count change (±)"><input type="number" value={v.guestCountDelta} onChange={(e) => setV({ ...v, guestCountDelta: e.target.value })} /></Field>
@@ -93,7 +94,7 @@ function NewCo({ ev, onClose }) {
           <input type="number" placeholder="Cost" value={l.cost} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, cost: e.target.value } : x)))} />
         </div>
       ))}
-      <button className="btn sm" onClick={() => setLines([...lines, { name: '', category: 'Other', amount: 0, cost: 0 }])}>+ line</button>
+      <Button size="sm" onClick={() => setLines([...lines, { name: '', category: 'Other', amount: 0, cost: 0 }])}>+ line</Button>
       <h4 className="mt">Decor impact (sent to Decor Inventory on approval)</h4>
       {decor.map((d, i) => (
         <div className="row mb" key={i}>
@@ -101,7 +102,7 @@ function NewCo({ ev, onClose }) {
           <input type="number" value={d.qty} onChange={(e) => setDecor(decor.map((x, j) => (j === i ? { ...x, qty: e.target.value } : x)))} />
         </div>
       ))}
-      <button className="btn sm" onClick={() => setDecor([...decor, { itemId: '', qty: 1 }])}>+ decor item</button>
+      <Button size="sm" onClick={() => setDecor([...decor, { itemId: '', qty: 1 }])}>+ decor item</Button>
       <div className="grid g2 mt">
         <Field label="Vendor impact"><input value={v.vendorImpact} onChange={(e) => setV({ ...v, vendorImpact: e.target.value })} /></Field>
         <Field label="Timeline impact"><input value={v.timelineImpact} onChange={(e) => setV({ ...v, timelineImpact: e.target.value })} /></Field>

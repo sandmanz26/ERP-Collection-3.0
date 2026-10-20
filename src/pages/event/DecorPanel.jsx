@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, StatusBadge } from '../../components/ui.jsx';
+import { Card, Badge, Money, Alert, StatusBadge, Button } from '../../design-system/index.js';
 import * as decorApi from '../../lib/decorApi.js';
 import { fmtDateTime } from '../../lib/dates.js';
 
@@ -36,7 +36,7 @@ export default function DecorPanel({ ev }) {
   };
   const cost = draft.reduce((a, d) => a + (items.find((i) => i.id === d.itemId)?.unitCost || 0) * d.qty, 0);
   return (
-    <Card title="Decor & equipment (Decor Inventory System)" actions={<button className="btn primary" disabled={busy || !ev.date} onClick={sync}>{busy ? 'Syncing…' : 'Save & reserve via API'}</button>}>
+    <Card title="Decor & equipment (Decor Inventory System)" actions={<Button variant="primary" disabled={busy || !ev.date} onClick={sync}>{busy ? 'Syncing…' : 'Save & reserve via API'}</Button>}>
       {ev.decorSyncError && <Alert tone="danger">Last API call failed: {ev.decorSyncError}</Alert>}
       <div className="faint mb" style={{ fontSize: 12 }}>Reservation: {res ? <>{res.id} <StatusBadge status={res.status} /> · created {fmtDateTime(res.createdAt)}</> : 'none'}</div>
       <table className="t">
@@ -54,7 +54,7 @@ export default function DecorPanel({ ev }) {
                 <td className="num">{reservedFor(d.itemId)}</td>
                 <td className="num">{freeForUs ?? '…'} {freeForUs !== null && d.qty > freeForUs && <Badge tone="danger">short</Badge>}</td>
                 <td className="num"><Money value={(it?.unitCost || 0) * d.qty} currency={ev.currency} /></td>
-                <td><button className="btn sm ghost" onClick={() => setDraft(draft.filter((_, j) => j !== i))}>✕</button></td>
+                <td><Button variant="ghost" size="sm" onClick={() => setDraft(draft.filter((_, j) => j !== i))}>✕</Button></td>
               </tr>
             );
           })}

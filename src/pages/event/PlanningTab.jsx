@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, CommitInput, Empty } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, CommitInput, EmptyState, Button, useDialog } from '../../design-system/index.js';
 import { Moodboard } from './ProposalTab.jsx';
 import DecorPanel from './DecorPanel.jsx';
 import { taskBlocked } from '../../lib/tasks.js';
@@ -40,8 +40,8 @@ function Tasks({ ev }) {
   return (
     <Card title={`Task & checklist — ${done}/${ev.tasks.length} done`} actions={<div className="row">
       <PillSelect options={[{ id: 'open', label: 'Open' }, { id: 'all', label: 'All' }, { id: 'client', label: 'Client' }, { id: 'vendor', label: 'Vendor' }, { id: 'staff', label: 'Staff' }]} value={filter} onChange={setFilter} />
-      <button className="btn" onClick={() => act('TASKS_GENERATE', { eventId: ev.id })}>Apply template</button>
-      <button className="btn primary" onClick={() => setAdd(true)}>+ Task</button>
+      <Button onClick={() => act('TASKS_GENERATE', { eventId: ev.id })}>Apply template</Button>
+      <Button variant="primary" onClick={() => setAdd(true)}>+ Task</Button>
     </div>}>
       <div className="faint mb" style={{ fontSize: 12 }}>Due dates are relative to the event date (T-minus). When the event is postponed, every relative task shifts automatically.</div>
       <div className="table-wrap">
@@ -92,7 +92,7 @@ function AddTask({ ev, onClose }) {
   const { act } = useStore();
   const [v, , bind] = useForm({ title: '', dueDate: ev.date, assigneeType: 'staff', priority: 'medium', category: 'general', dependsOn: '' });
   return (
-    <Modal title="Add task" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.title} onClick={() => { act('TASK_ADD', { eventId: ev.id, data: { ...v, dependsOn: v.dependsOn ? [v.dependsOn] : [] } }); onClose(); }}>Add</button></>}>
+    <Modal title="Add task" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.title} onClick={() => { act('TASK_ADD', { eventId: ev.id, data: { ...v, dependsOn: v.dependsOn ? [v.dependsOn] : [] } }); onClose(); }}>Add</Button></>}>
       <div className="grid g2">
         <Field label="Title"><input {...bind('title')} /></Field>
         <Field label="Due date"><input type="date" {...bind('dueDate')} /></Field>
@@ -106,10 +106,11 @@ function AddTask({ ev, onClose }) {
 }
 
 function Functions({ ev }) {
+  const dialog = useDialog();
   const { act } = useStore();
   const upd = (id, patch) => act('SUBEVENT_UPDATE', { eventId: ev.id, subEventId: id, patch });
   return (
-    <Card title="Sub-events / functions" actions={<button className="btn primary" onClick={() => { const name = prompt('Function name', 'Rehearsal Dinner'); name && act('SUBEVENT_ADD', { eventId: ev.id, data: { name } }); }}>+ Function</button>}>
+    <Card title="Sub-events / functions" actions={<Button variant="primary" onClick={async () => { const r = await dialog.form({ title: 'Add function', fields: [{ name: 'name', label: 'Name', defaultValue: 'Rehearsal Dinner', required: true }, { name: 'date', label: 'Date', type: 'date', defaultValue: ev.date }, { name: 'start', label: 'Start', type: 'time', defaultValue: '18:00' }, { name: 'end', label: 'End', type: 'time', defaultValue: '22:00' }, { name: 'room', label: 'Room' }, { name: 'guestCount', label: 'Guests', type: 'number', defaultValue: ev.guestCount }] }); r && act('SUBEVENT_ADD', { eventId: ev.id, data: r }); }}>+ Function</Button>}>
       <table className="t">
         <thead><tr><th>Name</th><th>Date</th><th>Venue</th><th>Room</th><th>Start</th><th>End</th><th className="num">Guests</th><th /></tr></thead>
         <tbody>
@@ -122,7 +123,7 @@ function Functions({ ev }) {
               <td><CommitInput type="time" value={s.start} onCommit={(v) => upd(s.id, { start: v })} /></td>
               <td><CommitInput type="time" value={s.end} onCommit={(v) => upd(s.id, { end: v })} /></td>
               <td className="num"><CommitInput className="inline" type="number" value={s.guestCount} onCommit={(v) => upd(s.id, { guestCount: v })} /></td>
-              <td><button className="btn sm ghost" onClick={() => act('SUBEVENT_REMOVE', { eventId: ev.id, subEventId: s.id })}>✕</button></td>
+              <td><Button variant="ghost" size="sm" onClick={() => act('SUBEVENT_REMOVE', { eventId: ev.id, subEventId: s.id })}>✕</Button></td>
             </tr>
           ))}
         </tbody>
@@ -133,7 +134,7 @@ function Functions({ ev }) {
 
 function Forms({ ev }) {
   const { act } = useStore();
-  if (!ev.forms.length) return <Card><Empty>Forms are created from the event type when the contract is signed.</Empty></Card>;
+  if (!ev.forms.length) return <Card><EmptyState>Forms are created from the event type when the contract is signed.</EmptyState></Card>;
   return (
     <div className="grid g2">
       {ev.forms.map((f) => (
@@ -141,7 +142,7 @@ function Forms({ ev }) {
           {f.fields.map((fd) => (
             <div key={fd.key} className="mb"><div className="faint" style={{ fontSize: 12 }}>{fd.label}</div><div style={{ whiteSpace: 'pre-wrap' }}>{f.answers[fd.key] || <span className="faint">—</span>}</div></div>
           ))}
-          {!f.submittedAt && <button className="btn sm" onClick={() => act('MESSAGE_SEND', { eventId: ev.id, text: `Reminder: please complete the "${f.name}" form in your portal.` })}>Nudge client</button>}
+          {!f.submittedAt && <Button size="sm" onClick={() => act('MESSAGE_SEND', { eventId: ev.id, text: `Reminder: please complete the "${f.name}" form in your portal.` })}>Nudge client</Button>}
         </Card>
       ))}
     </div>
@@ -149,6 +150,7 @@ function Forms({ ev }) {
 }
 
 function Design({ ev }) {
+  const dialog = useDialog();
   const { act } = useStore();
   const db = decorSnapshot();
   const [color, setColor] = useState('#c9a227');
@@ -157,11 +159,11 @@ function Design({ ev }) {
     <div className="grid g2">
       <Card title="Palette & concept">
         <div className="row mb">{d.palette.map((c) => <span key={c} className="swatch" title={c} style={{ background: c }} onClick={() => act('DESIGN_UPDATE', { eventId: ev.id, patch: { palette: d.palette.filter((x) => x !== c) } })} />)}
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} /><button className="btn sm" onClick={() => act('DESIGN_UPDATE', { eventId: ev.id, patch: { palette: [...d.palette, color] } })}>+ color</button></div>
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} /><Button size="sm" onClick={() => act('DESIGN_UPDATE', { eventId: ev.id, patch: { palette: [...d.palette, color] } })}>+ color</Button></div>
         <Field label="Concept notes"><CommitInput value={d.notes} onCommit={(v) => act('DESIGN_UPDATE', { eventId: ev.id, patch: { notes: v } })} /></Field>
         <h4 className="mt">References</h4>
         {d.references.map((r, i) => <div key={i}>• {r}</div>)}
-        <button className="btn sm mt" onClick={() => { const r = prompt('Reference (link or description)'); r && act('DESIGN_UPDATE', { eventId: ev.id, patch: { references: [...d.references, r] } }); }}>+ Reference</button>
+        <Button size="sm" className="mt" onClick={async () => { const r = await dialog.prompt({ title: 'Add design reference', label: 'Link or description' }); r && act('DESIGN_UPDATE', { eventId: ev.id, patch: { references: [...d.references, r] } }); }}>+ Reference</Button>
       </Card>
       <Card title="Decor items on the board (linked to Decor Inventory)">
         <Moodboard itemIds={d.decorItemIds} />
@@ -185,7 +187,7 @@ function Docs({ ev }) {
         <input placeholder="File name (mock upload)" {...bind('name')} />
         <select {...bind('type')}>{['Vendor contract', 'Floor plan', 'Venue permit', 'Insurance certificate', 'Menu', 'Other'].map((t) => <option key={t}>{t}</option>)}</select>
         <input type="date" title="Expiry (optional)" {...bind('expiresAt')} />
-        <button className="btn primary" disabled={!v.name} onClick={() => act('DOCUMENT_ADD', { eventId: ev.id, ...v })}>Upload</button>
+        <Button variant="primary" disabled={!v.name} onClick={() => act('DOCUMENT_ADD', { eventId: ev.id, ...v })}>Upload</Button>
       </div>
       <table className="t">
         <thead><tr><th>Name</th><th>Type</th><th>Uploaded</th><th>By</th><th>Expires</th></tr></thead>
@@ -204,7 +206,7 @@ function Decisions({ ev }) {
         <input style={{ flex: 2 }} placeholder="Decision" {...bind('decision')} />
         <input placeholder="Approved by" {...bind('decidedBy')} />
         <input placeholder="Reference (meeting, email…)" {...bind('reference')} />
-        <button className="btn primary" disabled={!v.decision || !v.decidedBy} onClick={() => act('DECISION_ADD', { eventId: ev.id, ...v })}>Log decision</button>
+        <Button variant="primary" disabled={!v.decision || !v.decidedBy} onClick={() => act('DECISION_ADD', { eventId: ev.id, ...v })}>Log decision</Button>
       </div>
       <table className="t">
         <thead><tr><th>When</th><th>Decision</th><th>Approved by</th><th>Reference</th><th>Recorded by</th></tr></thead>

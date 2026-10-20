@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Modal, Field, useForm, Alert, Stat, PillSelect, download } from '../../components/ui.jsx';
+import { Card, Badge, Modal, Field, useForm, Alert, StatTile, PillSelect, download, Button, useDialog } from '../../design-system/index.js';
 import { headcount, guaranteeWarnings, finalHeadcountDeadline } from '../../lib/derived.js';
 import { fmtDate } from '../../lib/dates.js';
 
@@ -18,6 +18,7 @@ export function RsvpCell({ ev, g, h, s, readOnly }) {
 }
 
 export function GuestTable({ ev, readOnly, canEdit = true }) {
+  const dialog = useDialog();
   const { act } = useStore();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('All');
@@ -40,9 +41,9 @@ export function GuestTable({ ev, readOnly, canEdit = true }) {
                       <span><b>{h.name}</b> <span className="faint">{h.email}{h.company ? ` · ${h.company}` : ''}</span> <Badge>{h.category}</Badge> <code>{h.code}</code> {h.plusOnesAllowed > 0 && <Badge tone="info">+{h.plusOnesAllowed} allowed</Badge>}</span>
                       {canEdit && !readOnly && (
                         <span className="row">
-                          {h.plusOnesAllowed > h.guests.filter((g) => g.isPlusOne).length && <button className="btn sm" onClick={() => { const n = prompt('Plus-one name'); n && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: n, isPlusOne: true }); }}>+ plus-one</button>}
-                          <button className="btn sm" onClick={() => { const n = prompt('Guest name'); n && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: n, isChild: window.confirm('Is this a child?') }); }}>+ guest</button>
-                          <button className="btn sm ghost" onClick={() => window.confirm(`Remove ${h.name}?`) && act('HOUSEHOLD_REMOVE', { eventId: ev.id, householdId: h.id })}>✕</button>
+                          {h.plusOnesAllowed > h.guests.filter((g) => g.isPlusOne).length && <Button size="sm" onClick={async () => { const n = await dialog.prompt({ title: `Plus-one for ${h.name}`, label: 'Name' }); n && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: n, isPlusOne: true }); }}>+ plus-one</Button>}
+                          <Button size="sm" onClick={async () => { const r = await dialog.form({ title: `Add guest to ${h.name}`, fields: [{ name: 'name', label: 'Guest name', required: true }, { name: 'isChild', label: 'Child', type: 'checkbox' }] }); r && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: r.name, isChild: r.isChild }); }}>+ guest</Button>
+                          <Button variant="ghost" size="sm" onClick={async () => (await dialog.confirm({ title: 'Remove household', message: `Remove ${h.name} and all their guests?`, danger: true })) && act('HOUSEHOLD_REMOVE', { eventId: ev.id, householdId: h.id })}>✕</Button>
                         </span>
                       )}
                     </div>
@@ -79,7 +80,7 @@ export function AddHouseholdModal({ ev, et, onClose }) {
     onClose();
   };
   return (
-    <Modal title={et.features.registration ? 'Register attendee' : 'Add household / party'} onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.name} onClick={submit}>Add</button></>}>
+    <Modal title={et.features.registration ? 'Register attendee' : 'Add household / party'} onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.name} onClick={submit}>Add</Button></>}>
       <div className="grid g2">
         <Field label={et.features.registration ? 'Attendee name' : 'Household name'}><input {...bind('name')} /></Field>
         <Field label="Category"><select {...bind('category')}>{(et.features.registration ? ['Attendee', 'VIP', 'Speaker', 'Sponsor', 'Press'] : ['Bride family', 'Groom family', 'Family', 'Friends', 'VIP', 'Colleagues']).map((c) => <option key={c}>{c}</option>)}</select></Field>
@@ -94,6 +95,7 @@ export function AddHouseholdModal({ ev, et, onClose }) {
 }
 
 export default function GuestsTab({ ev, et }) {
+  const dialog = useDialog();
   const { state, act, today } = useStore();
   const [add, setAdd] = useState(false);
   const hc = headcount(ev);
@@ -113,11 +115,11 @@ export default function GuestsTab({ ev, et }) {
   return (
     <div>
       <div className="grid g5">
-        <Stat label="Invited" value={hc.invited} />
-        <Stat label="Confirmed (max function)" value={hc.confirmed} tone="ok" />
-        <Stat label="Pending" value={hc.pending} tone="warn" />
-        <Stat label="Declined" value={hc.declined} />
-        <Stat label={et.features.checkInQR ? 'Checked in (QR)' : 'Checked in'} value={hc.checkedIn} />
+        <StatTile label="Invited" value={hc.invited} />
+        <StatTile label="Confirmed (max function)" value={hc.confirmed} tone="ok" />
+        <StatTile label="Pending" value={hc.pending} tone="warn" />
+        <StatTile label="Declined" value={hc.declined} />
+        <StatTile label={et.features.checkInQR ? 'Checked in (QR)' : 'Checked in'} value={hc.checkedIn} />
       </div>
       {warn.map((w, i) => <Alert key={i} tone={w.level}>{w.text}</Alert>)}
       <div className="grid g3 mt">
@@ -125,7 +127,7 @@ export default function GuestsTab({ ev, et }) {
           {ev.subEvents.map((s) => <div key={s.id} className="row between"><span>{s.name}</span><b>{hc.bySubEvent[s.id] || 0}</b></div>)}
           <div className="mt">
             <div className="faint" style={{ fontSize: 12 }}>Final headcount deadline: <b>{fmtDate(deadline)}</b>{today > deadline && ' (passed — changes need a Change Order)'}</div>
-            <div className="row mt"><b>Final headcount: {ev.finalHeadcount ?? '—'}</b><button className="btn sm" onClick={() => { const n = prompt('Final headcount', hc.confirmed); n && act('FINAL_HEADCOUNT_SET', { eventId: ev.id, count: Number(n) }); }}>Set</button></div>
+            <div className="row mt"><b>Final headcount: {ev.finalHeadcount ?? '—'}</b><Button size="sm" onClick={async () => { const n = await dialog.prompt({ title: 'Confirm final headcount', label: 'Guests', type: 'number', defaultValue: hc.confirmed, hint: 'Sent to catering/venue as the guaranteed number' }); n !== null && act('FINAL_HEADCOUNT_SET', { eventId: ev.id, count: Number(n) }); }}>Set</Button></div>
           </div>
         </Card>
         <Card title={`Catering report${mainSe ? ` — ${mainSe.name}` : ''}`}>
@@ -137,10 +139,10 @@ export default function GuestsTab({ ev, et }) {
           <p className="muted" style={{ fontSize: 12.5 }}>Each household has a unique code. Guests RSVP per function, choose meals and add allowed plus-ones on the public page.</p>
           <a className="btn" href={`#/rsvp?event=${ev.id}`} target="_blank" rel="noreferrer">Open public RSVP page ↗</a>
           <div className="faint mt" style={{ fontSize: 12 }}>Try code: <code>{ev.households[0]?.code ?? '—'}</code></div>
-          <div className="row mt"><button className="btn" onClick={exportCsv}>Export CSV</button></div>
+          <div className="row mt"><Button onClick={exportCsv}>Export CSV</Button></div>
         </Card>
       </div>
-      <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<button className="btn primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</button>}>
+      <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>
         <div className="faint mb" style={{ fontSize: 12 }}>Click an RSVP badge to cycle pending → yes → no. Confirmed headcount feeds per-guest budget lines and guarantee warnings automatically.</div>
         <GuestTable ev={ev} />
       </Card>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Modal, Field, useForm, PillSelect, Money } from '../components/ui.jsx';
+import { Card, Badge, Modal, Field, useForm, PillSelect, Money, Button } from '../design-system/index.js';
 import { vendorCompliance, vendorScore } from '../lib/derived.js';
 import { fmtDate } from '../lib/dates.js';
 
@@ -16,7 +16,7 @@ export default function Vendors() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Vendor directory</h1><div className="muted">Categories, regions, price range, internal rating, compliance documents (COI, licenses, W-9) with expiry reminders.</div></div>
-        <button className="btn primary" onClick={() => setAdd(true)}>+ Vendor</button>
+        <Button variant="primary" onClick={() => setAdd(true)}>+ Vendor</Button>
       </div>
       <PillSelect options={cats} value={cat} onChange={setCat} />
       <Card className="mt">
@@ -80,7 +80,7 @@ function AddVendor({ onClose }) {
   const { act } = useStore();
   const [v, , bind] = useForm({ name: '', category: 'Catering', regions: '', priceRange: '$$', contact: '', email: '', phone: '', country: 'US', coiExpiry: '', commissionPct: 0, w9: false });
   return (
-    <Modal title="Add vendor" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.name} onClick={() => { act('VENDOR_CREATE', { data: { ...v, regions: v.regions.split(',').map((x) => x.trim()).filter(Boolean), commissionPct: Number(v.commissionPct) } }); onClose(); }}>Add</button></>}>
+    <Modal title="Add vendor" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.name} onClick={() => { act('VENDOR_CREATE', { data: { ...v, regions: v.regions.split(',').map((x) => x.trim()).filter(Boolean), commissionPct: Number(v.commissionPct) } }); onClose(); }}>Add</Button></>}>
       <div className="grid g2">
         <Field label="Name"><input {...bind('name')} /></Field>
         <Field label="Category"><select {...bind('category')}>{['Catering', 'Florist', 'Photographer', 'Band/DJ', 'AV', 'Transportation', 'Venue', 'Bartending', 'Rentals', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></Field>

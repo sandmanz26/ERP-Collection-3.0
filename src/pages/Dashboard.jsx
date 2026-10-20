@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Stat, StageBadge, Badge, Money, Alert } from '../components/ui.jsx';
+import { Card, StatTile, StageBadge, Badge, Money, Alert } from '../design-system/index.js';
 import { fmtDate, diffDays, addDays } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
@@ -35,11 +35,11 @@ export default function Dashboard() {
       </div>
 
       <div className="grid g5">
-        <Stat label="Weighted pipeline (USD)" value={fmtMoney(pipeValue)} sub={`${pipeline.length} deals`} />
-        <Stat label="Contracted revenue (USD)" value={fmtMoney(contracted)} sub="signed, not cancelled" />
-        <Stat label="Deferred revenue (USD)" value={fmtMoney(deferred)} sub="deposits for future events" />
-        <Stat label="Revenue leakage (USD)" value={fmtMoney(leakUSD)} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />
-        <Stat label="Open tasks ≤14d" value={myTasks.length} sub={`${myTasks.filter((t) => t.dueDate < today).length} overdue`} />
+        <StatTile label="Weighted pipeline (USD)" value={fmtMoney(pipeValue)} sub={`${pipeline.length} deals`} />
+        <StatTile label="Contracted revenue (USD)" value={fmtMoney(contracted)} sub="signed, not cancelled" />
+        <StatTile label="Deferred revenue (USD)" value={fmtMoney(deferred)} sub="deposits for future events" />
+        <StatTile label="Revenue leakage (USD)" value={fmtMoney(leakUSD)} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />
+        <StatTile label="Open tasks ≤14d" value={myTasks.length} sub={`${myTasks.filter((t) => t.dueDate < today).length} overdue`} />
       </div>
 
       <div className="grid g2 mt">

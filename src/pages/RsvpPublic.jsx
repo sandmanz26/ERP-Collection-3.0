@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Alert, Badge } from '../components/ui.jsx';
+import { Card, Alert, Badge, Button, useDialog } from '../design-system/index.js';
 import { fmtDate } from '../lib/dates.js';
 
 /** Public RSVP website (no login). Guests look up their household by unique code. */
 export default function RsvpPublic() {
+  const dialog = useDialog();
   const [sp] = useSearchParams();
   const { state, act } = useStore();
   const ev = state.events.find((e) => e.id === sp.get('event')) ?? state.events.find((e) => e.households.length);
@@ -25,7 +26,7 @@ export default function RsvpPublic() {
         {!hh && (
           <Card className="mt">
             <h3>Find your invitation</h3>
-            <div className="row"><input placeholder="RSVP code (e.g. on your invitation)" value={code} onChange={(e) => setCode(e.target.value)} /><button className="btn primary" onClick={() => { const h = ev.households.find((x) => x.code.toLowerCase() === code.trim().toLowerCase()); if (h) setHhId(h.id); else alert('Code not found'); }}>Continue</button></div>
+            <div className="row"><input placeholder="RSVP code (e.g. on your invitation)" value={code} onChange={(e) => setCode(e.target.value)} /><Button variant="primary" onClick={() => { const h = ev.households.find((x) => x.code.toLowerCase() === code.trim().toLowerCase()); if (h) setHhId(h.id); else dialog.alert({ title: 'Code not found', message: 'Please check the code printed on your invitation.' }); }}>Continue</Button></div>
           </Card>
         )}
         {hh && (
@@ -38,7 +39,7 @@ export default function RsvpPublic() {
                   <div key={s.id} className="row between mt">
                     <span>{s.name} <span className="faint">{fmtDate(s.date)} {s.start}</span></span>
                     <span className="row">
-                      {['yes', 'no'].map((val) => <button key={val} className={`btn sm ${g.rsvp[s.id] === val ? (val === 'yes' ? 'ok' : 'danger solid') : ''}`} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val }); setDone(true); }}>{val === 'yes' ? 'Joyfully accepts' : 'Regretfully declines'}</button>)}
+                      {['yes', 'no'].map((val) => <Button key={val} size="sm" variant={g.rsvp[s.id] === val ? (val === 'yes' ? 'success' : 'danger-solid') : 'secondary'} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val }); setDone(true); }}>{val === 'yes' ? 'Joyfully accepts' : 'Regretfully declines'}</Button>)}
                     </span>
                   </div>
                 ))}
@@ -49,7 +50,7 @@ export default function RsvpPublic() {
                 </div>
               </div>
             ))}
-            {hh.plusOnesAllowed > hh.guests.filter((g) => g.isPlusOne).length && <button className="btn mt" onClick={() => { const n = prompt('Name of your guest'); n && act('GUEST_ADD', { eventId: ev.id, householdId: hh.id, name: n, isPlusOne: true }); }}>+ Add your plus-one</button>}
+            {hh.plusOnesAllowed > hh.guests.filter((g) => g.isPlusOne).length && <Button className="mt" onClick={async () => { const n = await dialog.prompt({ title: 'Add your plus-one', label: 'Guest name' }); n && act('GUEST_ADD', { eventId: ev.id, householdId: hh.id, name: n, isPlusOne: true }); }}>+ Add your plus-one</Button>}
           </Card>
         )}
         <div className="faint mt" style={{ textAlign: 'center', fontSize: 12 }}>Powered by {state.settings.company.name} · <a href="#/">back to app</a></div>

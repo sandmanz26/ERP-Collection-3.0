@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Kv, Modal, Field, Alert, Money, StatusBadge, ConfirmButton } from '../../components/ui.jsx';
+import { Card, Badge, KeyValue, Modal, Field, Alert, Money, StatusBadge, ConfirmButton, Button, useDialog } from '../../design-system/index.js';
 import { AvailabilityCheck } from '../../components/Availability.jsx';
 import { STAGES, stageIndex, stageLabel, transitionBlockers, nextStage, isExit } from '../../lib/lifecycle.js';
 import { eventContext, clientOf, eventFinancials, headcount } from '../../lib/derived.js';
 import { calcCancellation } from '../../lib/contracts.js';
 import { fmtDate, fmtDateTime, diffDays } from '../../lib/dates.js';
 import { fmtMoney } from '../../lib/money.js';
+import { LOST_REASONS } from '../../data/config.js';
 
 export default function Overview({ ev, et }) {
+  const dialog = useDialog();
   const { state, act, today, user } = useStore();
   const [postpone, setPostpone] = useState(false);
   const [cancel, setCancel] = useState(false);
@@ -32,7 +34,7 @@ export default function Overview({ ev, et }) {
       {isExit(ev.stage) && <Alert tone="danger">This event is <b>{stageLabel(ev.stage)}</b>{ev.prevStage ? ` (was ${stageLabel(ev.prevStage)})` : ''}. {ev.lostReason || ev.cancellation?.reason}</Alert>}
       {ev.cancellation && (
         <Card title="Cancellation settlement" className="mt">
-          <Kv rows={[['Cancelled by', ev.cancellation.by], ['Days before event', ev.cancellation.daysBefore], ['Forfeit %', `${ev.cancellation.forfeitPct}%`], ['Cancellation fee', fmtMoney(ev.cancellation.fee, ev.currency)], ['Paid to date', fmtMoney(ev.cancellation.paid, ev.currency)], ['Refund due to client', fmtMoney(ev.cancellation.refund, ev.currency)], ['Balance owed by client', fmtMoney(ev.cancellation.balanceDue, ev.currency)]]} />
+          <KeyValue rows={[['Cancelled by', ev.cancellation.by], ['Days before event', ev.cancellation.daysBefore], ['Forfeit %', `${ev.cancellation.forfeitPct}%`], ['Cancellation fee', fmtMoney(ev.cancellation.fee, ev.currency)], ['Paid to date', fmtMoney(ev.cancellation.paid, ev.currency)], ['Refund due to client', fmtMoney(ev.cancellation.refund, ev.currency)], ['Balance owed by client', fmtMoney(ev.cancellation.balanceDue, ev.currency)]]} />
         </Card>
       )}
       <div className="grid g3 mt">
@@ -41,21 +43,21 @@ export default function Overview({ ev, et }) {
             <div>Current: <b>{stageLabel(ev.stage)}</b></div>
             {next && !isExit(ev.stage) && (
               <>
-                <button className="btn primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: next })}>Advance to {stageLabel(next)}</button>
+                <Button variant="primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: next })}>Advance to {stageLabel(next)}</Button>
                 {blockers.map((b) => <div key={b} className="faint" style={{ fontSize: 12 }}>⛔ {b}</div>)}
-                {blockers.length > 0 && user.role === 'admin' && <ConfirmButton className="btn sm danger" message="Admin override: force the stage change? This is logged." onConfirm={() => act('STAGE_CHANGE', { eventId: ev.id, to: next, force: true })}>Force (admin)</ConfirmButton>}
+                {blockers.length > 0 && user.role === 'admin' && <ConfirmButton variant="danger" size="sm" message="Admin override: force the stage change? This is logged." onConfirm={() => act('STAGE_CHANGE', { eventId: ev.id, to: next, force: true })}>Force (admin)</ConfirmButton>}
               </>
             )}
             {!isExit(ev.stage) && (
               <div className="row mt">
-                {ev.contract?.immutable && <button className="btn" onClick={() => setPostpone(true)}>Postpone…</button>}
-                {ev.contract?.immutable ? <button className="btn danger" onClick={() => setCancel(true)}>Cancel event…</button> : <button className="btn danger" onClick={() => { const r = prompt('Lost reason?', 'No response'); r && act('MARK_LOST', { eventId: ev.id, reason: r }); }}>Mark lost</button>}
+                {ev.contract?.immutable && <Button onClick={() => setPostpone(true)}>Postpone…</Button>}
+                {ev.contract?.immutable ? <Button variant="danger" onClick={() => setCancel(true)}>Cancel event…</Button> : <Button variant="danger" onClick={async () => { const r = await dialog.form({ title: 'Mark as lost', fields: [{ name: 'reason', label: 'Reason (used in conversion analytics)', type: 'select', options: LOST_REASONS, defaultValue: LOST_REASONS[0] }] }); r && act('MARK_LOST', { eventId: ev.id, reason: r.reason }); }}>Mark lost</Button>}
               </div>
             )}
           </div>
         </Card>
         <Card title="Key figures">
-          <Kv rows={[
+          <KeyValue rows={[
             ['Contract total', <Money value={f.contractTotal} currency={ev.currency} />],
             ['Paid', <Money value={f.paid} currency={ev.currency} />],
             ['Balance', <Money value={f.balance} currency={ev.currency} />],
@@ -66,13 +68,13 @@ export default function Overview({ ev, et }) {
           ]} />
         </Card>
         <Card title="Client" actions={<Badge>{client?.type}</Badge>}>
-          <Kv rows={[['Name', client?.name], ['Email', client?.email], ['Phone', client?.phone], ['Country', client?.country], client?.vatId && ['VAT ID', client.vatId], ['Decision makers', <div>{(client?.decisionMakers || []).map((d) => <div key={d}>• {d}</div>)}</div>]]} />
+          <KeyValue rows={[['Name', client?.name], ['Email', client?.email], ['Phone', client?.phone], ['Country', client?.country], client?.vatId && ['VAT ID', client.vatId], ['Decision makers', <div>{(client?.decisionMakers || []).map((d) => <div key={d}>• {d}</div>)}</div>]]} />
         </Card>
       </div>
 
       <div className="grid g2 mt">
-        <Card title="Event details" actions={<button className="btn sm" onClick={() => setEdit(true)}>Edit</button>}>
-          <Kv rows={[
+        <Card title="Event details" actions={<Button size="sm" onClick={() => setEdit(true)}>Edit</Button>}>
+          <KeyValue rows={[
             ['Event type', `${et.name} (${et.segment})`],
             ['Date', ev.date ? fmtDate(ev.date, { weekday: 'long' }) : 'TBD'],
             ['Date status', ev.dateStatus],
@@ -99,13 +101,13 @@ export default function Overview({ ev, et }) {
             <div key={h.id} className="row between" style={{ padding: '6px 0', borderBottom: '1px dashed var(--line)' }}>
               <span>#{h.priority} · {fmtDate(h.date)} · expires {fmtDate(h.expiresAt)} {h.status === 'active' && <span className="faint">({diffDays(today, h.expiresAt)}d)</span>}</span>
               <span className="row"><StatusBadge status={h.status} />
-                {h.status === 'active' && <><button className="btn sm" onClick={() => act('HOLD_EXTEND', { holdId: h.id, days: 7 })}>+7d</button><button className="btn sm danger" onClick={() => act('HOLD_RELEASE', { holdId: h.id })}>Release</button></>}
+                {h.status === 'active' && <><Button size="sm" onClick={() => act('HOLD_EXTEND', { holdId: h.id, days: 7 })}>+7d</Button><Button variant="danger" size="sm" onClick={() => act('HOLD_RELEASE', { holdId: h.id })}>Release</Button></>}
               </span>
             </div>
           ))}
           {!ev.contract?.immutable && !isExit(ev.stage) && (
             <div className="mt stack">
-              <div className="row"><input type="date" value={holdDate} onChange={(e) => setHoldDate(e.target.value)} /><button className="btn primary" disabled={!holdDate} onClick={() => act('HOLD_CREATE', { eventId: ev.id, date: holdDate })}>Place hold</button></div>
+              <div className="row"><input type="date" value={holdDate} onChange={(e) => setHoldDate(e.target.value)} /><Button variant="primary" disabled={!holdDate} onClick={() => act('HOLD_CREATE', { eventId: ev.id, date: holdDate })}>Place hold</Button></div>
               <AvailabilityCheck date={holdDate} excludeEventId={ev.id} />
             </div>
           )}
@@ -115,10 +117,10 @@ export default function Overview({ ev, et }) {
               {ev.approvals.map((a) => (
                 <div key={a.id} className="row between" style={{ padding: '4px 0' }}>
                   <span>{a.step} <span className="faint">{a.by} {a.at ? fmtDateTime(a.at) : ''}</span></span>
-                  <span className="row"><StatusBadge status={a.status} />{a.status === 'pending' && <button className="btn sm" onClick={() => act('APPROVAL_STEP', { eventId: ev.id, stepId: a.id, status: 'approved' })}>Mark approved</button>}</span>
+                  <span className="row"><StatusBadge status={a.status} />{a.status === 'pending' && <Button size="sm" onClick={() => act('APPROVAL_STEP', { eventId: ev.id, stepId: a.id, status: 'approved' })}>Mark approved</Button>}</span>
                 </div>
               ))}
-              <button className="btn sm mt" onClick={() => { const s = prompt('Approval step name'); s && act('APPROVAL_ADD', { eventId: ev.id, step: s }); }}>+ Add step</button>
+              <Button size="sm" className="mt" onClick={async () => { const s = await dialog.prompt({ title: 'Add client approval step', label: 'Step (e.g. Legal review)' }); s && act('APPROVAL_ADD', { eventId: ev.id, step: s }); }}>+ Add step</Button>
             </div>
           )}
         </Card>
@@ -128,7 +130,7 @@ export default function Overview({ ev, et }) {
         <div className="row mb">
           <select value={note.type} onChange={(e) => setNote({ ...note, type: e.target.value })}>{['call', 'email', 'meeting', 'note'].map((t) => <option key={t}>{t}</option>)}</select>
           <input style={{ flex: 1 }} placeholder="Summary…" value={note.summary} onChange={(e) => setNote({ ...note, summary: e.target.value })} />
-          <button className="btn primary" disabled={!note.summary} onClick={() => { act('INTERACTION_ADD', { eventId: ev.id, ...note }); setNote({ ...note, summary: '' }); }}>Log</button>
+          <Button variant="primary" disabled={!note.summary} onClick={() => { act('INTERACTION_ADD', { eventId: ev.id, ...note }); setNote({ ...note, summary: '' }); }}>Log</Button>
         </div>
         <table className="t">
           <tbody>
@@ -155,7 +157,7 @@ function EditModal({ ev, onClose }) {
     onClose();
   };
   return (
-    <Modal title="Edit event details" onClose={onClose} wide footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" onClick={save}>Save</button></>}>
+    <Modal title="Edit event details" onClose={onClose} wide footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={save}>Save</Button></>}>
       {ev.contract?.immutable && <Alert tone="info">Contract signed: date, currency and tax jurisdiction are locked. Use Postpone or a Change Order.</Alert>}
       <div className="grid g3 mt">
         <Field label="Name"><input value={v.name} onChange={set('name')} /></Field>
@@ -183,7 +185,7 @@ function PostponeModal({ ev, onClose }) {
   const [reason, setReason] = useState('Client request');
   const [fee, setFee] = useState(Math.round((ev.contract?.total || 0) * 0.1));
   return (
-    <Modal title="Postpone event" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!date} onClick={() => { act('EVENT_POSTPONE', { eventId: ev.id, newDate: date, reason, fee }); onClose(); }}>Postpone</button></>}>
+    <Modal title="Postpone event" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!date} onClick={() => { act('EVENT_POSTPONE', { eventId: ev.id, newDate: date, reason, fee }); onClose(); }}>Postpone</Button></>}>
       <Alert tone="info">All relative task deadlines, sub-event dates, crew shifts, non-deposit payment due dates and the Decor Inventory reservation will move automatically.</Alert>
       <div className="grid g3 mt">
         <Field label="New date"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -203,7 +205,7 @@ function CancelModal({ ev, onClose }) {
   const paid = ev.payments.reduce((a, p) => a + p.amount, 0);
   const calc = { ...calcCancellation({ policy, contractTotal: ev.contract.total, paid, eventDate: ev.date, cancelDate: today, byEO: by === 'eo' }), paid, contractTotal: ev.contract.total };
   return (
-    <Modal title="Cancel event" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Back</button><button className="btn danger solid" disabled={!reason} onClick={() => { act('EVENT_CANCEL', { eventId: ev.id, by, reason, calc }); onClose(); }}>Confirm cancellation</button></>}>
+    <Modal title="Cancel event" onClose={onClose} footer={<><Button onClick={onClose}>Back</Button><Button variant="danger-solid" disabled={!reason} onClick={() => { act('EVENT_CANCEL', { eventId: ev.id, by, reason, calc }); onClose(); }}>Confirm cancellation</Button></>}>
       <div className="grid g2">
         <Field label="Cancelled by"><select value={by} onChange={(e) => setBy(e.target.value)}><option value="client">Client</option><option value="eo">EO (us)</option></select></Field>
         <Field label="Reason"><input value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
@@ -211,7 +213,7 @@ function CancelModal({ ev, onClose }) {
       <h4 className="mt2">Policy: {policy.name}</h4>
       <table className="t"><tbody>{policy.rows.map((r) => <tr key={r.minDaysBefore} style={calc.daysBefore >= r.minDaysBefore && by === 'client' && policy.rows.filter((x) => calc.daysBefore >= x.minDaysBefore).sort((a, b) => b.minDaysBefore - a.minDaysBefore)[0] === r ? { background: 'var(--warn-soft)' } : undefined}><td>{r.minDaysBefore}+ days before</td><td className="num">{r.forfeitPct}% forfeited</td></tr>)}</tbody></table>
       <div className="mt">
-        <Kv rows={[['Days before event', calc.daysBefore], ['Contract total', fmtMoney(ev.contract.total, ev.currency)], ['Forfeit', `${calc.forfeitPct}% = ${fmtMoney(calc.fee, ev.currency)}`], ['Paid to date', fmtMoney(paid, ev.currency)], ['Refund (credit note)', fmtMoney(calc.refund, ev.currency)], ['Balance invoice to client', fmtMoney(calc.balanceDue, ev.currency)]]} />
+        <KeyValue rows={[['Days before event', calc.daysBefore], ['Contract total', fmtMoney(ev.contract.total, ev.currency)], ['Forfeit', `${calc.forfeitPct}% = ${fmtMoney(calc.fee, ev.currency)}`], ['Paid to date', fmtMoney(paid, ev.currency)], ['Refund (credit note)', fmtMoney(calc.refund, ev.currency)], ['Balance invoice to client', fmtMoney(calc.balanceDue, ev.currency)]]} />
       </div>
     </Modal>
   );

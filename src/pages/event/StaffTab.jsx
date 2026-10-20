@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Modal, Field, useForm, Alert } from '../../components/ui.jsx';
+import { Card, Badge, Money, Modal, Field, useForm, Alert, Button } from '../../design-system/index.js';
 import { shiftCost, findConflicts, LABOR_RULES } from '../../lib/staff.js';
 import { fmtDate } from '../../lib/dates.js';
 import { sum } from '../../lib/money.js';
@@ -14,7 +14,7 @@ export default function StaffTab({ ev }) {
   return (
     <div>
       {conflicts.map(([a, b], i) => <Alert key={i} tone="danger">Schedule conflict: {state.staff.find((s) => s.id === a.staffId)?.name} is booked on {a.eventName} ({a.start}-{a.end}) and {b.eventName} ({b.start}-{b.end}) on {fmtDate(a.date)}.</Alert>)}
-      <Card title="Crew shifts" actions={<button className="btn primary" onClick={() => setAdd(true)}>+ Shift</button>}>
+      <Card title="Crew shifts" actions={<Button variant="primary" onClick={() => setAdd(true)}>+ Shift</Button>}>
         <table className="t">
           <thead><tr><th>Staff</th><th>Type</th><th>Role</th><th>Date</th><th>Shift</th><th>Clock in/out</th><th className="num">Hours</th><th>Rules</th><th className="num">Cost</th><th>Status</th><th /></tr></thead>
           <tbody>
@@ -27,8 +27,8 @@ export default function StaffTab({ ev }) {
                 <td className="num">{c.hours}</td>
                 <td style={{ fontSize: 11.5 }}>{LABOR_RULES[st?.laborRegion]?.label}{c.warnings.map((w) => <div key={w} style={{ color: 'var(--warn)' }}>{w}</div>)}</td>
                 <td className="num"><Money value={c.cost} currency={ev.currency} /></td>
-                <td>{s.confirmed ? <Badge tone="ok">confirmed</Badge> : <><Badge tone="warn">awaiting</Badge><button className="btn sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: s.id })}>confirm</button></>}</td>
-                <td><button className="btn sm ghost" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}>✕</button></td>
+                <td>{s.confirmed ? <Badge tone="ok">confirmed</Badge> : <><Badge tone="warn">awaiting</Badge><Button size="sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: s.id })}>confirm</Button></>}</td>
+                <td><Button variant="ghost" size="sm" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}>✕</Button></td>
               </tr>
             ))}
           </tbody>
@@ -49,7 +49,7 @@ function AddShift({ ev, onClose }) {
   const st = state.staff.find((s) => s.id === v.staffId);
   const preview = shiftCost(v, st);
   return (
-    <Modal title="Schedule shift" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" onClick={() => { act('SHIFT_ADD', { eventId: ev.id, data: v }); onClose(); }}>Schedule{conflict ? ' anyway' : ''}</button></>}>
+    <Modal title="Schedule shift" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => { act('SHIFT_ADD', { eventId: ev.id, data: v }); onClose(); }}>Schedule{conflict ? ' anyway' : ''}</Button></>}>
       <div className="grid g2">
         <Field label="Staff"><select {...bind('staffId')}>{state.staff.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.type}, {s.region})</option>)}</select></Field>
         <Field label="Role"><input {...bind('role')} /></Field>

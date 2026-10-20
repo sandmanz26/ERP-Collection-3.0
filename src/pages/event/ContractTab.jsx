@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, Empty, Field } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, Button } from '../../design-system/index.js';
 import { clientOf, activeProposal } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -22,7 +22,7 @@ export function SignaturePanel({ ev, allowSignerIds }) {
               {!s.signedAt && c.status !== 'draft' && (!allowSignerIds || allowSignerIds.includes(s.id)) && (
                 <div className="row">
                   <input placeholder="Type full name" value={names[s.id] || ''} onChange={(e) => setNames({ ...names, [s.id]: e.target.value })} style={{ width: 150 }} />
-                  <button className="btn sm primary" onClick={() => act('CONTRACT_SIGN', { eventId: ev.id, signerId: s.id, typedName: names[s.id] })}>e-Sign</button>
+                  <Button variant="primary" size="sm" onClick={() => act('CONTRACT_SIGN', { eventId: ev.id, signerId: s.id, typedName: names[s.id] })}>e-Sign</Button>
                 </div>
               )}
             </td>
@@ -43,7 +43,7 @@ export default function ContractTab({ ev, et }) {
   const c = ev.contract;
 
   if (!c) {
-    if (!prop) return <Card><Empty>Create and send a proposal first.</Empty></Card>;
+    if (!prop) return <Card><EmptyState>Create and send a proposal first.</EmptyState></Card>;
     return (
       <Card title="Generate contract from template">
         <Alert tone="info">Variables (client, date, venue, total, schedule, cancellation table) are filled automatically from proposal v{prop.version} ({prop.status}).</Alert>
@@ -57,12 +57,12 @@ export default function ContractTab({ ev, et }) {
             <input placeholder="Name" value={s.name} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
             <input placeholder="Email" value={s.email} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))} />
             <input placeholder="Role" value={s.role} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)))} />
-            <button className="btn sm ghost" onClick={() => setSigners(signers.filter((_, j) => j !== i))}>✕</button>
+            <Button variant="ghost" size="sm" onClick={() => setSigners(signers.filter((_, j) => j !== i))}>✕</Button>
           </div>
         ))}
         <div className="row">
-          <button className="btn" onClick={() => setSigners([...signers, { name: '', email: '', role: 'Co-signer' }])}>+ Signer</button>
-          <button className="btn primary" disabled={!signers.length || signers.some((s) => !s.name)} onClick={() => act('CONTRACT_GENERATE', { eventId: ev.id, signers, paymentScheduleId: ps, cancellationPolicyId: cp })}>Generate contract</button>
+          <Button onClick={() => setSigners([...signers, { name: '', email: '', role: 'Co-signer' }])}>+ Signer</Button>
+          <Button variant="primary" disabled={!signers.length || signers.some((s) => !s.name)} onClick={() => act('CONTRACT_GENERATE', { eventId: ev.id, signers, paymentScheduleId: ps, cancellationPolicyId: cp })}>Generate contract</Button>
         </div>
       </Card>
     );
@@ -76,7 +76,7 @@ export default function ContractTab({ ev, et }) {
         <div className="contract-body mt">{c.body}</div>
       </Card>
       <div>
-        <Card title="E-signature" actions={c.status === 'draft' && <button className="btn primary" onClick={() => act('CONTRACT_SEND', { eventId: ev.id })}>Send for signature</button>}>
+        <Card title="E-signature" actions={c.status === 'draft' && <Button variant="primary" onClick={() => act('CONTRACT_SEND', { eventId: ev.id })}>Send for signature</Button>}>
           <SignaturePanel ev={ev} />
           {c.status !== 'draft' && !c.immutable && <div className="faint mt" style={{ fontSize: 12 }}>Clients sign in the Client Portal. For demo you can sign here on their behalf.</div>}
         </Card>

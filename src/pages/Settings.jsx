@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, Badge, CommitInput, ConfirmButton, Kv } from '../components/ui.jsx';
+import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue } from '../design-system/index.js';
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const FEATURES = { guestHouseholds: 'Household-based guest list', seating: 'Seating chart', registration: 'Attendee registration', poRequired: 'PO required', multiplePayers: 'Multiple payers', clientApprovalLayers: 'Layered client approvals', rsvp: 'RSVP', checkInQR: 'QR check-in' };
@@ -13,13 +13,13 @@ export default function Settings() {
   return (
     <div>
       <div className="page-head"><div className="grow"><h1>Settings</h1><div className="muted">Segment differences (social vs corporate) are configuration on Event Types — not separate code.</div></div>
-        <ConfirmButton className="btn danger" message="Reset ALL demo data to the original seed? (The reset itself is logged.)" onConfirm={() => act('RESET_DEMO')}>Reset demo data</ConfirmButton>
+        <ConfirmButton variant="danger" message="Reset ALL demo data to the original seed? (The reset itself is logged.)" onConfirm={() => act('RESET_DEMO')}>Reset demo data</ConfirmButton>
       </div>
       <Tabs tabs={[{ id: 'general', label: 'General & capacity' }, { id: 'types', label: 'Event types' }, { id: 'catalog', label: 'Service catalog' }, { id: 'tax', label: 'Tax jurisdictions' }, { id: 'policies', label: 'Payment & cancellation' }, { id: 'users', label: 'Users & roles' }]} value={tab} onChange={setTab} />
       {tab === 'general' && (
         <div className="grid g2">
           <Card title="Company">
-            <Kv rows={[['Name', s.company.name], ['Country', s.company.country], ['EU VAT registration', s.company.euVatCountry], ['Base currency', s.company.baseCurrency], ['Address', s.company.address]]} />
+            <KeyValue rows={[['Name', s.company.name], ['Country', s.company.country], ['EU VAT registration', s.company.euVatCountry], ['Base currency', s.company.baseCurrency], ['Address', s.company.address]]} />
             <h4 className="mt2">Exchange rates (1 unit → USD)</h4>
             {Object.entries(s.fxRates).map(([c, r]) => <div key={c} className="row">{c} <CommitInput className="inline" type="number" value={r} onCommit={(n) => set('fxRates', { ...s.fxRates, [c]: n }, `FX ${c}`)} /></div>)}
           </Card>

@@ -1,0 +1,7 @@
+/* Design system stylesheet entry — order follows atomic layers. */
+@import '../tokens/tokens.css';
+@import './base.css';
+@import './atoms.css';
+@import './molecules.css';
+@import './organisms.css';
+@import './templates.css';

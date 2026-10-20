@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, download, PillSelect } from '../components/ui.jsx';
+import { Card, Badge, download, PillSelect, Button } from '../design-system/index.js';
 import { fmtDateTime } from '../lib/dates.js';
 import { activityToMarkdown } from '../lib/exportMd.js';
 
@@ -17,7 +17,7 @@ export default function ActivityLog() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Activity log (audit trail)</h1><div className="muted">Every action in the system — including rejected attempts and automation runs — is recorded here and can be exported as Markdown.</div></div>
-        <button className="btn primary" onClick={() => download('activity-log.md', activityToMarkdown(log), 'text/markdown')}>Export .md</button>
+        <Button variant="primary" onClick={() => download('activity-log.md', activityToMarkdown(log), 'text/markdown')}>Export .md</Button>
       </div>
       <div className="row mb">
         <input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StageBadge, Badge, Money, PillSelect } from '../components/ui.jsx';
+import { Card, StageBadge, Badge, Money, PillSelect } from '../design-system/index.js';
 import { fmtDate } from '../lib/dates.js';
 import { eventFinancials, clientOf } from '../lib/derived.js';
 import { STAGES, EXIT_STAGES } from '../lib/lifecycle.js';

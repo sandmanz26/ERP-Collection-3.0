@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Stat, Modal, Field, Alert } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, StatTile, Modal, Field, Alert, Button, useDialog } from '../../design-system/index.js';
 import { eventFinancials, invoiceBalance, invoiceStatus } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -16,7 +16,7 @@ export function PayModal({ ev, inv, onClose, portal }) {
     setTimeout(() => { act('PAYMENT_RECORD', { eventId: ev.id, invoiceId: inv.id, amount: Number(amount), method }); onClose(); }, 700);
   };
   return (
-    <Modal title={`${portal ? 'Pay' : 'Record payment for'} ${inv.number}`} onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={busy || !amount} onClick={pay}>{busy ? 'Processing…' : `Pay ${amount} ${inv.currency}`}</button></>}>
+    <Modal title={`${portal ? 'Pay' : 'Record payment for'} ${inv.number}`} onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={busy || !amount} onClick={pay}>{busy ? 'Processing…' : `Pay ${amount} ${inv.currency}`}</Button></>}>
       <Alert tone="info">Mock Stripe Checkout — the EO system never stores card data (PCI DSS scope stays minimal). A processor reference (pi_…) is stored instead.</Alert>
       <div className="grid g2 mt">
         <Field label="Amount"><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} max={bal} /></Field>
@@ -58,9 +58,9 @@ export function InvoiceTable({ ev, portal, payerFilter }) {
                   <td><StatusBadge status={st} /></td>
                   <td>
                     <div className="row">
-                      {bal > 0 && st !== 'void' && <button className="btn sm primary" onClick={() => setPay(i)}>{portal ? 'Pay now' : 'Record payment'}</button>}
-                      {!portal && st === 'overdue' && <button className="btn sm danger" onClick={() => act('LATE_FEE_APPLY', { eventId: ev.id, invoiceId: i.id })}>Apply late fee</button>}
-                      {portal && st === 'paid' && <button className="btn sm" onClick={() => act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: `${user.name} downloaded receipt for ${i.number}` })}>Receipt</button>}
+                      {bal > 0 && st !== 'void' && <Button variant="primary" size="sm" onClick={() => setPay(i)}>{portal ? 'Pay now' : 'Record payment'}</Button>}
+                      {!portal && st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: ev.id, invoiceId: i.id })}>Apply late fee</Button>}
+                      {portal && st === 'paid' && <Button size="sm" onClick={() => act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: `${user.name} downloaded receipt for ${i.number}` })}>Receipt</Button>}
                     </div>
                   </td>
                 </tr>
@@ -75,6 +75,7 @@ export function InvoiceTable({ ev, portal, payerFilter }) {
 }
 
 export default function FinanceTab({ ev }) {
+  const dialog = useDialog();
   const { state, act } = useStore();
   const f = eventFinancials(state, ev);
   const [provider, setProvider] = useState(state.settings.accountingProvider);
@@ -82,20 +83,20 @@ export default function FinanceTab({ ev }) {
   return (
     <div>
       <div className="grid g5">
-        <Stat label="Contract value" value={<Money value={f.contractTotal} currency={cur} />} sub={`incl. tax ${f.tax}`} />
-        <Stat label="Received" value={<Money value={f.paid} currency={cur} />} />
-        <Stat label="Deferred revenue" value={<Money value={f.deferred} currency={cur} />} sub="received in advance (liability)" />
-        <Stat label="Recognized revenue" value={<Money value={f.recognizedRevenue} currency={cur} />} sub="after event took place" />
-        <Stat label="Gratuities (not revenue)" value={<Money value={f.gratuities} currency={cur} />} />
+        <StatTile label="Contract value" value={<Money value={f.contractTotal} currency={cur} />} sub={`incl. tax ${f.tax}`} />
+        <StatTile label="Received" value={<Money value={f.paid} currency={cur} />} />
+        <StatTile label="Deferred revenue" value={<Money value={f.deferred} currency={cur} />} sub="received in advance (liability)" />
+        <StatTile label="Recognized revenue" value={<Money value={f.recognizedRevenue} currency={cur} />} sub="after event took place" />
+        <StatTile label="Gratuities (not revenue)" value={<Money value={f.gratuities} currency={cur} />} />
       </div>
-      <Card title="Client invoices" className="mt" actions={<button className="btn" onClick={() => { const label = prompt('Invoice description'); if (!label) return; act('INVOICE_ADHOC', { eventId: ev.id, label, amount: Number(prompt('Amount', '500')) }); }}>+ Ad-hoc invoice</button>}>
+      <Card title="Client invoices" className="mt" actions={<Button onClick={async () => { const r = await dialog.form({ title: 'Ad-hoc invoice', fields: [{ name: 'label', label: 'Description', required: true }, { name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'payerId', label: 'Payer', type: 'select', options: ev.payers.map((p) => ({ value: p.id, label: p.name })), defaultValue: ev.payers[0]?.id }] }); r && act('INVOICE_ADHOC', { eventId: ev.id, ...r }); }}>+ Ad-hoc invoice</Button>}>
         <InvoiceTable ev={ev} />
       </Card>
       <div className="grid g2 mt">
         <Card title="Payment schedule (from contract & change orders)">
           <table className="t">
             <thead><tr><th>Installment</th><th>Source</th><th>Due</th><th className="num">Amount</th><th>Status</th><th /></tr></thead>
-            <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}</td><td><Badge>{p.source}</Badge></td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /></td><td>{p.status === 'scheduled' && <button className="btn sm" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: p.id })}>Invoice now</button>}</td></tr>)}</tbody>
+            <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}</td><td><Badge>{p.source}</Badge></td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /></td><td>{p.status === 'scheduled' && <Button size="sm" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: p.id })}>Invoice now</Button>}</td></tr>)}</tbody>
           </table>
           <div className="faint mt" style={{ fontSize: 12 }}>The automation engine invoices installments automatically 30 days before they fall due.</div>
         </Card>
@@ -107,16 +108,16 @@ export default function FinanceTab({ ev }) {
         </Card>
       </div>
       <div className="grid g3 mt">
-        <Card title="Credit notes & refunds" actions={<button className="btn sm" onClick={() => { const a = prompt('Amount'); if (!a) return; act('CREDIT_NOTE_CREATE', { eventId: ev.id, amount: Number(a), reason: prompt('Reason', 'Service reduction') || '', refund: window.confirm('Refund cash to client? (Cancel = credit only)') }); }}>+ Credit note</button>}>
+        <Card title="Credit notes & refunds" actions={<Button size="sm" onClick={async () => { const r = await dialog.form({ title: 'Credit note / refund', fields: [{ name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'reason', label: 'Reason', defaultValue: 'Service reduction', required: true }, { name: 'refund', label: 'Refund cash to the client (otherwise credit only)', type: 'checkbox' }] }); r && act('CREDIT_NOTE_CREATE', { eventId: ev.id, ...r }); }}>+ Credit note</Button>}>
           {ev.creditNotes.length === 0 && <div className="faint">None</div>}
           {ev.creditNotes.map((c) => <div key={c.id} className="row between"><span>{c.number} · {c.reason} {c.refund && <Badge tone="warn">refund</Badge>}</span><Money value={c.amount} currency={cur} /></div>)}
         </Card>
-        <Card title="Gratuities (vendors & crew)" actions={<button className="btn sm" onClick={() => { const to = prompt('To (vendor/crew)'); if (!to) return; act('GRATUITY_ADD', { eventId: ev.id, to, amount: Number(prompt('Amount', '200')), paidBy: 'Client' }); }}>+ Gratuity</button>}>
+        <Card title="Gratuities (vendors & crew)" actions={<Button size="sm" onClick={async () => { const r = await dialog.form({ title: 'Record gratuity', fields: [{ name: 'to', label: 'Recipient (vendor / crew)', required: true }, { name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true, defaultValue: 200 }, { name: 'paidBy', label: 'Paid by', type: 'select', options: ['Client', 'EO on behalf of client'], defaultValue: 'Client' }] }); r && act('GRATUITY_ADD', { eventId: ev.id, ...r }); }}>+ Gratuity</Button>}>
           <div className="faint mb" style={{ fontSize: 12 }}>Recorded as a pass-through liability — never EO revenue.</div>
           {ev.gratuities.map((g) => <div key={g.id} className="row between"><span>{g.to} <span className="faint">({g.paidBy})</span></span><Money value={g.amount} currency={cur} /></div>)}
         </Card>
         <Card title="Accounting sync">
-          <div className="row"><select value={provider} onChange={(e) => setProvider(e.target.value)}><option value="quickbooks">QuickBooks Online</option><option value="xero">Xero</option></select><button className="btn primary" onClick={() => act('ACCOUNTING_SYNC', { eventId: ev.id, provider })}>Sync (mock)</button></div>
+          <div className="row"><select value={provider} onChange={(e) => setProvider(e.target.value)}><option value="quickbooks">QuickBooks Online</option><option value="xero">Xero</option></select><Button variant="primary" onClick={() => act('ACCOUNTING_SYNC', { eventId: ev.id, provider })}>Sync (mock)</Button></div>
           {ev.accountingSync[0] && (
             <div className="mt">
               <div className="faint" style={{ fontSize: 12 }}>Last sync {fmtDateTime(ev.accountingSync[0].at)} → {ev.accountingSync[0].provider}</div>

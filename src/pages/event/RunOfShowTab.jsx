@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, Alert, download, CommitInput } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, Alert, download, CommitInput, Button } from '../../design-system/index.js';
 import { sortRos, rosForVendor } from '../../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -61,9 +61,9 @@ export default function RunOfShowTab({ ev }) {
     <div>
       <Card title={`Run of show — v${ev.ros.version}`} actions={<div className="row">
         <StatusBadge status={ev.ros.status} />
-        <button className="btn" onClick={() => act('ROS_SET_STATUS', { eventId: ev.id, status: statusFlow[ev.ros.status] })}>{ev.ros.status === 'draft' ? 'Share with vendors' : ev.ros.status === 'shared' ? 'Mark FINAL' : 'Back to draft'}</button>
-        <button className="btn" onClick={() => setSheet(true)}>Call sheet</button>
-        <button className="btn primary" onClick={() => setAdd(true)}>+ Item</button>
+        <Button onClick={() => act('ROS_SET_STATUS', { eventId: ev.id, status: statusFlow[ev.ros.status] })}>{ev.ros.status === 'draft' ? 'Share with vendors' : ev.ros.status === 'shared' ? 'Mark FINAL' : 'Back to draft'}</Button>
+        <Button onClick={() => setSheet(true)}>Call sheet</Button>
+        <Button variant="primary" onClick={() => setAdd(true)}>+ Item</Button>
       </div>}>
         {ev.ros.status === 'final' && <Alert tone="warning">Timeline is FINAL. Any change now notifies affected vendors and crew automatically.</Alert>}
         <div className="row mb mt">
@@ -91,7 +91,7 @@ export default function RunOfShowTab({ ev }) {
                       <td style={{ fontSize: 12 }}>{i.vendorIds.map((v) => state.vendors.find((x) => x.id === v)?.name).join(', ')}</td>
                       <td style={{ fontSize: 12 }}>{i.cue}</td>
                       <td><StatusBadge status={i.liveStatus} />{i.delayedBy ? <span className="faint"> +{i.delayedBy}m</span> : null}</td>
-                      <td><button className="btn sm ghost" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}>✕</button></td>
+                      <td><Button variant="ghost" size="sm" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}>✕</Button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -104,7 +104,7 @@ export default function RunOfShowTab({ ev }) {
       </Card>
       {add && <AddRos ev={ev} onClose={() => setAdd(false)} />}
       {sheet && (
-        <Modal wide title="Call sheet (auto-generated)" onClose={() => setSheet(false)} footer={<button className="btn primary" onClick={() => { download(`${ev.name}-call-sheet.txt`, callSheetText(state, ev)); act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: 'Call sheet downloaded/distributed' }); }}>Download</button>}>
+        <Modal wide title="Call sheet (auto-generated)" onClose={() => setSheet(false)} footer={<Button variant="primary" onClick={() => { download(`${ev.name}-call-sheet.txt`, callSheetText(state, ev)); act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: 'Call sheet downloaded/distributed' }); }}>Download</Button>}>
           <CallSheet ev={ev} />
         </Modal>
       )}
@@ -117,7 +117,7 @@ function AddRos({ ev, onClose }) {
   const [v, , bind] = useForm({ subEventId: ev.subEvents[0]?.id, track: 'guest', start: '18:00', duration: 15, activity: '', location: '', ownerStaffId: '', cue: '', notes: '' });
   const [vids, setVids] = useState([]);
   return (
-    <Modal title="Add run-of-show item" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.activity} onClick={() => { act('ROS_ITEM_ADD', { eventId: ev.id, data: { ...v, duration: Number(v.duration), vendorIds: vids } }); onClose(); }}>Add</button></>}>
+    <Modal title="Add run-of-show item" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.activity} onClick={() => { act('ROS_ITEM_ADD', { eventId: ev.id, data: { ...v, duration: Number(v.duration), vendorIds: vids } }); onClose(); }}>Add</Button></>}>
       <div className="grid g3">
         <Field label="Function"><select {...bind('subEventId')}>{ev.subEvents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
         <Field label="Track"><select {...bind('track')}><option value="guest">Guest timeline</option><option value="production">Production</option></select></Field>

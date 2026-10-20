@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Badge, StatusBadge, PillSelect, Alert } from '../components/ui.jsx';
+import { Badge, StatusBadge, PillSelect, Alert, Button } from '../design-system/index.js';
 import { sortRos } from '../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../lib/dates.js';
 import { ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
@@ -28,7 +28,7 @@ export default function DayOf() {
       <div className="page-head">
         <div className="grow"><h1>Day-of mode</h1><div className="muted">Mobile view for coordinators & crew. Works offline: toggle the connection to simulate a venue with no signal — actions are stored locally and synced when back online.</div></div>
         <select value={ev.id} onChange={(e) => nav(`/dayof/${e.target.value}`)}>{candidates.map((e) => <option key={e.id} value={e.id}>{e.name} — {fmtDate(e.date)}</option>)}</select>
-        <button className={`btn ${state.online ? '' : 'danger solid'}`} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? '📶 Online — simulate offline' : '📵 Offline — reconnect & sync'}</button>
+        <Button variant={state.online ? 'secondary' : 'danger-solid'} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? '📶 Online — simulate offline' : '📵 Offline — reconnect & sync'}</Button>
       </div>
       <div className="phone">
         <div className="screen">
@@ -40,10 +40,10 @@ export default function DayOf() {
             <div className="row between mb"><span className="muted">{fmtDate(ev.date, { weekday: 'short' })} · {ev.venue?.name}</span><span className="badge">{user.name.split(' ')[0]}</span></div>
             {myShift && (
               <div className="card" style={{ padding: 10, marginBottom: 10 }}>
-                <div className="row between"><span>My shift {myShift.start}–{myShift.end}</span>{!myShift.confirmed && <button className="btn sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: myShift.id })}>Confirm</button>}</div>
+                <div className="row between"><span>My shift {myShift.start}–{myShift.end}</span>{!myShift.confirmed && <Button size="sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: myShift.id })}>Confirm</Button>}</div>
                 <div className="row mt">
-                  <button className="btn sm ok" disabled={!!myShift.clockIn} onClick={() => act('CLOCK', { eventId: ev.id, shiftId: myShift.id, direction: 'in', location: '40.7614,-74.0021 (mock GPS)' })}>Clock in {myShift.clockIn && myShift.clockIn.slice(11, 16)}</button>
-                  <button className="btn sm" disabled={!myShift.clockIn || !!myShift.clockOut} onClick={() => act('CLOCK', { eventId: ev.id, shiftId: myShift.id, direction: 'out', location: 'mock GPS' })}>Clock out {myShift.clockOut && myShift.clockOut.slice(11, 16)}</button>
+                  <Button variant="success" size="sm" disabled={!!myShift.clockIn} onClick={() => act('CLOCK', { eventId: ev.id, shiftId: myShift.id, direction: 'in', location: '40.7614,-74.0021 (mock GPS)' })}>Clock in {myShift.clockIn && myShift.clockIn.slice(11, 16)}</Button>
+                  <Button size="sm" disabled={!myShift.clockIn || !!myShift.clockOut} onClick={() => act('CLOCK', { eventId: ev.id, shiftId: myShift.id, direction: 'out', location: 'mock GPS' })}>Clock out {myShift.clockOut && myShift.clockOut.slice(11, 16)}</Button>
                 </div>
               </div>
             )}
@@ -59,9 +59,9 @@ export default function DayOf() {
                         <b>{i.activity}</b> {i.track === 'production' && <Badge tone="warn">prod</Badge>}
                         <div className="faint" style={{ fontSize: 11.5 }}>{i.location} · {state.staff.find((s) => s.id === i.ownerStaffId)?.name}{i.cue && <> · 🎵 {i.cue}</>}</div>
                         <div className="row" style={{ marginTop: 4, gap: 4 }}>
-                          {i.liveStatus !== 'in_progress' && i.liveStatus !== 'done' && <button className="btn sm primary" onClick={() => live(i.id, 'in_progress')}>Start</button>}
-                          {i.liveStatus === 'in_progress' && <button className="btn sm ok" onClick={() => live(i.id, 'done')}>Done</button>}
-                          {i.liveStatus !== 'done' && <><button className="btn sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 5 })}>+5</button><button className="btn sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 15 })}>+15</button></>}
+                          {i.liveStatus !== 'in_progress' && i.liveStatus !== 'done' && <Button variant="primary" size="sm" onClick={() => live(i.id, 'in_progress')}>Start</Button>}
+                          {i.liveStatus === 'in_progress' && <Button variant="success" size="sm" onClick={() => live(i.id, 'done')}>Done</Button>}
+                          {i.liveStatus !== 'done' && <><Button size="sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 5 })}>+5</Button><Button size="sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 15 })}>+15</Button></>}
                         </div>
                       </div>
                       <div><StatusBadge status={i.liveStatus} />{i.delayedBy ? <div className="faint" style={{ fontSize: 10 }}>+{i.delayedBy}m</div> : null}</div>
@@ -96,7 +96,7 @@ function CheckIn({ ev }) {
           {h.guests.map((g) => (
             <div key={g.id} className="row between" style={{ fontSize: 13 }}>
               <span>{g.name} {g.dietary && <Badge tone="warn">{g.dietary}</Badge>}</span>
-              <button className={`btn sm ${g.checkedIn ? 'ok' : ''}`} onClick={() => act('GUEST_CHECKIN', { eventId: ev.id, guestId: g.id, value: !g.checkedIn, via: q && h.code.toLowerCase() === q.toLowerCase() ? 'QR' : 'manual' })}>{g.checkedIn ? '✓ in' : 'Check in'}</button>
+              <Button size="sm" variant={g.checkedIn ? 'success' : 'secondary'} onClick={() => act('GUEST_CHECKIN', { eventId: ev.id, guestId: g.id, value: !g.checkedIn, via: q && h.code.toLowerCase() === q.toLowerCase() ? 'QR' : 'manual' })}>{g.checkedIn ? '✓ in' : 'Check in'}</Button>
             </div>
           ))}
         </div>
@@ -122,7 +122,7 @@ function Incident({ ev }) {
       <textarea placeholder="What happened?" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
       <input type="file" accept="image/*" capture="environment" onChange={onFile} />
       {v.photo && <img src={v.photo} alt="preview" style={{ maxWidth: '100%', borderRadius: 8 }} />}
-      <button className="btn danger solid" disabled={!v.description} onClick={() => { act('INCIDENT_ADD', { eventId: ev.id, ...v }); setV({ ...v, description: '', photo: null }); }}>Report incident</button>
+      <Button variant="danger-solid" disabled={!v.description} onClick={() => { act('INCIDENT_ADD', { eventId: ev.id, ...v }); setV({ ...v, description: '', photo: null }); }}>Report incident</Button>
       <h4 className="mt">Reported</h4>
       {ev.incidents.map((i) => <Alert key={i.id} tone={i.severity === 'high' ? 'danger' : 'warning'}><div><b>{i.type}</b> · {i.description}<div className="faint">{fmtDateTime(i.at)}</div></div></Alert>)}
     </div>

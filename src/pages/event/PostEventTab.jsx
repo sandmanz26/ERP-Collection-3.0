@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, Kv, Stat } from '../../components/ui.jsx';
+import { Card, Badge, Money, Alert, KeyValue, StatTile, Button } from '../../design-system/index.js';
 import { closingChecklist, eventFinancials, eventContext } from '../../lib/derived.js';
 import { transitionBlockers, stageIndex } from '../../lib/lifecycle.js';
 import * as decorApi from '../../lib/decorApi.js';
@@ -28,15 +28,15 @@ export default function PostEventTab({ ev }) {
     <div>
       {!happened && <Alert tone="info">The event hasn't happened yet — this tab becomes the close-out workspace after the event date.</Alert>}
       <div className="grid g2 mt">
-        <Card title="Close-out checklist" actions={ev.stage === 'post_event' && <button className="btn primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'financial_close' })}>Financial close</button>}>
+        <Card title="Close-out checklist" actions={ev.stage === 'post_event' && <Button variant="primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'financial_close' })}>Financial close</Button>}>
           {checklist.map((c) => <div key={c.key} className="row" style={{ padding: '5px 0' }}><span style={{ color: c.done ? 'var(--ok)' : 'var(--ink-3)', fontSize: 16 }}>{c.done ? '☑' : '☐'}</span>{c.label}</div>)}
           <div className="row mt">
             <label className="row"><input type="checkbox" checked={!!ev.closing.venueDepositReturned} onChange={(e) => act('CLOSING_UPDATE', { eventId: ev.id, patch: { venueDepositReturned: e.target.checked } })} />Venue security deposit returned</label>
           </div>
-          {ev.stage === 'financial_close' && <button className="btn mt" onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'archived' })}>Archive event</button>}
+          {ev.stage === 'financial_close' && <Button className="mt" onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'archived' })}>Archive event</Button>}
         </Card>
         <Card title="Final profitability">
-          <Kv rows={[
+          <KeyValue rows={[
             ['Revenue (excl. tax)', <Money value={f.revenueNet} currency={cur} />],
             ['+ Commissions from vendors', <Money value={f.commissions} currency={cur} />],
             ['+ Damage / late fees billed', <Money value={f.damageCharges + f.lateFees} currency={cur} />],
@@ -49,7 +49,7 @@ export default function PostEventTab({ ev }) {
         </Card>
       </div>
       <div className="grid g2 mt">
-        <Card title="Decor return & damage (Decor Inventory)" actions={!ev.decorReturn && ev.decorRequests.length > 0 && <button className="btn primary" disabled={busy || !happened} onClick={pullReturn}>{busy ? 'Calling API…' : 'Pull return report'}</button>}>
+        <Card title="Decor return & damage (Decor Inventory)" actions={!ev.decorReturn && ev.decorRequests.length > 0 && <Button variant="primary" disabled={busy || !happened} onClick={pullReturn}>{busy ? 'Calling API…' : 'Pull return report'}</Button>}>
           {!ev.decorRequests.length && <div className="faint">No decor used.</div>}
           {ev.decorReturn && (
             <>
@@ -60,7 +60,7 @@ export default function PostEventTab({ ev }) {
                 <tfoot><tr><td colSpan={5}>Total charge</td><td className="num"><Money value={ev.decorReturn.totalCharge} currency={cur} /></td></tr></tfoot>
               </table>
               {ev.decorReturn.totalCharge > 0 && !ev.closing.damageBilled && (
-                <div className="row mt"><span className="muted">Bill per contract to:</span><button className="btn" onClick={() => act('DAMAGE_BILL', { eventId: ev.id, billTo: 'client' })}>Client</button><button className="btn" onClick={() => act('DAMAGE_BILL', { eventId: ev.id, billTo: 'venue' })}>Venue</button></div>
+                <div className="row mt"><span className="muted">Bill per contract to:</span><Button onClick={() => act('DAMAGE_BILL', { eventId: ev.id, billTo: 'client' })}>Client</Button><Button onClick={() => act('DAMAGE_BILL', { eventId: ev.id, billTo: 'venue' })}>Venue</Button></div>
               )}
               {ev.closing.damageBilled && <Badge tone="ok">billed</Badge>}
             </>
@@ -69,8 +69,8 @@ export default function PostEventTab({ ev }) {
         </Card>
         <Card title="Client feedback">
           <div className="row">
-            <button className="btn" disabled={ev.closing.surveySent} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { surveySent: true } })}>{ev.closing.surveySent ? 'Survey sent ✓' : 'Send satisfaction survey'}</button>
-            <button className="btn" disabled={ev.closing.reviewRequested} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { reviewRequested: true } })}>{ev.closing.reviewRequested ? 'Review requested ✓' : 'Request review (Google / The Knot)'}</button>
+            <Button disabled={ev.closing.surveySent} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { surveySent: true } })}>{ev.closing.surveySent ? 'Survey sent ✓' : 'Send satisfaction survey'}</Button>
+            <Button disabled={ev.closing.reviewRequested} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { reviewRequested: true } })}>{ev.closing.reviewRequested ? 'Review requested ✓' : 'Request review (Google / The Knot)'}</Button>
           </div>
           {ev.closing.survey ? <Alert tone="success">★ {ev.closing.survey.rating}/5 — “{ev.closing.survey.comment}”</Alert> : <div className="faint mt">No survey response yet (client answers in the portal).</div>}
           <h4 className="mt2">Internal vendor ratings</h4>
@@ -96,11 +96,11 @@ function VendorRatings({ ev }) {
             <label className="row">On-time <select value={cur.onTime} onChange={(e) => setR({ ...r, [v.id]: { ...cur, onTime: e.target.value } })}>{[1, 2, 3, 4, 5].map((n) => <option key={n}>{n}</option>)}</select></label>
             <label className="row">Quality <select value={cur.quality} onChange={(e) => setR({ ...r, [v.id]: { ...cur, quality: e.target.value } })}>{[1, 2, 3, 4, 5].map((n) => <option key={n}>{n}</option>)}</select></label>
             <input placeholder="Notes" value={cur.notes} onChange={(e) => setR({ ...r, [v.id]: { ...cur, notes: e.target.value } })} />
-            <button className="btn sm" onClick={() => act('VENDOR_RATE', { vendorId: v.id, eventId: ev.id, ...cur })}>{existing ? 'Update' : 'Rate'}</button>
+            <Button size="sm" onClick={() => act('VENDOR_RATE', { vendorId: v.id, eventId: ev.id, ...cur })}>{existing ? 'Update' : 'Rate'}</Button>
           </div>
         );
       })}
-      {ev.vendorBookings.length > 0 && <button className="btn sm" onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { vendorRatingsDone: true } })}>Mark ratings complete</button>}
+      {ev.vendorBookings.length > 0 && <Button size="sm" onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { vendorRatingsDone: true } })}>Mark ratings complete</Button>}
     </div>
   );
 }

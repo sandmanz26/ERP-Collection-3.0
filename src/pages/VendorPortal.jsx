@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, Empty } from '../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog } from '../design-system/index.js';
 import { sortRos, rosForVendor } from '../lib/ros.js';
 import { vendorCompliance } from '../lib/derived.js';
 import { fmtDate, fmtDateTime, addMinutes } from '../lib/dates.js';
 
 export default function VendorPortal() {
+  const dialog = useDialog();
   const { state, act, user, today } = useStore();
   const v = state.vendors.find((x) => x.id === user.vendorId);
   const [coi, setCoi] = useState('');
@@ -21,9 +22,9 @@ export default function VendorPortal() {
       <Card title="Compliance documents">
         {issues.map((i) => <Alert key={i.text} tone={i.level}>{i.text}</Alert>)}
         <div className="row mt">Certificate of Insurance valid until <b>{fmtDate(v.coiExpiry)}</b></div>
-        <div className="row mt"><span>Upload renewed COI — new expiry:</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><button className="btn primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</button></div>
+        <div className="row mt"><span>Upload renewed COI — new expiry:</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><Button variant="primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</Button></div>
       </Card>
-      {bookings.length === 0 && <Empty>No bookings yet.</Empty>}
+      {bookings.length === 0 && <EmptyState>No bookings yet.</EmptyState>}
       {bookings.map(({ b, e }) => {
         const items = sortRos(rosForVendor(e.ros.items, v.id));
         return (
@@ -37,14 +38,14 @@ export default function VendorPortal() {
                 <div><b>Access:</b> {e.venue?.accessCode}</div>
                 <div><b>Curfew:</b> {e.venue?.curfew}</div>
                 <div><b>Planner on site:</b> {state.users.find((u) => u.id === e.plannerId)?.name}</div>
-                {b.status === 'requested' && <button className="btn primary mt" onClick={() => act('BOOKING_CONFIRM', { eventId: e.id, bookingId: b.id })}>Confirm booking & schedule</button>}
+                {b.status === 'requested' && <Button variant="primary" className="mt" onClick={() => act('BOOKING_CONFIRM', { eventId: e.id, bookingId: b.id })}>Confirm booking & schedule</Button>}
               </div>
               <div>
                 <h4>Your payments</h4>
                 {b.model === 'direct' ? <div className="faint">Direct contract — invoice the client directly.</div> : b.payments.map((p) => <div key={p.id} className="row between"><span>{p.label} · {fmtDate(p.dueDate)}</span><span><Money value={p.amount} currency={e.currency} /> <StatusBadge status={p.status} /></span></div>)}
                 <h4 className="mt">Invoices uploaded</h4>
                 {b.vendorInvoices.map((vi) => <div key={vi.id}>📄 {vi.name} — <Money value={vi.amount} currency={e.currency} /></div>)}
-                <div className="row mt"><input type="file" onChange={(ev) => { const f = ev.target.files?.[0]; if (!f) return; act('VENDOR_INVOICE_UPLOAD', { eventId: e.id, bookingId: b.id, name: f.name, amount: Number(prompt('Invoice amount', b.cost)) || b.cost }); }} /></div>
+                <div className="row mt"><input type="file" onChange={async (ev) => { const f = ev.target.files?.[0]; if (!f) return; const amount = await dialog.prompt({ title: `Upload ${f.name}`, label: 'Invoice amount', type: 'number', defaultValue: b.cost }); if (amount === null) return; act('VENDOR_INVOICE_UPLOAD', { eventId: e.id, bookingId: b.id, name: f.name, amount: Number(amount) }); }} /></div>
               </div>
             </div>
             <h4 className="mt">Your run of show ({e.ros.status}, v{e.ros.version}) — only the items relevant to you</h4>

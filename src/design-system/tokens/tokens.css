@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Design tokens — the single source of truth for every visual decision.
+   Atoms/molecules/organisms reference ONLY these variables (never raw values).
+   ========================================================================== */
+:root {
+  /* color · surfaces */
+  --color-bg: #f6f5f2;
+  --color-surface: #ffffff;
+  --color-surface-2: #faf9f7;
+  --color-surface-sunken: #efece7;
+  --color-sidebar: #17151f;
+  --color-sidebar-hover: #26222f;
+  --color-sidebar-ink: #c9c5d6;
+  --color-border: #e6e2dc;
+  --color-border-subtle: #f0ede8;
+
+  /* color · ink (text) */
+  --color-ink: #1f2328;
+  --color-ink-2: #57606a;
+  --color-ink-3: #8c959f;
+  --color-ink-inverse: #ffffff;
+
+  /* color · brand */
+  --color-brand: #6d4aff;
+  --color-brand-soft: #efe9ff;
+  --color-brand-strong: #4a2fd1;
+
+  /* color · status (reserved — never used as series colors) */
+  --color-success: #1f883d;
+  --color-success-soft: #dafbe1;
+  --color-warning: #9a6700;
+  --color-warning-soft: #fff4d4;
+  --color-danger: #cf222e;
+  --color-danger-soft: #ffebe9;
+  --color-info: #0969da;
+  --color-info-soft: #ddf4ff;
+
+  /* typography */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-xs: 11.5px;
+  --text-sm: 12.5px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* radius, elevation, motion, layers */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.06), 0 2px 8px rgba(31, 35, 40, 0.04);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.25);
+  --focus-ring: 0 0 0 3px var(--color-brand-soft);
+  --duration-fast: 120ms;
+  --z-sticky: 20;
+  --z-popover: 50;
+  --z-modal: 100;
+  --z-toast: 200;
+
+  /* legacy aliases (kept so older selectors resolve) */
+  --bg: var(--color-bg); --panel: var(--color-surface); --panel-2: var(--color-surface-2);
+  --ink: var(--color-ink); --ink-2: var(--color-ink-2); --ink-3: var(--color-ink-3);
+  --line: var(--color-border); --brand: var(--color-brand); --brand-soft: var(--color-brand-soft);
+  --ok: var(--color-success); --ok-soft: var(--color-success-soft); --warn: var(--color-warning); --warn-soft: var(--color-warning-soft);
+  --danger: var(--color-danger); --danger-soft: var(--color-danger-soft); --info: var(--color-info); --info-soft: var(--color-info-soft);
+  --radius: var(--radius-lg); --shadow: var(--shadow-sm);
+}

@@ -62,3 +62,19 @@ Format entri: `### [YYYY-MM-DD] #NNN — Judul` lalu bullet: *Aksi*, *Alasan*, *
 
 ### [2026-10-20] #012 — Dokumentasi
 - Membuat `HANDOFF.md` (panduan AI berikutnya) dan `README.md`; memperbarui log ini.
+
+### [2026-10-20] #013 — New request: feature roast + Atomic Design system + English as base language
+- Action: user asked to (1) critically re-review ("roast") all features against the spec, (2) rebuild the UI on an atomic design system (tokens → atoms → molecules → organisms → templates → pages), (3) use English as the base language (UI + all documentation).
+- Plan: write `docs/FEATURE_REVIEW.md` (findings + status), create `src/design-system/`, replace all `window.prompt/confirm/alert` with design-system dialogs, fix the high-impact gaps, translate `CONTEXT.md`/`HANDOFF.md`/`README.md` to English. From this entry on the log is written in English.
+
+### [2026-10-20] #014 — Atomic Design system (`src/design-system/`)
+- Action: created tokens (`tokens/tokens.css` + `tokens.js`: color, typography, spacing, radius, elevation, motion, z-index), hand-authored layered CSS (`styles/base|atoms|molecules|organisms|templates.css`, entry `styles/index.css`), and components:
+  - atoms: `Button`, `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` (new dep `qrcode@1.5.4`)
+  - molecules: `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast`
+  - organisms: `Card`, `PageHeader`, `Modal` (Esc/backdrop close, aria), `DialogProvider/useDialog` (promise-based confirm/alert/prompt/form), `BarChart`
+  - templates: `PortalTemplate`, `MobileTemplate`, `PublicTemplate`; app shell = `src/components/AppShell.jsx`
+  - single barrel `src/design-system/index.js` — pages import only from it.
+- Removed `src/styles.css` and `src/components/ui.jsx`; renamed `Layout.jsx` → `AppShell.jsx`.
+- Codemod (scratchpad script, not committed): rewired imports, renamed `Stat/Kv/Empty/Progress` → `StatTile/KeyValue/EmptyState/ProgressBar`, converted every `<button className="btn …">` into `<Button variant size>`.
+- Replaced all 26 `window.prompt/confirm/alert` calls with design-system dialogs (typed fields, validation, Esc to cancel). Lead form now shows inline "Required" errors.
+- Verification: build OK; Playwright smoke (all routes/tabs/portals) 0 runtime errors; E2E flow still passes.

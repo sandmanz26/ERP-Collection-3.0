@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Tabs, Modal, Field } from '../components/ui.jsx';
+import { Card, Badge, Tabs, Modal, Field, Button } from '../design-system/index.js';
 import { fmtDateTime } from '../lib/dates.js';
 
 const TRIGGERS = { hold_expiring: 'Hold expiring', hold_promoted: 'Hold promoted', payment_due: 'Payment due', payment_overdue: 'Payment overdue', relative_date: 'Date relative to event', doc_expiry: 'Vendor document expiring', stage_change: 'Status changed' };
@@ -15,7 +15,7 @@ export default function Automation() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Communication & automation</h1><div className="muted">Templates with variables, trigger-based workflows and the (mock) outbox. The engine runs on load and every 60 seconds.</div></div>
-        <button className="btn primary" onClick={() => act('SYSTEM_TICK', {})}>Run automations now</button>
+        <Button variant="primary" onClick={() => act('SYSTEM_TICK', {})}>Run automations now</Button>
       </div>
       <Tabs tabs={[{ id: 'outbox', label: 'Outbox', count: state.outbox.length }, { id: 'rules', label: 'Workflows' }, { id: 'templates', label: 'Templates' }, { id: 'sync', label: 'Email & calendar sync' }]} value={tab} onChange={setTab} />
       {tab === 'outbox' && (
@@ -38,7 +38,7 @@ export default function Automation() {
       {tab === 'templates' && (
         <Card>
           <div className="faint mb" style={{ fontSize: 12 }}>Variables: {'{{client_name}} {{event_name}} {{event_date}} {{planner_name}} {{invoice_number}} {{amount}} {{due_date}} {{days_left}} {{hold_expires}} {{vendor_name}} {{expiry}} {{rsvp_deadline}}'}</div>
-          <table className="t"><tbody>{state.settings.emailTemplates.map((t) => <tr key={t.id}><td><b>{t.name}</b></td><td>{t.subject}</td><td><button className="btn sm" onClick={() => setTpl(t)}>Edit</button></td></tr>)}</tbody></table>
+          <table className="t"><tbody>{state.settings.emailTemplates.map((t) => <tr key={t.id}><td><b>{t.name}</b></td><td>{t.subject}</td><td><Button size="sm" onClick={() => setTpl(t)}>Edit</Button></td></tr>)}</tbody></table>
         </Card>
       )}
       {tab === 'sync' && (
@@ -57,7 +57,7 @@ function TemplateModal({ t, onClose }) {
   const { act } = useStore();
   const [v, setV] = useState({ subject: t.subject, body: t.body });
   return (
-    <Modal title={`Template: ${t.name}`} onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" onClick={() => { act('TEMPLATE_UPDATE', { templateId: t.id, patch: v }); onClose(); }}>Save</button></>}>
+    <Modal title={`Template: ${t.name}`} onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => { act('TEMPLATE_UPDATE', { templateId: t.id, patch: v }); onClose(); }}>Save</Button></>}>
       <Field label="Subject"><input value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} /></Field>
       <Field label="Body" style={{ marginTop: 10 }}><textarea style={{ minHeight: 160 }} value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} /></Field>
     </Modal>

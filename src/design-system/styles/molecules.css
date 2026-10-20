@@ -1,0 +1,37 @@
+/* molecules layer — small groups of atoms with one job */
+.field { display: flex; flex-direction: column; gap: var(--space-1); }
+.field > span { font-size: 12px; color: var(--color-ink-2); font-weight: var(--weight-semibold); }
+.field input, .field select, .field textarea { width: 100%; }
+.field .hint { font-size: var(--text-xs); color: var(--color-ink-3); font-weight: var(--weight-regular); }
+.field .error { font-size: var(--text-xs); color: var(--color-danger); font-weight: var(--weight-regular); }
+
+.alert { padding: 10px var(--space-3); border-radius: var(--radius-md); border: 1px solid; font-size: 13px; display: block; }
+.alert + .alert { margin-top: var(--space-2); }
+.alert.warning { background: var(--color-warning-soft); border-color: #f0d58a; color: #6b4a00; }
+.alert.danger { background: var(--color-danger-soft); border-color: #f5b4af; color: #8c1a22; }
+.alert.info { background: var(--color-info-soft); border-color: #a8d8ff; color: #0a4a91; }
+.alert.success { background: var(--color-success-soft); border-color: #a6e3b4; color: #135c27; }
+
+.stat { padding: 14px var(--space-4); }
+.stat .label { font-size: 12px; color: var(--color-ink-2); font-weight: var(--weight-semibold); }
+.stat .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); margin-top: var(--space-1); font-variant-numeric: tabular-nums; }
+.stat .sub { font-size: 12px; color: var(--color-ink-3); margin-top: 2px; }
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4); overflow-x: auto; }
+.tabs button { background: none; border: none; padding: 9px var(--space-3); font: inherit; font-size: 13px; color: var(--color-ink-2); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs button.active { color: var(--color-brand); border-bottom-color: var(--color-brand); font-weight: var(--weight-semibold); }
+.tabs button:hover { color: var(--color-ink); }
+
+.pill-select { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.pill-select button { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-pill); padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.pill-select button.on { background: var(--color-brand); color: var(--color-ink-inverse); border-color: var(--color-brand); }
+
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px var(--space-3); font-size: 13px; }
+.kv > div:nth-child(odd) { color: var(--color-ink-2); }
+.empty { padding: 28px; text-align: center; color: var(--color-ink-3); }
+.legend { display: flex; gap: var(--space-3); font-size: 12px; color: var(--color-ink-2); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: var(--space-1); vertical-align: middle; }
+.toast { position: fixed; right: var(--space-5); bottom: var(--space-5); z-index: var(--z-toast); max-width: 420px; padding: var(--space-3) 14px; border-radius: var(--radius-lg); box-shadow: 0 10px 30px rgba(0,0,0,.18); font-size: 13px; }
+.toast.err { background: #2b0d10; color: #ffd8d6; }
+.toast.ok { background: #0f2416; color: #c9f5d3; }
+.search { position: relative; } .search input { padding-left: 26px; } .search::before { content: '⌕'; position: absolute; left: 9px; top: 5px; color: var(--color-ink-3); }

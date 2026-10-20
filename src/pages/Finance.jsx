@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Stat, PillSelect, Tabs } from '../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, StatTile, PillSelect, Tabs, Button } from '../design-system/index.js';
 import { invoiceStatus, invoiceBalance, eventFinancials, toUSD } from '../lib/derived.js';
 import { fmtDate, diffDays, monthKey } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
@@ -34,11 +34,11 @@ export default function Finance() {
     <div>
       <div className="page-head"><div className="grow"><h1>Finance</h1><div className="muted">Receivables, payables, deferred vs recognized revenue, gratuities, commissions and accounting sync. Amounts in USD equivalent unless stated.</div></div></div>
       <div className="grid g5">
-        <Stat label="Open receivables" value={fmtMoney(arOpen)} />
-        <Stat label="Overdue" value={fmtMoney(overdue)} tone={overdue ? 'danger' : undefined} />
-        <Stat label="Open vendor payables" value={fmtMoney(apOpen)} />
-        <Stat label="Deferred revenue (liability)" value={fmtMoney(deferred)} />
-        <Stat label="Recognized revenue" value={fmtMoney(recognized)} />
+        <StatTile label="Open receivables" value={fmtMoney(arOpen)} />
+        <StatTile label="Overdue" value={fmtMoney(overdue)} tone={overdue ? 'danger' : undefined} />
+        <StatTile label="Open vendor payables" value={fmtMoney(apOpen)} />
+        <StatTile label="Deferred revenue (liability)" value={fmtMoney(deferred)} />
+        <StatTile label="Recognized revenue" value={fmtMoney(recognized)} />
       </div>
       <div className="mt">
         <Tabs tabs={[{ id: 'ar', label: 'Receivables' }, { id: 'ap', label: 'Vendor payables' }, { id: 'rev', label: 'Revenue recognition' }, { id: 'cash', label: 'Cash forecast' }, { id: 'other', label: 'Gratuities & commissions' }, { id: 'acct', label: 'Accounting' }]} value={tab} onChange={setTab} />
@@ -49,7 +49,7 @@ export default function Finance() {
             <thead><tr><th>Invoice</th><th>Event</th><th>Description</th><th>Due</th><th className="num">Amount</th><th className="num">Balance</th><th>Status</th><th /></tr></thead>
             <tbody>{ar.map(({ i, e, st, bal }) => (
               <tr key={i.id}><td>{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td>{i.label}</td><td>{fmtDate(i.dueDate)}{st === 'overdue' && <div style={{ color: 'var(--danger)', fontSize: 11 }}>{diffDays(i.dueDate, today)}d late</div>}</td><td className="num"><Money value={i.amount} currency={i.currency} /></td><td className="num"><Money value={bal} currency={i.currency} /></td><td><StatusBadge status={st} /></td>
-                <td className="row">{bal > 0 && st !== 'void' && <button className="btn sm" onClick={() => setPay({ e, i })}>Record payment</button>}{st === 'overdue' && <button className="btn sm danger" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</button>}</td></tr>
+                <td className="row">{bal > 0 && st !== 'void' && <Button size="sm" onClick={() => setPay({ e, i })}>Record payment</Button>}{st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</Button>}</td></tr>
             ))}</tbody>
           </table>
         </Card>
@@ -60,7 +60,7 @@ export default function Finance() {
             <thead><tr><th>Due</th><th>Vendor</th><th>Event</th><th>Label</th><th className="num">Amount</th><th>Status</th><th>Proof</th><th /></tr></thead>
             <tbody>{ap.map(({ p, b, e, v }) => (
               <tr key={p.id}><td style={{ color: p.status !== 'paid' && p.dueDate < today ? 'var(--danger)' : undefined }}>{fmtDate(p.dueDate)}</td><td>{v.name}</td><td><Link to={`/events/${e.id}?tab=vendors`}>{e.name}</Link></td><td>{p.label}</td><td className="num"><Money value={p.amount} currency={e.currency} /></td><td><StatusBadge status={p.status} /></td><td className="faint">{p.proofRef}</td>
-                <td>{p.status !== 'paid' && <button className="btn sm ok" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: e.id, bookingId: b.id, paymentId: p.id })}>Mark paid</button>}</td></tr>
+                <td>{p.status !== 'paid' && <Button variant="success" size="sm" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: e.id, bookingId: b.id, paymentId: p.id })}>Mark paid</Button>}</td></tr>
             ))}</tbody>
           </table>
         </Card>
@@ -97,7 +97,7 @@ export default function Finance() {
           <Card title="Chart of accounts mapping">
             <table className="t"><thead><tr><th>Concept</th><th>QuickBooks</th><th>Xero</th></tr></thead><tbody>{state.settings.accountMapping.map((m) => <tr key={m.key}><td>{m.label}</td><td>{m.quickbooks}</td><td>{m.xero}</td></tr>)}</tbody></table>
           </Card>
-          <Card title="Sync events" actions={<button className="btn primary" onClick={() => state.events.filter((e) => e.contract?.immutable).forEach((e) => act('ACCOUNTING_SYNC', { eventId: e.id, provider: state.settings.accountingProvider }))}>Sync all booked events</button>}>
+          <Card title="Sync events" actions={<Button variant="primary" onClick={() => state.events.filter((e) => e.contract?.immutable).forEach((e) => act('ACCOUNTING_SYNC', { eventId: e.id, provider: state.settings.accountingProvider }))}>Sync all booked events</Button>}>
             <table className="t"><tbody>{state.events.filter((e) => e.contract?.immutable).map((e) => <tr key={e.id}><td>{e.name}</td><td>{e.accountingSync[0] ? <Badge tone="ok">{e.accountingSync[0].provider} · {fmtDate(e.accountingSync[0].at.slice(0, 10))}</Badge> : <Badge>never</Badge>}</td></tr>)}</tbody></table>
           </Card>
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store/AppStore.jsx';
 import { availability } from '../lib/availability.js';
 import { fmtDate } from '../lib/dates.js';
-import { Alert } from './ui.jsx';
+import { Alert } from '../design-system/index.js';
 
 /** Live availability check for a date based on team capacity, booked events and existing holds. */
 export function AvailabilityCheck({ date, excludeEventId }) {

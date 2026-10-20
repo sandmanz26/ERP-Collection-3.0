@@ -1,11 +1,12 @@
 import React from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Money, Alert, Badge, CommitInput, Stat, PillSelect } from '../../components/ui.jsx';
+import { Card, Money, Alert, Badge, CommitInput, StatTile, PillSelect, Button, useDialog } from '../../design-system/index.js';
 import { budgetByCategory, eventFinancials, proposalTotals, headcount, payerSummary } from '../../lib/derived.js';
 import { round2, sum } from '../../lib/money.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
 
 export default function BudgetTab({ ev, et }) {
+  const dialog = useDialog();
   const { state, act, today, user } = useStore();
   const rows = budgetByCategory(state, ev);
   const f = eventFinancials(state, ev);
@@ -21,11 +22,11 @@ export default function BudgetTab({ ev, et }) {
   return (
     <div>
       <div className="grid g5">
-        <Stat label="Revenue (excl. tax)" value={<Money value={f.revenueNet} currency={cur} />} />
-        <Stat label="Vendor cost (pass-through)" value={<Money value={f.vendorCost} currency={cur} />} />
-        <Stat label="Decor cost (Decor Inventory)" value={<Money value={f.decorCost} currency={cur} />} />
-        <Stat label="Crew cost (from schedule)" value={<Money value={f.crewCost} currency={cur} />} />
-        <Stat label="Profit / margin" value={<Money value={f.profit} currency={cur} />} sub={`${f.marginPct}%`} tone={f.profit < 0 ? 'danger' : 'ok'} />
+        <StatTile label="Revenue (excl. tax)" value={<Money value={f.revenueNet} currency={cur} />} />
+        <StatTile label="Vendor cost (pass-through)" value={<Money value={f.vendorCost} currency={cur} />} />
+        <StatTile label="Decor cost (Decor Inventory)" value={<Money value={f.decorCost} currency={cur} />} />
+        <StatTile label="Crew cost (from schedule)" value={<Money value={f.crewCost} currency={cur} />} />
+        <StatTile label="Profit / margin" value={<Money value={f.profit} currency={cur} />} sub={`${f.marginPct}%`} tone={f.profit < 0 ? 'danger' : 'ok'} />
       </div>
       {rows.filter((r) => r.overCost).map((r) => <Alert key={r.category} tone="warning">Variance: {r.category} actual cost <Money value={r.actualCost} currency={cur} /> exceeds estimate <Money value={r.estCost} currency={cur} /> by <Money value={r.variance} currency={cur} />.</Alert>)}
       {rows.filter((r) => r.overBudget).map((r) => <Alert key={`b${r.category}`} tone="info">{r.category}: client budget <Money value={r.clientBudget} currency={cur} /> exceeded by price <Money value={r.sell} currency={cur} />.</Alert>)}
@@ -82,7 +83,7 @@ export default function BudgetTab({ ev, et }) {
               <PillSelect multi options={BUDGET_CATEGORIES} value={p.categories} onChange={(cats) => act('PAYER_UPDATE', { eventId: ev.id, payers: ev.payers.map((x) => (x.id === p.id ? { ...x, categories: cats } : x)) })} />
             </div>
           ))}
-          <button className="btn sm mt" onClick={() => { const n = prompt('Payer name'); n && act('PAYER_UPDATE', { eventId: ev.id, payers: [...ev.payers, { id: `py_${Date.now()}`, name: n, userId: null, categories: [] }] }); }}>+ Payer</button>
+          <Button size="sm" className="mt" onClick={async () => { const n = await dialog.prompt({ title: 'Add payer', label: 'Payer name' }); n && act('PAYER_UPDATE', { eventId: ev.id, payers: [...ev.payers, { id: `py_${Date.now()}`, name: n, userId: null, categories: [] }] }); }}>+ Payer</Button>
           <table className="t mt">
             <thead><tr><th>Payer</th><th className="num">Billed</th><th className="num">Paid</th><th className="num">Outstanding</th></tr></thead>
             <tbody>{payers.map((p) => <tr key={p.id}><td>{p.name} {p.overdue > 0 && <Badge tone="danger">{p.overdue} overdue</Badge>}</td><td className="num"><Money value={p.billed} currency={cur} /></td><td className="num"><Money value={p.paid} currency={cur} /></td><td className="num"><Money value={p.outstanding} currency={cur} /></td></tr>)}</tbody>

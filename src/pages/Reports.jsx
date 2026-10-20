@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, BarChart, Money, Badge, download } from '../components/ui.jsx';
+import { Card, Tabs, BarChart, Money, Badge, download, Button } from '../design-system/index.js';
 import { eventFinancials, leakage, toUSD, proposalTotals, vendorScore, vendorCompliance } from '../lib/derived.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { stageIndex, isBookedOrLater } from '../lib/lifecycle.js';
@@ -76,7 +76,7 @@ export default function Reports() {
           <Card title="Conversion rate by lead source (won ÷ decided)">
             <BarChart rows={bySource.map((r) => ({ label: r.s, value: r.conv, display: `${r.conv}%` }))} max={100} />
           </Card>
-          <Card title="Lead sources" actions={<button className="btn sm" onClick={() => exportCsv('conversion-by-source', [['Source', 'Leads', 'Open', 'Won', 'Lost', 'Conversion %', 'Won value USD'], ...bySource.map((r) => [r.s, r.n, r.open, r.won, r.lost, r.conv, r.wonValue])])}>CSV</button>}>
+          <Card title="Lead sources" actions={<Button size="sm" onClick={() => exportCsv('conversion-by-source', [['Source', 'Leads', 'Open', 'Won', 'Lost', 'Conversion %', 'Won value USD'], ...bySource.map((r) => [r.s, r.n, r.open, r.won, r.lost, r.conv, r.wonValue])])}>CSV</Button>}>
             <table className="t">
               <thead><tr><th>Source</th><th className="num">Leads</th><th className="num">Open</th><th className="num">Won</th><th className="num">Lost</th><th className="num">Conv.</th><th className="num">Won value</th></tr></thead>
               <tbody>{bySource.map((r) => <tr key={r.s}><td>{r.s}</td><td className="num">{r.n}</td><td className="num">{r.open}</td><td className="num">{r.won}</td><td className="num">{r.lost}</td><td className="num">{r.conv}%</td><td className="num">{fmtMoney(r.wonValue)}</td></tr>)}</tbody>
@@ -137,7 +137,7 @@ export default function Reports() {
         </Card>
       )}
       {tab === 'leak' && (
-        <Card title="Revenue leakage report" actions={<button className="btn sm" onClick={() => exportCsv('leakage', [['Type', 'Event', 'Ref', 'Amount', 'Currency'], ...leaks.map((l) => [l.type, l.eventName, l.ref, l.amount, l.currency])])}>CSV</button>}>
+        <Card title="Revenue leakage report" actions={<Button size="sm" onClick={() => exportCsv('leakage', [['Type', 'Event', 'Ref', 'Amount', 'Currency'], ...leaks.map((l) => [l.type, l.eventName, l.ref, l.amount, l.currency])])}>CSV</Button>}>
           <div className="faint mb" style={{ fontSize: 12 }}>Unbilled change orders, overdue payments, unbilled decor damage, unbilled cancellation fees and uncollected vendor commissions.</div>
           <table className="t">
             <thead><tr><th>Type</th><th>Event</th><th>Reference</th><th className="num">Amount</th><th className="num">USD</th></tr></thead>

@@ -1,10 +1,11 @@
+import { Button } from '../design-system/index.js';
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { navFor, homeFor } from '../lib/permissions.js';
 import { fmtDateTime } from '../lib/dates.js';
 
-export default function Layout({ children }) {
+export default function AppShell({ children }) {
   const { state, act, user } = useStore();
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
@@ -73,14 +74,14 @@ export default function Layout({ children }) {
             </select>
           </label>
           <div style={{ position: 'relative' }}>
-            <button className="btn" onClick={() => setOpen((o) => !o)}>
+            <Button onClick={() => setOpen((o) => !o)}>
               🔔 {unread > 0 && <span className="badge danger">{unread}</span>}
-            </button>
+            </Button>
             {open && (
               <div className="card notif-panel">
                 <div className="card-head">
                   <h3>Notifications</h3>
-                  <button className="btn sm" onClick={() => act('NOTIFICATIONS_READ')}>Mark all read</button>
+                  <Button size="sm" onClick={() => act('NOTIFICATIONS_READ')}>Mark all read</Button>
                 </div>
                 {myNotifs.length === 0 && <div className="empty">Nothing yet</div>}
                 {myNotifs.slice(0, 40).map((n) => (

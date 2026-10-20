@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Modal, Field, useForm, Alert, PillSelect } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, Modal, Field, useForm, Alert, PillSelect, Button, useDialog } from '../../design-system/index.js';
 import { vendorCompliance } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { round2 } from '../../lib/money.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
 
 export default function VendorsTab({ ev }) {
+  const dialog = useDialog();
   const { state, act, today } = useStore();
   const [add, setAdd] = useState(false);
   const [rfq, setRfq] = useState(false);
@@ -14,7 +15,7 @@ export default function VendorsTab({ ev }) {
   const cur = ev.currency;
   return (
     <div>
-      <Card title="Vendor bookings" actions={<div className="row"><button className="btn" onClick={() => setRfq(true)}>+ Request for quote</button><button className="btn primary" onClick={() => setAdd(true)}>+ Book vendor</button></div>}>
+      <Card title="Vendor bookings" actions={<div className="row"><Button onClick={() => setRfq(true)}>+ Request for quote</Button><Button variant="primary" onClick={() => setAdd(true)}>+ Book vendor</Button></div>}>
         <div className="legend mb"><span><b>Pass-through</b>: EO pays vendor & bills client (cash-flow risk, markup possible)</span><span><b>Direct</b>: client pays vendor; EO coordinates (commission possible)</span></div>
         <div className="table-wrap">
           <table className="t">
@@ -35,8 +36,8 @@ export default function VendorsTab({ ev }) {
                       <td>{b.commissionAmount ? <><Money value={b.commissionAmount} currency={cur} /> <StatusBadge status={b.commissionStatus} /><select value={b.commissionStatus} onChange={(e) => act('COMMISSION_STATUS', { eventId: ev.id, bookingId: b.id, status: e.target.value })}><option>pending</option><option>invoiced</option><option>paid</option></select></> : '—'}</td>
                       <td className="faint" style={{ fontSize: 12 }}>{b.loadIn ? fmtDateTime(b.loadIn) : '—'}<br />{b.loadOut ? fmtDateTime(b.loadOut) : ''}</td>
                       <td>{issues.length ? issues.map((i) => <div key={i.text}><Badge tone={i.level}>{i.text}</Badge></div>) : <Badge tone="ok">OK</Badge>}</td>
-                      <td><StatusBadge status={b.status} />{b.status === 'requested' && <button className="btn sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Mark confirmed</button>}</td>
-                      <td><button className="btn sm" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide' : 'Payments'}</button></td>
+                      <td><StatusBadge status={b.status} />{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Mark confirmed</Button>}</td>
+                      <td><Button size="sm" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide' : 'Payments'}</Button></td>
                     </tr>
                     {open === b.id && (
                       <tr><td colSpan={11} style={{ background: 'var(--panel-2)' }}>
@@ -46,10 +47,10 @@ export default function VendorsTab({ ev }) {
                             <table className="t"><tbody>
                               {b.payments.map((p) => (
                                 <tr key={p.id}><td>{p.label}</td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /> {p.proofRef && <span className="faint">{p.proofRef}</span>}</td>
-                                  <td>{p.status !== 'paid' && <button className="btn sm ok" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: ev.id, bookingId: b.id, paymentId: p.id })}>Mark paid</button>}</td></tr>
+                                  <td>{p.status !== 'paid' && <Button variant="success" size="sm" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: ev.id, bookingId: b.id, paymentId: p.id })}>Mark paid</Button>}</td></tr>
                               ))}
                             </tbody></table>
-                            <button className="btn sm mt" onClick={() => { const amt = prompt('Amount'); if (!amt) return; const due = prompt('Due date (YYYY-MM-DD)', ev.date); act('VENDOR_PAYMENT_ADD', { eventId: ev.id, bookingId: b.id, label: 'Installment', amount: Number(amt), dueDate: due }); }}>+ Payable</button>
+                            <Button size="sm" className="mt" onClick={async () => { const r = await dialog.form({ title: 'Add vendor payable', fields: [{ name: 'label', label: 'Label', defaultValue: 'Installment', required: true }, { name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'dueDate', label: 'Due date', type: 'date', defaultValue: ev.date, required: true }] }); r && act('VENDOR_PAYMENT_ADD', { eventId: ev.id, bookingId: b.id, ...r }); }}>+ Payable</Button>
                           </div>
                           <div>
                             <h4>Vendor invoices & logistics</h4>
@@ -80,6 +81,7 @@ export default function VendorsTab({ ev }) {
 }
 
 function RfqBlock({ ev, r }) {
+  const dialog = useDialog();
   const { state, act } = useStore();
   const best = r.responses.length ? Math.min(...r.responses.map((x) => x.amount)) : null;
   return (
@@ -97,8 +99,8 @@ function RfqBlock({ ev, r }) {
                 <td className="num">{resp ? <><Money value={resp.amount} currency={ev.currency} /> {resp.amount === best && <Badge tone="ok">lowest</Badge>}</> : <span className="faint">awaiting</span>}</td>
                 <td>{resp?.notes}</td>
                 <td>
-                  {!r.awardedVendorId && !resp && <button className="btn sm" onClick={() => { const a = prompt(`Quote from ${v.name}`); a && act('RFQ_RESPOND', { eventId: ev.id, rfqId: r.id, vendorId: vid, amount: Number(a), notes: prompt('Notes') || '' }); }}>Enter quote</button>}
-                  {!r.awardedVendorId && resp && <button className="btn sm primary" onClick={() => { const model = window.confirm('Pass-through (EO pays & bills client)? Cancel = direct contract') ? 'pass_through' : 'direct'; const sell = model === 'pass_through' ? Number(prompt('Sell price to client', Math.round(resp.amount * 1.15))) : resp.amount; act('RFQ_AWARD', { eventId: ev.id, rfqId: r.id, vendorId: vid, model, sellPrice: sell }); }}>Award</button>}
+                  {!r.awardedVendorId && !resp && <Button size="sm" onClick={async () => { const q = await dialog.form({ title: `Quote from ${v.name}`, fields: [{ name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'notes', label: 'Notes', type: 'textarea' }] }); q && act('RFQ_RESPOND', { eventId: ev.id, rfqId: r.id, vendorId: vid, ...q }); }}>Enter quote</Button>}
+                  {!r.awardedVendorId && resp && <Button variant="primary" size="sm" onClick={async () => { const a = await dialog.form({ title: `Award to ${v.name}`, description: 'Pass-through: we pay the vendor and bill the client (markup possible). Direct: the client contracts and pays the vendor.', fields: [{ name: 'model', label: 'Financial model', type: 'select', options: [{ value: 'pass_through', label: 'Pass-through' }, { value: 'direct', label: 'Direct contract' }], defaultValue: 'pass_through' }, { name: 'sellPrice', label: `Sell price to client (${ev.currency})`, type: 'number', defaultValue: Math.round(resp.amount * 1.15), hint: 'Ignored for direct contracts' }] }); a && act('RFQ_AWARD', { eventId: ev.id, rfqId: r.id, vendorId: vid, model: a.model, sellPrice: a.model === 'direct' ? resp.amount : a.sellPrice }); }}>Award</Button>}
                   {r.awardedVendorId === vid && <Badge tone="ok">awarded</Badge>}
                 </td>
               </tr>
@@ -115,7 +117,7 @@ function NewRfq({ ev, onClose }) {
   const [v, , bind] = useForm({ category: 'Photo/Video', description: '', dueDate: '' });
   const [ids, setIds] = useState([]);
   return (
-    <Modal title="Request for quote" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!ids.length || !v.description} onClick={() => { act('RFQ_CREATE', { eventId: ev.id, ...v, vendorIds: ids }); onClose(); }}>Send RFQ</button></>}>
+    <Modal title="Request for quote" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!ids.length || !v.description} onClick={() => { act('RFQ_CREATE', { eventId: ev.id, ...v, vendorIds: ids }); onClose(); }}>Send RFQ</Button></>}>
       <div className="grid g2">
         <Field label="Category"><select {...bind('category')}>{BUDGET_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></Field>
         <Field label="Response due"><input type="date" {...bind('dueDate')} /></Field>
@@ -133,7 +135,7 @@ function AddBooking({ ev, onClose }) {
   const vendor = state.vendors.find((x) => x.id === v.vendorId);
   const issues = vendorCompliance(vendor, today);
   return (
-    <Modal title="Book vendor" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.service} onClick={() => { act('BOOKING_ADD', { eventId: ev.id, data: { ...v, minGuarantee: Number(v.minGuarantee) || null, contractedGuests: Number(v.contractedGuests) || null } }); onClose(); }}>Create booking</button></>}>
+    <Modal title="Book vendor" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.service} onClick={() => { act('BOOKING_ADD', { eventId: ev.id, data: { ...v, minGuarantee: Number(v.minGuarantee) || null, contractedGuests: Number(v.contractedGuests) || null } }); onClose(); }}>Create booking</Button></>}>
       <div className="grid g2">
         <Field label="Vendor"><select {...bind('vendorId')}>{state.vendors.map((x) => <option key={x.id} value={x.id}>{x.name} — {x.category}</option>)}</select></Field>
         <Field label="Budget category"><select {...bind('category')}>{BUDGET_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></Field>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, Tabs, Empty, Field, Progress, StatusBadge } from '../components/ui.jsx';
+import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button } from '../design-system/index.js';
 import { proposalTotals, eventFinancials, clientOf, headcount } from '../lib/derived.js';
 import { proposalExpired } from '../lib/pricing.js';
 import { clientCan } from '../lib/permissions.js';
@@ -21,7 +21,7 @@ export default function ClientPortal() {
   const mine = state.events.filter((e) => e.clientId === user.clientId);
   const ev = mine.find((e) => e.id === id) ?? mine.find((e) => e.contract) ?? mine[0];
   const [tab, setTab] = useState('home');
-  if (!ev) return <Empty>No events linked to your account.</Empty>;
+  if (!ev) return <EmptyState>No events linked to your account.</EmptyState>;
   const et = state.settings.eventTypes.find((t) => t.id === ev.eventTypeId);
   const can = (p) => clientCan(user, p);
   const viewAll = can('view_all');
@@ -73,9 +73,9 @@ function Home({ ev, et }) {
       {ev.dateStatus === 'hold' && ev.contract?.immutable && <Alert tone="warning">Your date is on HOLD until the deposit is received. Pay the deposit to lock {fmtDate(ev.date)}.</Alert>}
       {pendingCO.map((c) => <Alert key={c.id} tone="info">Change Order {c.number} “{c.title}” awaits your approval.</Alert>)}
       <div className="grid g3 mt">
-        {clientCan(user, 'view_all') && <Card title="Payments"><div className="row between"><span>Paid</span><b><Money value={f.paid} currency={ev.currency} /></b></div><div className="row between"><span>Contract total</span><b><Money value={f.contractTotal} currency={ev.currency} /></b></div><Progress value={f.contractTotal ? (f.paid / f.contractTotal) * 100 : 0} tone="ok" /></Card>}
+        {clientCan(user, 'view_all') && <Card title="Payments"><div className="row between"><span>Paid</span><b><Money value={f.paid} currency={ev.currency} /></b></div><div className="row between"><span>Contract total</span><b><Money value={f.contractTotal} currency={ev.currency} /></b></div><ProgressBar value={f.contractTotal ? (f.paid / f.contractTotal) * 100 : 0} tone="ok" /></Card>}
         {myPayer && !clientCan(user, 'view_all') && <Card title="Your share">You are paying for: <b>{myPayer.categories.join(', ') || 'all'}</b><div className="faint mt">Only the invoices assigned to you are shown.</div></Card>}
-        {clientCan(user, 'view_all') && <Card title="My checklist"><div>{done}/{tasks.length} done</div><Progress value={tasks.length ? (done / tasks.length) * 100 : 0} /><div className="mt">{tasks.filter((t) => t.status !== 'done').slice(0, 4).map((t) => <div key={t.id} style={{ fontSize: 13 }}>☐ {t.title} <span className="faint">{fmtDate(t.dueDate)}</span></div>)}</div></Card>}
+        {clientCan(user, 'view_all') && <Card title="My checklist"><div>{done}/{tasks.length} done</div><ProgressBar value={tasks.length ? (done / tasks.length) * 100 : 0} /><div className="mt">{tasks.filter((t) => t.status !== 'done').slice(0, 4).map((t) => <div key={t.id} style={{ fontSize: 13 }}>☐ {t.title} <span className="faint">{fmtDate(t.dueDate)}</span></div>)}</div></Card>}
         {ev.households.length > 0 && <Card title="RSVPs"><div className="row between"><span>Confirmed</span><b>{hc.confirmed}</b></div><div className="row between"><span>Pending</span><b>{hc.pending}</b></div><div className="row between"><span>Declined</span><b>{hc.declined}</b></div></Card>}
       </div>
       {clientCan(user, 'view_all') && ev.design.palette.length > 0 && (
@@ -88,7 +88,7 @@ function Home({ ev, et }) {
 function PortalProposal({ ev }) {
   const { state, act, user, today } = useStore();
   const v = ev.proposals.find((p) => p.status === 'active') ?? ev.proposals.find((p) => p.status === 'accepted');
-  if (!v) return <Empty>No proposal shared yet.</Empty>;
+  if (!v) return <EmptyState>No proposal shared yet.</EmptyState>;
   const t = proposalTotals(state, ev, v);
   const expired = proposalExpired(v, today);
   const canApprove = clientCan(user, 'approve_costs');
@@ -97,7 +97,7 @@ function PortalProposal({ ev }) {
       <Card title={`Proposal v${v.version}`} actions={<StatusBadge status={expired ? 'expired' : v.status} />}>
         {expired ? <Alert tone="danger">This proposal expired on {fmtDate(v.validUntil)}. Please ask your planner for an updated version.</Alert> : v.status === 'active' && <Alert tone="info">Valid until {fmtDate(v.validUntil)}. Tick optional extras to add them — the total updates instantly.</Alert>}
         <div className="mt"><ProposalTable ev={ev} version={v} totals={t} internal={false} editable={false} onToggleOptional={v.status === 'active' && canApprove && !expired ? (l) => act('PROPOSAL_TOGGLE_OPTIONAL', { eventId: ev.id, versionId: v.id, lineId: l.id }) : null} /></div>
-        {v.status === 'active' && canApprove && <button className="btn primary mt" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: v.id })}>Accept proposal</button>}
+        {v.status === 'active' && canApprove && <Button variant="primary" className="mt" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: v.id })}>Accept proposal</Button>}
         {!canApprove && <div className="faint mt">You don't have permission to approve costs.</div>}
       </Card>
       <Card title="Moodboard"><Moodboard itemIds={v.moodboard} /></Card>
@@ -107,7 +107,7 @@ function PortalProposal({ ev }) {
 
 function PortalContract({ ev }) {
   const { user } = useStore();
-  if (!ev.contract || ev.contract.status === 'draft') return <Empty>Your contract is being prepared.</Empty>;
+  if (!ev.contract || ev.contract.status === 'draft') return <EmptyState>Your contract is being prepared.</EmptyState>;
   const allowed = ev.contract.signers.filter((s) => s.email === user.email || s.name.split(' ')[0] === user.name.split(' ')[0]).map((s) => s.id);
   return (
     <div className="grid" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(280px,2fr)' }}>
@@ -124,7 +124,7 @@ function PortalPayments({ ev }) {
   const { user } = useStore();
   const myPayer = ev.payers.find((p) => p.userId === user.id);
   const filter = clientCan(user, 'view_all') ? null : myPayer ? [myPayer.id] : [];
-  if (!clientCan(user, 'pay') && !clientCan(user, 'view_all')) return <Empty>No access.</Empty>;
+  if (!clientCan(user, 'pay') && !clientCan(user, 'view_all')) return <EmptyState>No access.</EmptyState>;
   return (
     <div>
       <Card title="Payment schedule">
@@ -138,7 +138,7 @@ function PortalPayments({ ev }) {
 function PortalCO({ ev }) {
   const { user } = useStore();
   const list = ev.changeOrders.filter((c) => c.status !== 'draft');
-  if (!list.length) return <Empty>No change orders.</Empty>;
+  if (!list.length) return <EmptyState>No change orders.</EmptyState>;
   return <div className="stack">{!clientCan(user, 'approve_costs') && <Alert tone="info">You can view but not approve change orders.</Alert>}{list.slice().reverse().map((c) => clientCan(user, 'approve_costs') ? <CoCard key={c.id} ev={ev} co={c} portal /> : <CoCard key={c.id} ev={ev} co={{ ...c, status: c.status === 'sent' ? 'awaiting approval' : c.status }} portal />)}</div>;
 }
 
@@ -157,8 +157,8 @@ function PortalForms({ ev }) {
             </Field>
           ))}
           <div className="row">
-            <button className="btn" onClick={() => act('FORM_SAVE', { eventId: ev.id, formId: f.id, answers: answers[f.id] || {}, submit: false })}>Save draft</button>
-            <button className="btn primary" onClick={() => act('FORM_SAVE', { eventId: ev.id, formId: f.id, answers: answers[f.id] || {}, submit: true })}>Submit</button>
+            <Button onClick={() => act('FORM_SAVE', { eventId: ev.id, formId: f.id, answers: answers[f.id] || {}, submit: false })}>Save draft</Button>
+            <Button variant="primary" onClick={() => act('FORM_SAVE', { eventId: ev.id, formId: f.id, answers: answers[f.id] || {}, submit: true })}>Submit</Button>
           </div>
         </Card>
       ))}
@@ -174,7 +174,7 @@ function PortalGuests({ ev, et }) {
   const [add, setAdd] = useState(false);
   const can = clientCan(user, 'manage_guests');
   return (
-    <Card title="Guest list (shared with your planner)" actions={can && <button className="btn primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</button>}>
+    <Card title="Guest list (shared with your planner)" actions={can && <Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>
       <GuestTable ev={ev} readOnly={!can} />
       {add && <AddHouseholdModal ev={ev} et={et} onClose={() => setAdd(false)} />}
     </Card>
@@ -213,9 +213,9 @@ function PortalSurvey({ ev }) {
   if (ev.closing.survey) return <Alert tone="success">Thank you for your feedback ({ev.closing.survey.rating}/5)!</Alert>;
   return (
     <Card title="How did we do?">
-      <div className="row">{[1, 2, 3, 4, 5].map((n) => <button key={n} className={`btn ${rating >= n ? 'primary' : ''}`} onClick={() => setRating(n)}>★</button>)}</div>
+      <div className="row">{[1, 2, 3, 4, 5].map((n) => <Button key={n} variant={rating >= n ? 'primary' : 'secondary'} onClick={() => setRating(n)} aria-label={`${n} stars`}>★</Button>)}</div>
       <textarea className="mt" placeholder="Tell us more…" value={comment} onChange={(e) => setComment(e.target.value)} />
-      <button className="btn primary mt" onClick={() => act('SURVEY_SUBMIT', { eventId: ev.id, rating, comment })}>Submit</button>
+      <Button variant="primary" className="mt" onClick={() => act('SURVEY_SUBMIT', { eventId: ev.id, rating, comment })}>Submit</Button>
     </Card>
   );
 }

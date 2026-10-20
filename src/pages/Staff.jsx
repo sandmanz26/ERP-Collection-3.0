@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Modal, Field, useForm, Alert, Money, download } from '../components/ui.jsx';
+import { Card, Badge, Modal, Field, useForm, Alert, Money, download, Button } from '../design-system/index.js';
 import { findConflicts, shiftCost, classificationRisk, LABOR_RULES, shiftHours } from '../lib/staff.js';
 import { fmtDate, addDays } from '../lib/dates.js';
 
@@ -20,7 +20,7 @@ export default function Staff() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Staff & crew</h1><div className="muted">Employees and freelancers, skills, rates, region-specific labor rules, scheduling conflicts and utilization.</div></div>
-        <button className="btn primary" onClick={() => setAdd(true)}>+ Staff</button>
+        <Button variant="primary" onClick={() => setAdd(true)}>+ Staff</Button>
       </div>
       {conflicts.map(([a, b], i) => <Alert key={i} tone="danger">Conflict: {state.staff.find((s) => s.id === a.staffId)?.name} double-booked on {fmtDate(a.date)} — <Link to={`/events/${a.eventId}?tab=staff`}>{a.eventName}</Link> vs <Link to={`/events/${b.eventId}?tab=staff`}>{b.eventName}</Link></Alert>)}
       <Card className="mt">
@@ -44,7 +44,7 @@ export default function Staff() {
                   <td className="num">{hours.toFixed(1)}</td>
                   <td className="num"><Money value={cost} /></td>
                   <td style={{ fontSize: 12 }}>{risk ? <span style={{ color: 'var(--danger)' }}>{risk}</span> : <span className="faint">—</span>}</td>
-                  <td><button className="btn sm" onClick={() => ics(st)}>.ics</button></td>
+                  <td><Button size="sm" onClick={() => ics(st)}>.ics</Button></td>
                 </tr>
               );
             })}
@@ -66,7 +66,7 @@ function AddStaff({ onClose }) {
   const { act } = useStore();
   const [v, , bind] = useForm({ name: '', type: 'freelancer', skills: '', rate: 30, rateType: 'hourly', region: '', laborRegion: 'US-NY', phone: '' });
   return (
-    <Modal title="Add staff" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!v.name} onClick={() => { act('STAFF_ADD', { data: { ...v, skills: v.skills.split(',').map((x) => x.trim()).filter(Boolean) } }); onClose(); }}>Add</button></>}>
+    <Modal title="Add staff" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.name} onClick={() => { act('STAFF_ADD', { data: { ...v, skills: v.skills.split(',').map((x) => x.trim()).filter(Boolean) } }); onClose(); }}>Add</Button></>}>
       <div className="grid g2">
         <Field label="Name"><input {...bind('name')} /></Field>
         <Field label="Type"><select {...bind('type')}><option value="employee">Employee</option><option value="freelancer">Freelancer (1099 / contractor)</option></select></Field>

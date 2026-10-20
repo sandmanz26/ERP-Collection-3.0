@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, Empty, Field, CommitInput } from '../../components/ui.jsx';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, CommitInput, Button, useDialog } from '../../design-system/index.js';
 import { proposalTotals } from '../../lib/derived.js';
 import { proposalExpired } from '../../lib/pricing.js';
 import { decorSnapshot } from '../../lib/decorApi.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { CURRENCIES } from '../../lib/money.js';
+import { BUDGET_CATEGORIES } from '../../data/config.js';
 
 export function ProposalTable({ ev, version, totals, internal, editable, onToggleOptional }) {
   const { act } = useStore();
@@ -47,9 +48,9 @@ export function ProposalTable({ ev, version, totals, internal, editable, onToggl
               <td>
                 {l.optional ? (
                   onToggleOptional ? <input type="checkbox" checked={l.selected} onChange={() => onToggleOptional(l)} /> : editable ? <input type="checkbox" checked={l.selected} onChange={() => upd(l.id, { selected: !l.selected })} title="selected by default" /> : <Badge tone={l.selected ? 'ok' : ''}>{l.selected ? 'selected' : 'optional'}</Badge>
-                ) : editable ? <button className="btn sm ghost" title="Make optional (upsell)" onClick={() => upd(l.id, { optional: true, selected: false })}>make opt.</button> : null}
+                ) : editable ? <Button variant="ghost" size="sm" title="Make optional (upsell)" onClick={() => upd(l.id, { optional: true, selected: false })}>make opt.</Button> : null}
               </td>
-              {editable && <td><button className="btn sm ghost" onClick={() => act('PROPOSAL_LINE_REMOVE', { eventId: ev.id, versionId: version.id, lineId: l.id })}>✕</button></td>}
+              {editable && <td><Button variant="ghost" size="sm" onClick={() => act('PROPOSAL_LINE_REMOVE', { eventId: ev.id, versionId: version.id, lineId: l.id })}>✕</Button></td>}
             </tr>
           ))}
         </tbody>
@@ -83,13 +84,14 @@ export function Moodboard({ itemIds }) {
 }
 
 export default function ProposalTab({ ev }) {
+  const dialog = useDialog();
   const { state, act, today } = useStore();
   const [selId, setSelId] = useState(null);
   const [internal, setInternal] = useState(true);
   const [addCat, setAddCat] = useState('');
   const version = ev.proposals.find((p) => p.id === selId) ?? ev.proposals.find((p) => ['active', 'accepted'].includes(p.status)) ?? ev.proposals[ev.proposals.length - 1];
   if (!version) {
-    return <Card><Empty>No proposal yet.<div className="mt"><button className="btn primary" onClick={() => act('PROPOSAL_CREATE', { eventId: ev.id })}>Build proposal from event-type template</button></div></Empty></Card>;
+    return <Card><EmptyState>No proposal yet.<div className="mt"><Button variant="primary" onClick={() => act('PROPOSAL_CREATE', { eventId: ev.id })}>Build proposal from event-type template</Button></div></EmptyState></Card>;
   }
   const totals = proposalTotals(state, ev, version);
   const editable = version.status === 'draft';
@@ -107,7 +109,7 @@ export default function ProposalTab({ ev }) {
             <div style={{ fontSize: 12, marginTop: 4 }}>{p.changeSummary}</div>
           </div>
         ))}
-        {!locked && <button className="btn mt" onClick={() => { const s = prompt('What changes in this version?', `Revision of v${version.version}`); s && act('PROPOSAL_NEW_VERSION', { eventId: ev.id, fromId: version.id, changeSummary: s }); }}>+ New version from v{version.version}</button>}
+        {!locked && <Button className="mt" onClick={async () => { const s = await dialog.prompt({ title: 'New proposal version', label: 'What changes in this version?', defaultValue: `Revision of v${version.version}` }); s && act('PROPOSAL_NEW_VERSION', { eventId: ev.id, fromId: version.id, changeSummary: s }); }}>+ New version from v{version.version}</Button>}
         {locked && <Alert tone="info">Contract signed — further changes go through Change Orders.</Alert>}
       </Card>
       <div>
@@ -116,8 +118,8 @@ export default function ProposalTab({ ev }) {
           actions={
             <div className="row">
               <label className="row" style={{ fontSize: 12 }}><input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />Internal view (cost & margin)</label>
-              {version.status === 'draft' && <button className="btn primary" onClick={() => act('PROPOSAL_ACTIVATE', { eventId: ev.id, versionId: version.id })}>Send to client (make active)</button>}
-              {version.status === 'active' && <button className="btn ok" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: version.id })}>Record client acceptance</button>}
+              {version.status === 'draft' && <Button variant="primary" onClick={() => act('PROPOSAL_ACTIVATE', { eventId: ev.id, versionId: version.id })}>Send to client (make active)</Button>}
+              {version.status === 'active' && <Button variant="success" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: version.id })}>Record client acceptance</Button>}
             </div>
           }
         >
@@ -135,8 +137,8 @@ export default function ProposalTab({ ev }) {
                 <option value="">Add from service catalog…</option>
                 {state.settings.catalog.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.pricing}</option>)}
               </select>
-              <button className="btn" disabled={!addCat} onClick={() => { act('PROPOSAL_LINE_ADD', { eventId: ev.id, versionId: version.id, catalogId: addCat }); setAddCat(''); }}>Add</button>
-              <button className="btn" onClick={() => { const name = prompt('Custom item name'); if (!name) return; const price = Number(prompt('Price', '1000')); act('PROPOSAL_LINE_ADD', { eventId: ev.id, versionId: version.id, custom: { name, category: 'Other', pricing: 'fixed', unitPrice: price, unitCost: Math.round(price * 0.6) } }); }}>+ Custom line</button>
+              <Button disabled={!addCat} onClick={() => { act('PROPOSAL_LINE_ADD', { eventId: ev.id, versionId: version.id, catalogId: addCat }); setAddCat(''); }}>Add</Button>
+              <Button onClick={async () => { const r = await dialog.form({ title: 'Custom line item', fields: [{ name: 'name', label: 'Item name', required: true }, { name: 'category', label: 'Category', type: 'select', options: BUDGET_CATEGORIES, defaultValue: 'Other' }, { name: 'pricing', label: 'Pricing', type: 'select', options: [{ value: 'fixed', label: 'Fixed' }, { value: 'per_guest', label: 'Per guest' }], defaultValue: 'fixed' }, { name: 'unitPrice', label: `Unit price (${version.currency})`, type: 'number', required: true, defaultValue: 1000 }, { name: 'unitCost', label: 'Unit cost', type: 'number', defaultValue: 600 }] }); r && act('PROPOSAL_LINE_ADD', { eventId: ev.id, versionId: version.id, custom: r }); }}>+ Custom line</Button>
             </div>
           )}
         </Card>

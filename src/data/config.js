@@ -246,6 +246,8 @@ export const EVENT_TYPES = [
   },
 ];
 
+export const LOST_REASONS = ['Budget too low', 'Chose competitor', 'Date unavailable', 'Event cancelled by client', 'No response', 'Other'];
+
 export const LEAD_SOURCES = ['Website form', 'Email', 'The Knot', 'WeddingWire', 'Bark', 'Referral', 'Instagram', 'Manual'];
 
 export const EMAIL_TEMPLATES = [
