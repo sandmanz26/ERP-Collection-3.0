@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog, Gantt, hourTicks, SitePlan, PillSelect, Icon } from '../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog, Gantt, hourTicks, SitePlan, PillSelect, Icon, Callout } from '../design-system/index.js';
 import { dayTimeline, productionIssues } from '../lib/timeline.js';
 import { positionFill, WORKER_STATUSES } from '../lib/workforce.js';
 import { sortRos, rosForVendor } from '../lib/ros.js';
@@ -21,10 +21,12 @@ export default function VendorPortal() {
         <h1>{v.name}</h1>
         <div>{v.category} · {v.regions.join(', ')}</div>
       </div>
+      <VendorCallouts vendor={v} bookings={bookings} />
+      <div id="vp-compliance" />
       <Card title="Compliance documents">
         {issues.map((i) => <Alert key={i.text} tone={i.level}>{i.text}</Alert>)}
         <div className="row mt">Certificate of Insurance valid until <b>{fmtDate(v.coiExpiry)}</b></div>
-        <div className="row mt"><span>Upload renewed COI — new expiry:</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><Button variant="primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</Button></div>
+        <div className="row mt"><span>Upload a renewed COI, valid until</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><Button variant="primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</Button></div>
       </Card>
       <CrewRequests vendor={v} />
       <VendorRfqs vendor={v} />
@@ -74,6 +76,7 @@ function VendorRfqs({ vendor }) {
   if (!rfqs.length) return null;
   return (
     <Card title="Requests for quote">
+      <div id="vp-rfq" />
       <table className="t">
         <thead><tr><th>Event</th><th>Scope</th><th>Respond by</th><th>Your quote</th><th>Status</th><th /></tr></thead>
         <tbody>
@@ -107,6 +110,7 @@ function VendorTasks({ vendor }) {
   if (!tasks.length) return null;
   return (
     <Card title="Your tasks">
+      <div id="vp-tasks" />
       {tasks.map(({ t, e }) => (
         <label key={t.id} className="row" style={{ padding: '4px 0' }}>
           <input type="checkbox" checked={t.status === 'done'} onChange={(ev) => act('TASK_UPDATE', { eventId: e.id, taskId: t.id, patch: { status: ev.target.checked ? 'done' : 'todo' } })} />
@@ -125,6 +129,7 @@ function CrewRequests({ vendor }) {
   if (!reqs.length) return null;
   return (
     <Card title="Crew requested from you">
+      <div id="vp-crew" />
       <div className="faint mb text-sm">Submit the names of the people you are sending — they receive QR credentials for venue access and are checked in on site. You are billed for the booked headcount.</div>
       {reqs.map(({ p, e }) => {
         const f = positionFill(e, p);
@@ -180,6 +185,28 @@ function VendorSiteFootprint({ ev, vendorId }) {
       <div className="row between"><h4>Where you set up</h4>{rooms.length > 1 && <PillSelect options={rooms.map((r) => ({ id: r.id, label: r.name }))} value={room.id} onChange={setRoomId} />}</div>
       <div style={{ maxWidth: 640 }}><SitePlan readOnly width={room.width} height={room.height} elements={room.elements} highlightIds={room.elements.filter((x) => x.vendorId === vendorId).map((x) => x.id)} /></div>
       <div className="faint text-sm">Your elements are outlined in red.</div>
+    </div>
+  );
+}
+
+/** The vendor's to-do list, most urgent first. Scrolls to the section that resolves each item. */
+function VendorCallouts({ vendor, bookings }) {
+  const { state, act, today } = useStore();
+  const items = [];
+  vendorCompliance(vendor, today).forEach((i) => items.push({ tone: i.level, icon: 'shield', title: i.text, text: 'Upload a renewed certificate so bookings can be confirmed.', target: 'compliance', cta: 'Upload' }));
+  bookings.filter(({ b }) => b.status === 'requested').forEach(({ b, e }) => items.push({ tone: 'warning', icon: 'calendar', title: `Confirm your booking for ${e.name}`, text: `${b.service} · ${fmtDate(e.date)}`, cta: 'Confirm', run: () => act('BOOKING_CONFIRM', { eventId: e.id, bookingId: b.id }) }));
+  state.events.forEach((e) => (e.positions || []).filter((p) => p.vendorId === vendor.id).forEach((p) => {
+    const named = (e.workers || []).filter((w) => w.positionId === p.id && w.status !== 'declined').length;
+    if (named < p.qty) items.push({ tone: 'danger', icon: 'hardhat', title: `${p.qty - named} crew name(s) missing for ${p.role}`, text: `${e.name} · ${fmtDate(p.date)} call ${p.start}`, target: 'crew', cta: 'Add names' });
+  }));
+  state.events.forEach((e) => e.rfqs.filter((r) => r.vendorIds.includes(vendor.id) && !r.awardedVendorId && !r.responses.some((x) => x.vendorId === vendor.id)).forEach((r) => items.push({ tone: 'info', icon: 'file', title: `Quote requested: ${r.category}`, text: `${e.name} · respond by ${fmtDate(r.dueDate)}`, target: 'rfq', cta: 'Quote' })));
+  state.events.forEach((e) => e.tasks.filter((t) => t.assigneeType === 'vendor' && t.assigneeId === vendor.id && t.status !== 'done').forEach((t) => items.push({ tone: t.dueDate < today ? 'danger' : 'info', icon: 'checkSquare', title: t.title, text: `${e.name} · due ${fmtDate(t.dueDate)}`, target: 'tasks', cta: 'Open' })));
+  const order = { danger: 0, warning: 1, info: 2 };
+  items.sort((a, b) => order[a.tone] - order[b.tone]);
+  if (!items.length) return <Callout tone="success" icon="check" title="Nothing waiting on you">New requests from the planning team will appear here.</Callout>;
+  return (
+    <div className="grid g2 mb">
+      {items.slice(0, 6).map((i, n) => <Callout key={n} tone={i.tone} icon={i.icon} title={i.title} action={{ label: i.cta, onClick: () => (i.run ? i.run() : document.getElementById(`vp-${i.target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }}>{i.text}</Callout>)}
     </div>
   );
 }

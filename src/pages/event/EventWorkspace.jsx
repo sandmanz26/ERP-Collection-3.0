@@ -37,8 +37,8 @@ export default function EventWorkspace() {
   const staffing = staffingSummary(ev);
   const f = et.features;
   const PHASES = [
+    { id: 'overview', label: 'Overview', tabs: [{ id: 'overview', label: 'Overview' }] },
     { id: 'sell', label: 'Sell', tabs: [
-      { id: 'overview', label: 'Overview' },
       { id: 'proposal', label: 'Proposal', count: ev.proposals.length },
       { id: 'contract', label: 'Contract', alert: ev.contract && !ev.contract.immutable },
     ] },
@@ -97,9 +97,9 @@ export default function EventWorkspace() {
             );
           })}
         </div>
-        <Tabs tabs={phase.tabs.map((t) => ({ ...t, label: t.alert ? <>{t.label} <span className="phase-dot inline" aria-hidden /></> : t.label }))} value={tab} onChange={(t) => setSp({ tab: t })} />
+        {phase.tabs.length > 1 && <Tabs tabs={phase.tabs.map((t) => ({ ...t, label: t.alert ? <>{t.label} <span className="phase-dot inline" aria-hidden /></> : t.label }))} value={tab} onChange={(t) => setSp({ tab: t })} />}
       </nav>
-      <Comp ev={ev} et={et} />
+      <Comp key={ev.id} ev={ev} et={et} open={(t) => { setSp({ tab: t }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
     </div>
   );
 }

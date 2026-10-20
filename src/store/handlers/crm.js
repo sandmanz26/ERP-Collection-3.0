@@ -13,7 +13,7 @@ function emptyParts() {
     ros: { status: 'draft', version: 1, items: [], history: [] }, shifts: [], incidents: [], decorRequests: [], decorReturn: null,
     closing: { venueDepositReturned: false, surveySent: false, survey: null, reviewRequested: false, vendorRatingsDone: false, damageBilled: false },
     payers: [], clientBudget: {}, finalHeadcount: null, cancellation: null, postponements: [], interactions: [], accountingSync: [], approvals: [],
-    positions: [], workers: [], production: { accessWindows: [], resources: [] }, sitePlan: { rooms: [] },
+    positions: [], workers: [], production: { accessWindows: [], resources: [] }, sitePlan: { rooms: [] }, stageHistory: [],
   };
 }
 

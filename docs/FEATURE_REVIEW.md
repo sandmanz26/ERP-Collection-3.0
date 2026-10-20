@@ -89,3 +89,10 @@ Still deferred: multi-event crew pooling (one agency crew across two same-day ev
 | U12 | No way to find a record quickly. | ✅ Global search with `/` shortcut and keyboard navigation. |
 
 Deferred: real identity provider (SSO, MFA, server sessions), per-user saved preferences on a server, i18n string extraction.
+
+## Addendum (#030–#031) — Login clutter, priorities, lifecycle, "drive the event"
+- **Login was a wall of 18 demo accounts** → 8 role tiles (one click signs in) + an *All accounts* dialog.
+- **No guidance after sign-in** → role-aware *Today's priorities* callouts on the dashboard (each opens the exact event tab); task callouts on the client and vendor portals.
+- **Lifecycle bar looked clickable but wasn't** → `Stepper` organism: every stage is selectable and shows when/by whom it was entered (recorded `stageHistory`) or what is still required to reach it. Closed events show the final stage as done.
+- **Archived event offered Postpone/Cancel** → stage-aware actions; closed events get a read-only summary.
+- **Overview too shallow to run an event** → cockpit: next steps with CTAs, key dates with countdown, readiness by area (money, vendors, guests, people, production, tasks), functions, venue & logistics, who's who, vendors on site. Overview is its own phase; event rows are clickable.

@@ -63,6 +63,11 @@ export function reducer(state, action) {
     const r = typeof res === 'string' ? { summary: res } : res || {};
     if (r.skipLog) return { ...draft, lastError: null };
     const actor = r.actorId ? draft.users.find((u) => u.id === r.actorId) : user;
+    // Central stage history: whatever action moved an event to a new stage, record when and by whom.
+    const before = new Map(state.events.map((e) => [e.id, e.stage]));
+    draft.events.forEach((e) => {
+      if (before.get(e.id) !== e.stage) (e.stageHistory ??= []).push({ stage: e.stage, at: new Date().toISOString(), by: actor?.id ?? 'system' });
+    });
     const offline = draft.online === false && action.type !== 'SET_ONLINE';
     draft.activityLog.unshift({
       id: `log_${Date.now().toString(36)}${(++seq).toString(36)}`,

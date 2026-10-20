@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StatTile, StageBadge, Badge, Money, PageHeader, EmptyState, Icon, AttentionList } from '../design-system/index.js';
+import { Card, StatTile, StageBadge, Badge, Money, PageHeader, EmptyState, Icon, AttentionList, Callout } from '../design-system/index.js';
+import { useNavigate } from 'react-router-dom';
 import { fmtDate, diffDays, addDays, fmtDateTime } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
 import { productionIssues } from '../lib/timeline.js';
+import { priorities } from '../lib/eventGuide.js';
 import { staffingSummary } from '../lib/workforce.js';
 import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
 
@@ -16,6 +18,8 @@ import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invo
 export default function Dashboard() {
   const { state, today, user } = useStore();
   const role = user.role;
+  const nav = useNavigate();
+  const top = priorities(state, user, today, 4);
   const evs = state.events;
   const usd = (n, c) => toUSD(state, n, c);
   const pipeline = evs.filter((e) => SALES_STAGES.includes(e.stage));
@@ -78,7 +82,15 @@ export default function Dashboard() {
     <div>
       <PageHeader title={`Good day, ${user.name.split(' ')[0]}`} subtitle={`${fmtDate(today, { weekday: 'long' })} · ${state.users.find((u) => u.id === user.id)?.role} view · ${upcoming.length} booked events ahead · ${pipeline.length} open deals`}
         actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">+ New inquiry</Link>} />
-      <div className={`grid g${(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).length}`}>{(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).map((k) => KPIS[k])}</div>
+      {top.length > 0 && (
+        <section className="priorities" aria-label="Today's priorities">
+          <div className="row between mb"><h2 style={{ margin: 0 }}>Today's priorities</h2><span className="faint text-sm">Most urgent first · {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
+          <div className="grid g2">
+            {top.map((a, i) => <Callout key={i} tone={a.severity} icon={a.icon} meta={`${a.ev.name}${a.ev.date ? ` · ${fmtDate(a.ev.date)}` : ''}`} title={a.title} action={{ label: a.cta, onClick: () => nav(`/events/${a.ev.id}?tab=${a.tab}`) }}>{a.detail}</Callout>)}
+          </div>
+        </section>
+      )}
+      <div className={`grid g${(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).length} mt`}>{(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).map((k) => KPIS[k])}</div>
 
       <div className="grid g2 mt">
         <Card title="Needs your attention" actions={<Badge>{attention.length}</Badge>}>
@@ -100,7 +112,7 @@ export default function Dashboard() {
             <table className="t">
               <thead><tr><th>Date</th><th>Event</th><th>Stage</th><th>Date status</th><th className="num">Days out</th></tr></thead>
               <tbody>{upcoming.slice(0, 8).map((e) => (
-                <tr key={e.id}><td>{fmtDate(e.date)}</td><td><Link to={`/events/${e.id}`}>{e.name}</Link><div className="faint">{e.segment} · {e.venue?.name}</div></td><td><StageBadge stage={e.stage} /></td>
+                <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}><td>{fmtDate(e.date)}</td><td><Link to={`/events/${e.id}`} onClick={(x) => x.stopPropagation()}>{e.name}</Link><div className="faint">{e.segment} · {e.venue?.name}</div></td><td><StageBadge stage={e.stage} /></td>
                   <td><Badge tone={e.dateStatus === 'locked' ? 'ok' : 'warn'}>{e.dateStatus === 'locked' ? <><Icon name="lock" size={12} /> locked</> : <><Icon name="hourglass" size={12} /> hold</>}</Badge></td><td className="num">{diffDays(today, e.date)}</td></tr>
               ))}</tbody>
             </table>

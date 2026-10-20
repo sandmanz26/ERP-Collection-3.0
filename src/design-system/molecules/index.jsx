@@ -150,3 +150,21 @@ export function AttentionList({ items, empty = 'Nothing needs your attention rig
     </div>
   );
 }
+
+/**
+ * Molecule: Callout — one important thing, why it matters, and the one action that resolves it.
+ * tone: danger | warning | info | success. `action` = { label, onClick }.
+ */
+export function Callout({ tone = 'info', icon = 'info', title, children, action, meta, compact }) {
+  return (
+    <div className={`callout callout-${tone} ${compact ? 'compact' : ''}`}>
+      <span className="callout-icon"><Icon name={icon} size={compact ? 15 : 18} /></span>
+      <div className="callout-body">
+        {meta && <div className="callout-meta">{meta}</div>}
+        <div className="callout-title">{title}</div>
+        {children && <div className="callout-text">{children}</div>}
+      </div>
+      {action && <button type="button" className={`btn sm ${tone === 'danger' ? 'primary' : ''} callout-action`} onClick={action.onClick}>{action.label}<Icon name="chevron" size={13} /></button>}
+    </div>
+  );
+}

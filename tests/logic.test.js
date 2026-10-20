@@ -342,3 +342,32 @@ test('admin password reset clears a lockout', () => {
   s = reducer(s, { type: 'LOGIN', payload: { email: 'hannah@lumiere.events', password: 'welcome123' } });
   assert.equal(s.currentUserId, 'u_fin');
 });
+
+// ---------- event guide (cockpit) ----------
+test('next actions are stage-aware and point at the right tab', async () => {
+  const { nextActions, readiness, stepperSteps, priorities } = await import('../src/lib/eventGuide.js');
+  const s = buildSeed();
+  const today = todayISO();
+  const laurent = s.events.find((e) => e.id === 'ev_laurent');
+  const a1 = nextActions(s, laurent, today);
+  assert.equal(a1[0].tab, 'finance');
+  assert.ok(a1[0].title.includes('deposit'));
+  const carter = s.events.find((e) => e.id === 'ev_carter');
+  const a2 = nextActions(s, carter, today);
+  assert.ok(a2.some((a) => a.tab === 'people'));
+  assert.ok(a2.some((a) => a.tab === 'timeline'));
+  assert.equal(nextActions(s, s.events.find((e) => e.id === 'ev_brightwave'), today).length, 0, 'archived events have no actions');
+  assert.equal(readiness(s, carter, today).find((r) => r.id === 'people').status, 'attention');
+  const steps = stepperSteps(s, s.events.find((e) => e.id === 'ev_cancel'), today);
+  assert.equal(steps.at(-1).status, 'exit');
+  const fin = s.users.find((u) => u.id === 'u_fin');
+  assert.ok(priorities(s, fin, today).every((p) => ['finance', 'co'].includes(p.tab)));
+});
+
+test('reducer records stage history for every stage change', () => {
+  let s = { ...buildSeed(), effects: [] };
+  s = run(s, 'STAGE_CHANGE', { eventId: 'ev_lead_okafor', to: 'qualified' }, 'u_sales');
+  const h = s.events.find((e) => e.id === 'ev_lead_okafor').stageHistory;
+  assert.equal(h.at(-1).stage, 'qualified');
+  assert.equal(h.at(-1).by, 'u_sales');
+});

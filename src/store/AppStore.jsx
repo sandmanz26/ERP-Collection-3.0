@@ -13,7 +13,7 @@ function init() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed?.version === 4) return { ...parsed, effects: [] };
+      if (parsed?.version === 5) return { ...parsed, effects: [] };
     }
   } catch { /* corrupted -> reseed */ }
   const seed = buildSeed();

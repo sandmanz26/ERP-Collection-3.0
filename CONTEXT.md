@@ -181,3 +181,17 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 
 ### [2026-10-20] #029 — Pushed to GitHub
 - After the owner (`sandmanz26`) added the repo to the Claude GitHub App and invited `sandmanzz` as collaborator, `git push origin HEAD:main` and the working branch succeeded. `main` now holds the full history and `vercel.json`; ready to import in Vercel.
+
+### [2026-10-20] #030 — New request: simpler login, priority callouts, clickable lifecycle, "drive the event" overview
+- User feedback (with screenshot of the archived Brightwave event): (1) demo-account list floods the login screen; (2) after signing in there should be important call-outs; (3) the lifecycle bar looks like tabs but clicking it does nothing (also: archived event still offers Postpone/Cancel); (4) event detail is too shallow to actually *drive* an event.
+- Plan: compact role quick-picks on login + "all accounts" dialog; `Callout` molecule + role-aware "Today's priorities" after login (dashboard, client portal, vendor portal); `Stepper` organism (clickable stages with entered dates & exit requirements) backed by recorded `stageHistory`; Overview rebuilt as an event cockpit (next actions with CTAs, readiness by area, key dates, functions, venue & logistics, contacts; stage-aware actions; read-only summary for closed events); "Overview" becomes its own phase; clickable table rows for events.
+
+### [2026-10-20] #031 — Implemented: simpler login, priorities, clickable lifecycle, event cockpit
+- `src/lib/eventGuide.js` (new): stage info, stage dates, stepper steps, requirements, `nextActions`, `readiness`, `keyDates`, role-filtered `priorities`.
+- Reducer records `ev.stageHistory` ({stage, at, by}) centrally on every stage change; seed synthesizes history for existing events (`synthHistory`), seed `version: 5`.
+- Design system: `Callout` molecule, `Stepper` organism (+ CSS for callouts, stepper, readiness grid, key dates, clickable rows, login quick roles).
+- `Overview.jsx` rewritten as an event cockpit; closed events (archived/lost/cancelled) get a read-only summary and no Postpone/Cancel; archived final stage shown as done.
+- `EventWorkspace.jsx`: Overview is its own phase; sub-tabs hidden when a phase has one tab; child pages get `open(tab)` to jump between tabs.
+- `Login.jsx`: 8 role tiles + *All accounts* dialog. `Dashboard.jsx`: *Today's priorities* callouts. `ClientPortal.jsx` / `VendorPortal.jsx`: action callouts. `Events.jsx`: clickable rows.
+- Tests +2 (stage-aware next actions; stage history recording) → 30/30. Build OK; Playwright smoke 0 runtime errors; priority CTA, stepper click, readiness tile navigation verified; screenshots reviewed.
+- Docs: HANDOFF (file map, design system, demo script, version 5, test count), FEATURE_REVIEW addendum.

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button, printDocument, Icon } from '../design-system/index.js';
+import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button, printDocument, Icon, Callout } from '../design-system/index.js';
 import { proposalHtml } from '../lib/documents.js';
-import { proposalTotals, eventFinancials, clientOf, headcount } from '../lib/derived.js';
+import { proposalTotals, eventFinancials, clientOf, headcount, invoiceStatus, invoiceBalance } from '../lib/derived.js';
+import { fmtMoney } from '../lib/money.js';
 import { proposalExpired } from '../lib/pricing.js';
 import { clientCan } from '../lib/permissions.js';
 import { fmtDate, diffDays } from '../lib/dates.js';
@@ -54,12 +55,12 @@ export default function ClientPortal() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>Signed in as {user.name} · access: {(user.permissions || []).join(', ')}{user.payerScope ? ` · paying for ${user.payerScope.join(', ')}` : ''}</div>
       </div>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
-      <Comp ev={ev} et={et} />
+      <Comp ev={ev} et={et} setTab={setTab} />
     </div>
   );
 }
 
-function Home({ ev, et }) {
+function Home({ ev, et, setTab }) {
   const { state, user, today } = useStore();
   const f = eventFinancials(state, ev);
   const tasks = ev.tasks.filter((t) => t.assigneeType === 'client');
@@ -70,9 +71,7 @@ function Home({ ev, et }) {
   const myPayer = ev.payers.find((p) => p.userId === user.id);
   return (
     <div>
-      {unsigned && <Alert tone="warning">Your contract is ready to sign.</Alert>}
-      {ev.dateStatus === 'hold' && ev.contract?.immutable && <Alert tone="warning">Your date is on HOLD until the deposit is received. Pay the deposit to lock {fmtDate(ev.date)}.</Alert>}
-      {pendingCO.map((c) => <Alert key={c.id} tone="info">Change Order {c.number} “{c.title}” awaits your approval.</Alert>)}
+      <ClientCallouts ev={ev} setTab={setTab} />
       <div className="grid g3 mt">
         {clientCan(user, 'view_all') && <Card title="Payments"><div className="row between"><span>Paid</span><b><Money value={f.paid} currency={ev.currency} /></b></div><div className="row between"><span>Contract total</span><b><Money value={f.contractTotal} currency={ev.currency} /></b></div><ProgressBar value={f.contractTotal ? (f.paid / f.contractTotal) * 100 : 0} tone="ok" /></Card>}
         {myPayer && !clientCan(user, 'view_all') && <Card title="Your share">You are paying for: <b>{myPayer.categories.join(', ') || 'all'}</b><div className="faint mt">Only the invoices assigned to you are shown.</div></Card>}
@@ -221,4 +220,30 @@ function PortalSurvey({ ev }) {
       <Button variant="primary" className="mt" onClick={() => act('SURVEY_SUBMIT', { eventId: ev.id, rating, comment })}>Submit</Button>
     </Card>
   );
+}
+
+/** What this client user should do next — only actions their permissions allow. */
+function ClientCallouts({ ev, setTab }) {
+  const { state, user, today } = useStore();
+  const can = (p) => clientCan(user, p);
+  const items = [];
+  const mySigner = ev.contract?.signers.find((s) => s.email?.toLowerCase() === user.email.toLowerCase() && !s.signedAt);
+  if (mySigner && ev.contract.status !== 'draft' && can('sign')) items.push({ tone: 'warning', icon: 'edit', title: 'Your signature is needed on the contract', text: 'Review the agreement and sign online.', tab: 'contract', cta: 'Review & sign' });
+  const myPayer = ev.payers.find((p) => p.userId === user.id);
+  const dueInvoices = ev.invoices.filter((i) => ['sent', 'partial', 'overdue'].includes(invoiceStatus(ev, i, today)) && (can('view_all') || i.payerId === myPayer?.id));
+  if (can('pay') && dueInvoices.length) {
+    const od = dueInvoices.filter((i) => invoiceStatus(ev, i, today) === 'overdue');
+    items.push({ tone: od.length ? 'danger' : 'info', icon: 'money', title: od.length ? `${od.length} payment${od.length > 1 ? 's are' : ' is'} overdue` : `Next payment due ${fmtDate(dueInvoices[0].dueDate)}`, text: dueInvoices.map((i) => `${i.label}: ${fmtMoney(invoiceBalance(ev, i), i.currency)}`).join(' · '), tab: 'payments', cta: 'Pay now' });
+  }
+  if (ev.dateStatus === 'hold' && ev.contract?.immutable) items.push({ tone: 'warning', icon: 'lock', title: 'Your date is held, not yet secured', text: `Paying the deposit locks ${fmtDate(ev.date)} for you.`, tab: 'payments', cta: 'Pay deposit' });
+  const cos = ev.changeOrders.filter((c) => c.status === 'sent');
+  if (cos.length && can('approve_costs')) items.push({ tone: 'info', icon: 'edit', title: `${cos.length} change order${cos.length > 1 ? 's' : ''} to approve`, text: cos.map((c) => c.title).join(', '), tab: 'co', cta: 'Review' });
+  const forms = ev.forms.filter((f) => !f.submittedAt);
+  if (forms.length && can('forms')) items.push({ tone: 'info', icon: 'file', title: `${forms.length} planning form${forms.length > 1 ? 's' : ''} to complete`, text: forms.map((f) => f.name).join(', '), tab: 'forms', cta: 'Fill in' });
+  const tasks = ev.tasks.filter((t) => t.assigneeType === 'client' && t.status !== 'done');
+  if (tasks.length && can('view_all')) items.push({ tone: tasks.some((t) => t.dueDate < today) ? 'warning' : 'info', icon: 'checkSquare', title: `${tasks.length} item${tasks.length > 1 ? 's' : ''} on your checklist`, text: tasks.slice(0, 3).map((t) => `${t.title} (${fmtDate(t.dueDate)})`).join(' · '), tab: 'tasks', cta: 'Open checklist' });
+  const pending = ev.households.reduce((a, h) => a + h.guests.filter((g) => Object.values(g.rsvp).every((v) => v === 'pending')).length, 0);
+  if (pending && can('manage_guests')) items.push({ tone: 'info', icon: 'users', title: `${pending} guests have not replied yet`, text: 'Send a reminder or update their RSVP.', tab: 'guests', cta: 'Open guests' });
+  if (!items.length) return <Callout tone="success" icon="check" title="You're all set for now">Your planner will let you know when something needs you.</Callout>;
+  return <div className="grid g2">{items.map((i, n) => <Callout key={n} tone={i.tone} icon={i.icon} title={i.title} action={{ label: i.cta, onClick: () => setTab(i.tab) }}>{i.text}</Callout>)}</div>;
 }

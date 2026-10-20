@@ -656,6 +656,8 @@ export function buildSeed() {
     { id: id('log'), ts: new Date().toISOString(), userId: 'system', userName: 'System', role: 'system', type: 'SEED', entity: 'system', entityId: null, eventId: null, summary: 'Demo data loaded (mock seed)' },
   ];
 
+  events.forEach((e) => { e.stageHistory = synthHistory(e, today); });
+
   // Decor inventory reservations to seed the external system
   const decorReservations = events
     .filter((e) => e.decorRequests.length && !['cancelled_client', 'lost'].includes(e.stage))
@@ -663,7 +665,7 @@ export function buildSeed() {
   events.forEach((e) => { if (decorReservations.find((r) => r.eventId === e.id)) e.decorReservationId = `res_${e.id}`; });
 
   return {
-    version: 4,
+    version: 5,
     seededAt: new Date().toISOString(),
     currentUserId: null,
     loginAttempts: {},
@@ -809,4 +811,37 @@ function enrichAcme(ev, today) {
       { id: id('el'), type: 'power', label: 'Power 3-phase', x: 31, y: 1, w: 1.5, h: 1.5, shape: 'rect' },
     ] },
   ] };
+}
+
+/** Plausible stage history for seeded events (live actions append real entries in the reducer). */
+function synthHistory(ev, today) {
+  const order = ['lead', 'qualified', 'proposal_sent', 'negotiation', 'booked', 'planning', 'details_locked', 'pre_event', 'event_day', 'post_event', 'financial_close', 'archived'];
+  const exits = ['lost', 'cancelled_client', 'cancelled_eo'];
+  const created = ev.createdAt.slice(0, 10);
+  const deposit = ev.payments.find((p) => ev.paymentSchedule.find((s) => s.isDeposit && s.invoiceId === p.invoiceId))?.at.slice(0, 10);
+  const when = {
+    lead: created,
+    qualified: addDays(created, 2),
+    proposal_sent: ev.proposals[0]?.createdAt.slice(0, 10) ?? addDays(created, 5),
+    negotiation: ev.proposals.find((p) => p.status === 'accepted')?.createdAt.slice(0, 10) ?? ev.proposals.at(-1)?.createdAt.slice(0, 10) ?? addDays(created, 8),
+    booked: ev.contract?.signedAt?.slice(0, 10),
+    planning: deposit,
+    details_locked: ev.date && addDays(ev.date, -14),
+    pre_event: ev.date && addDays(ev.date, -7),
+    event_day: ev.date,
+    post_event: ev.date && addDays(ev.date, 1),
+    financial_close: ev.date && addDays(ev.date, 14),
+    archived: ev.date && addDays(ev.date, 21),
+  };
+  const target = exits.includes(ev.stage) ? ev.prevStage ?? 'qualified' : ev.stage;
+  const idx = order.indexOf(target);
+  let last = created;
+  const hist = order.slice(0, idx + 1).map((st) => {
+    let d = when[st] && when[st] >= last ? when[st] : last;
+    if (d > today) d = today;
+    last = d;
+    return { stage: st, at: `${d}T10:00:00.000Z`, by: ev.salesId ?? 'system' };
+  });
+  if (exits.includes(ev.stage)) hist.push({ stage: ev.stage, at: ev.cancellation?.at ?? `${addDays(created, 10) > today ? today : addDays(created, 10)}T10:00:00.000Z`, by: ev.plannerId ?? ev.salesId ?? 'system' });
+  return hist;
 }

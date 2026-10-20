@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, StageBadge, Badge, Money, PillSelect, SearchInput } from '../design-system/index.js';
 import { fmtDate } from '../lib/dates.js';
@@ -8,6 +8,7 @@ import { STAGES, EXIT_STAGES } from '../lib/lifecycle.js';
 
 export default function Events() {
   const { state, user } = useStore();
+  const nav = useNavigate();
   const [seg, setSeg] = useState('all');
   const [stage, setStage] = useState('');
   const [q, setQ] = useState('');
@@ -41,7 +42,7 @@ export default function Events() {
                 const f = eventFinancials(state, e);
                 const et = state.settings.eventTypes.find((t) => t.id === e.eventTypeId);
                 return (
-                  <tr key={e.id}>
+                  <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}>
                     <td>{fmtDate(e.date)}</td>
                     <td><Link to={`/events/${e.id}`}>{e.name}</Link></td>
                     <td>{clientOf(state, e)?.name}</td>

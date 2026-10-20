@@ -10,14 +10,14 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 **corporate** (conferences, product launches, offsites) events in the US and Western Europe.
 - **Stack:** React 18 + Vite 6 + react-router-dom 6 (HashRouter) + `qrcode`. No backend, no UI library.
 - **UI:** in-house **Atomic Design system** in `src/design-system/` (tokens → atoms → molecules → organisms → templates). Pages import only from `src/design-system/index.js`. Living style guide: `#/design-system` (admin).
-- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 2`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
+- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 5`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
 - **Audit:** every action goes through `act()` → reducer → `state.activityLog` (incl. rejected attempts, automation runs, offline-pending actions, generated documents). Export to Markdown from *Activity Log* or the event *Activity* tab.
 
 ## 2. Running
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 28 unit/integration tests (node --test)
+npm test         # 30 unit/integration tests (node --test)
 npm run build    # static output in dist/
 ```
 **Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
@@ -61,8 +61,8 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 | `tokens/` | `tokens.css` (color incl. **full dark palette**, typography, spacing, radius, elevation, motion, z-index — the only place raw values live), `tokens.js` mirror |
 | `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
 | `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), **`Icon`** (47 stroke icons — never emoji), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
-| `molecules/` | **`AttentionList`**, `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
-| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`** |
+| `molecules/` | **`Callout`** (tone, icon, title, CTA action, meta), **`AttentionList`**, `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
+| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit) |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
 Fonts: self-hosted via `@fontsource` (Fraunces display, Hanken Grotesk UI, JetBrains Mono data), imported in `main.jsx`. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
@@ -94,6 +94,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
+| `src/lib/eventGuide.js` | **event cockpit logic**: `STAGE_INFO`, `stageDates`, `stepperSteps`, `stageRequirements`, `nextActions` (stage-aware, each with target tab + CTA), `readiness` by area, `keyDates`, role-filtered `priorities` for the dashboard |
 | `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`, `workforce`) |
 | `src/pages/*.jsx` | **Login**, Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
 | `src/pages/event/*.jsx` | event workspace tabs (Overview, **Timeline**, Proposal, Contract, Planning, Vendors, Guests, Seating, Budget, Change Orders, Run of Show, **People**, **Site plan**, Crew shifts, Finance, Messages, Post-Event, Activity) + `DecorPanel` |
@@ -124,7 +125,8 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | §8 Decor Inventory integration | `decorApi.js`, `DecorPanel.jsx`, effects in `AppStore.jsx` |
 
 ## 7. Demo script
-0. **Sign in**: try a wrong password a few times on Marcus (lockout warning), Tyler (suspended), then sign in as Olivia.
+0. **Sign in**: one click on a role tile (Owner, Sales, Planner, Production, Finance, Day-of crew, Client, Vendor) or *All accounts* for the full list. Try a wrong password a few times on Marcus (lockout warning), Tyler (suspended).
+0b. **Drive an event**: Dashboard → *Today's priorities* → click a CTA (lands on the right event tab). Event → *Overview* cockpit: click any lifecycle step (entered date/by, or what is still required), *Next steps* callouts, *Readiness* tiles jump to the area. Archived events (Brightwave) are read-only summaries.
 1. **Admin** dashboard → attention list (expiring holds, overdue invoices, exception CO, guarantee warning, vendor compliance). Switch to **Hannah (finance)** / **Diego (production)** to see role-tailored dashboards.
 2. **CRM** → *Simulate marketplace lead* or open *Public inquiry form* → open the lead → *Place hold* → advance → Proposal *Build* → *Send* → *Record acceptance* → *Client PDF* → Contract *Generate* → *Send* → e-sign → Finance *Record payment* → 🔒 date locked → Planning.
 3. **Calendar**: release Stellar's hold #1 → Nguyen promoted, email in Communication → Outbox.
