@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button, printDocument } from '../design-system/index.js';
+import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button, printDocument, Icon } from '../design-system/index.js';
 import { proposalHtml } from '../lib/documents.js';
 import { proposalTotals, eventFinancials, clientOf, headcount } from '../lib/derived.js';
 import { proposalExpired } from '../lib/pricing.js';
@@ -76,7 +76,7 @@ function Home({ ev, et }) {
       <div className="grid g3 mt">
         {clientCan(user, 'view_all') && <Card title="Payments"><div className="row between"><span>Paid</span><b><Money value={f.paid} currency={ev.currency} /></b></div><div className="row between"><span>Contract total</span><b><Money value={f.contractTotal} currency={ev.currency} /></b></div><ProgressBar value={f.contractTotal ? (f.paid / f.contractTotal) * 100 : 0} tone="ok" /></Card>}
         {myPayer && !clientCan(user, 'view_all') && <Card title="Your share">You are paying for: <b>{myPayer.categories.join(', ') || 'all'}</b><div className="faint mt">Only the invoices assigned to you are shown.</div></Card>}
-        {clientCan(user, 'view_all') && <Card title="My checklist"><div>{done}/{tasks.length} done</div><ProgressBar value={tasks.length ? (done / tasks.length) * 100 : 0} /><div className="mt">{tasks.filter((t) => t.status !== 'done').slice(0, 4).map((t) => <div key={t.id} style={{ fontSize: 13 }}>☐ {t.title} <span className="faint">{fmtDate(t.dueDate)}</span></div>)}</div></Card>}
+        {clientCan(user, 'view_all') && <Card title="My checklist"><div>{done}/{tasks.length} done</div><ProgressBar value={tasks.length ? (done / tasks.length) * 100 : 0} /><div className="mt">{tasks.filter((t) => t.status !== 'done').slice(0, 4).map((t) => <div key={t.id} className="row" style={{ fontSize: 13, gap: 6 }}><Icon name="square" size={14} /> {t.title} <span className="faint">{fmtDate(t.dueDate)}</span></div>)}</div></Card>}
         {ev.households.length > 0 && <Card title="RSVPs"><div className="row between"><span>Confirmed</span><b>{hc.confirmed}</b></div><div className="row between"><span>Pending</span><b>{hc.pending}</b></div><div className="row between"><span>Declined</span><b>{hc.declined}</b></div></Card>}
       </div>
       {clientCan(user, 'view_all') && ev.design.palette.length > 0 && (
@@ -216,7 +216,7 @@ function PortalSurvey({ ev }) {
   if (ev.closing.survey) return <Alert tone="success">Thank you for your feedback ({ev.closing.survey.rating}/5)!</Alert>;
   return (
     <Card title="How did we do?">
-      <div className="row">{[1, 2, 3, 4, 5].map((n) => <Button key={n} variant={rating >= n ? 'primary' : 'secondary'} onClick={() => setRating(n)} aria-label={`${n} stars`}>★</Button>)}</div>
+      <div className="row">{[1, 2, 3, 4, 5].map((n) => <Button key={n} variant={rating >= n ? 'primary' : 'secondary'} onClick={() => setRating(n)} aria-label={`${n} stars`}><Icon name="star" /></Button>)}</div>
       <textarea className="mt" placeholder="Tell us more…" value={comment} onChange={(e) => setComment(e.target.value)} />
       <Button variant="primary" className="mt" onClick={() => act('SURVEY_SUBMIT', { eventId: ev.id, rating, comment })}>Submit</Button>
     </Card>

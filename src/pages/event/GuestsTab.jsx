@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Modal, Field, useForm, Alert, StatTile, PillSelect, download, Button, useDialog, printDocument, QrCode } from '../../design-system/index.js';
+import { Card, Badge, Modal, Field, useForm, Alert, StatTile, PillSelect, download, Button, useDialog, printDocument, QrCode, Icon } from '../../design-system/index.js';
 import { badgesHtml } from '../../lib/documents.js';
 import QRCode from 'qrcode';
 import { headcount, guaranteeWarnings, finalHeadcountDeadline } from '../../lib/derived.js';
@@ -45,7 +45,7 @@ export function GuestTable({ ev, readOnly, canEdit = true }) {
                         <span className="row">
                           {h.plusOnesAllowed > h.guests.filter((g) => g.isPlusOne).length && <Button size="sm" onClick={async () => { const n = await dialog.prompt({ title: `Plus-one for ${h.name}`, label: 'Name' }); n && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: n, isPlusOne: true }); }}>+ plus-one</Button>}
                           <Button size="sm" onClick={async () => { const r = await dialog.form({ title: `Add guest to ${h.name}`, fields: [{ name: 'name', label: 'Guest name', required: true }, { name: 'isChild', label: 'Child', type: 'checkbox' }] }); r && act('GUEST_ADD', { eventId: ev.id, householdId: h.id, name: r.name, isChild: r.isChild }); }}>+ guest</Button>
-                          <Button variant="ghost" size="sm" onClick={async () => (await dialog.confirm({ title: 'Remove household', message: `Remove ${h.name} and all their guests?`, danger: true })) && act('HOUSEHOLD_REMOVE', { eventId: ev.id, householdId: h.id })}>✕</Button>
+                          <Button variant="ghost" size="sm" onClick={async () => (await dialog.confirm({ title: 'Remove household', message: `Remove ${h.name} and all their guests?`, danger: true })) && act('HOUSEHOLD_REMOVE', { eventId: ev.id, householdId: h.id })}><Icon name="x" size={14} /></Button>
                         </span>
                       )}
                     </div>
@@ -145,7 +145,7 @@ export default function GuestsTab({ ev, et }) {
         </Card>
         <Card title="RSVP website">
           <p className="muted" style={{ fontSize: 12.5 }}>Each household has a unique code. Guests RSVP per function, choose meals and add allowed plus-ones on the public page.</p>
-          <a className="btn" href={`#/rsvp?event=${ev.id}`} target="_blank" rel="noreferrer">Open public RSVP page ↗</a>
+          <a className="btn" href={`#/rsvp?event=${ev.id}`} target="_blank" rel="noreferrer">Open public RSVP page <Icon name="external" size={13} /></a>
           {ev.households[0] && <div className="row mt"><QrCode value={ev.households[0].code} size={56} /><div className="faint" style={{ fontSize: 12 }}>Try code <code>{ev.households[0].code}</code><br />RSVP closes {fmtDate(addDays(ev.date, -state.settings.rsvpDeadlineDays))}</div></div>}
           <div className="row mt"><Button onClick={exportCsv}>Export CSV</Button><Button onClick={printBadges}>{et.features.registration ? 'Print badges (QR)' : 'Print QR place cards'}</Button></div>
         </Card>

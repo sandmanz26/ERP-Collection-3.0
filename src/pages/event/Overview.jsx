@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, KeyValue, Modal, Field, Alert, Money, StatusBadge, ConfirmButton, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, KeyValue, Modal, Field, Alert, Money, StatusBadge, ConfirmButton, Button, useDialog, Icon } from '../../design-system/index.js';
 import { AvailabilityCheck } from '../../components/Availability.jsx';
 import { STAGES, stageIndex, stageLabel, transitionBlockers, nextStage, isExit } from '../../lib/lifecycle.js';
 import { eventContext, clientOf, eventFinancials, headcount } from '../../lib/derived.js';
@@ -44,7 +44,7 @@ export default function Overview({ ev, et }) {
             {next && !isExit(ev.stage) && (
               <>
                 <Button variant="primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: next })}>Advance to {stageLabel(next)}</Button>
-                {blockers.map((b) => <div key={b} className="faint" style={{ fontSize: 12 }}>⛔ {b}</div>)}
+                {blockers.map((b) => <div key={b} className="faint" style={{ fontSize: 12 }}><Icon name="ban" size={12} /> {b}</div>)}
                 {blockers.length > 0 && user.role === 'admin' && <ConfirmButton variant="danger" size="sm" message="Admin override: force the stage change? This is logged." onConfirm={() => act('STAGE_CHANGE', { eventId: ev.id, to: next, force: true })}>Force (admin)</ConfirmButton>}
               </>
             )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue, PillSelect, Button, useDialog } from '../design-system/index.js';
+import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue, PillSelect, Button, useDialog, Icon, Avatar } from '../design-system/index.js';
+import { fmtDateTime } from '../lib/dates.js';
 import { ROLES, CLIENT_PERMISSIONS, BUDGET_CATEGORIES } from '../data/config.js';
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -59,7 +60,7 @@ export default function Settings() {
               <div style={{ fontSize: 12, maxHeight: 220, overflowY: 'auto' }}>{[...t.taskTemplate].sort((a, b) => a.offsetDays - b.offsetDays).map((x) => (
                 <div key={x.key} className="row between">
                   <span>T{x.offsetDays >= 0 ? '+' : ''}{x.offsetDays} · {x.title} {x.assigneeType === 'client' && <Badge>client</Badge>}</span>
-                  <Button variant="ghost" size="sm" aria-label="Remove task" onClick={() => act('EVENT_TYPE_UPDATE', { eventTypeId: t.id, patch: { taskTemplate: t.taskTemplate.filter((y) => y.key !== x.key) } })}>✕</Button>
+                  <Button variant="ghost" size="sm" aria-label="Remove task" onClick={() => act('EVENT_TYPE_UPDATE', { eventTypeId: t.id, patch: { taskTemplate: t.taskTemplate.filter((y) => y.key !== x.key) } })}><Icon name="x" size={14} /></Button>
                 </div>
               ))}</div>
               <Button size="sm" className="mt" onClick={async () => {
@@ -111,14 +112,23 @@ export default function Settings() {
           r && act('USER_CREATE', { data: { ...r, clientId: r.clientId || undefined, vendorId: r.vendorId || undefined } });
         }}>+ Invite user</Button>}>
           <table className="t">
-            <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Linked to</th><th>Portal permissions (clients)</th></tr></thead>
+            <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Linked to</th><th>Portal permissions (clients)</th><th /></tr></thead>
             <tbody>{state.users.map((u) => (
               <tr key={u.id}>
-                <td>{u.name}</td>
+                <td><div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}><Avatar name={u.name} /><div><b>{u.name}</b><div className="faint text-xs">{u.email}{u.title ? ` · ${u.title}` : ''}</div></div></div></td>
                 <td><select value={u.role} disabled={u.id === state.currentUserId} onChange={(e) => act('USER_UPDATE', { userId: u.id, patch: { role: e.target.value } })}>{ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></td>
-                <td>{u.email}</td>
+                <td><Badge tone={{ active: 'ok', invited: 'info', suspended: 'danger' }[u.status]}>{u.status}</Badge>{u.mfa && <div className="faint text-xs"><Icon name="shield" size={11} /> MFA</div>}{(state.loginAttempts?.[u.email.toLowerCase()]?.count ?? 0) > 0 && <div className="text-xs text-danger">{state.loginAttempts[u.email.toLowerCase()].count} failed attempt(s){state.loginAttempts[u.email.toLowerCase()].lockedUntil ? ', locked' : ''}</div>}</td>
+                <td className="text-sm">{u.lastLoginAt ? fmtDateTime(u.lastLoginAt) : <span className="faint">never</span>}</td>
                 <td>{u.clientId ? state.clients.find((c) => c.id === u.clientId)?.name : u.vendorId ? state.vendors.find((v) => v.id === u.vendorId)?.name : u.staffId ?? '—'}</td>
                 <td>{u.role === 'client' ? <PillSelect multi options={CLIENT_PERMISSIONS.map((p) => ({ id: p.id, label: p.label }))} value={u.permissions || []} onChange={(perms) => act('USER_UPDATE', { userId: u.id, patch: { permissions: perms } })} /> : <span className="faint">role-based</span>}{u.payerScope && <div className="faint" style={{ fontSize: 11 }}>pays: {u.payerScope.join(', ')}</div>}</td>
+                <td>
+                  <div className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                    <ConfirmButton size="sm" title="Reset password" message={`Issue a temporary password ("welcome123") to ${u.name} and clear any lockout?`} onConfirm={() => act('USER_PASSWORD_RESET', { userId: u.id })}><Icon name="key" size={13} /> Reset</ConfirmButton>
+                    {u.id !== state.currentUserId && (u.status === 'suspended'
+                      ? <Button size="sm" onClick={() => act('USER_STATUS', { userId: u.id, status: 'active' })}>Reactivate</Button>
+                      : <ConfirmButton size="sm" variant="danger" title="Suspend account" message={`${u.name} will no longer be able to sign in. Their history stays in the activity log.`} onConfirm={() => act('USER_STATUS', { userId: u.id, status: 'suspended' })}>Suspend</ConfirmButton>)}
+                  </div>
+                </td>
               </tr>
             ))}</tbody>
           </table>

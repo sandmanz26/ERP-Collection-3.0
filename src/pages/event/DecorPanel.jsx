@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, StatusBadge, Button } from '../../design-system/index.js';
+import { Card, Badge, Money, Alert, StatusBadge, Button, Icon } from '../../design-system/index.js';
 import * as decorApi from '../../lib/decorApi.js';
 import { fmtDateTime } from '../../lib/dates.js';
 
@@ -54,7 +54,7 @@ export default function DecorPanel({ ev }) {
                 <td className="num">{reservedFor(d.itemId)}</td>
                 <td className="num">{freeForUs ?? '…'} {freeForUs !== null && d.qty > freeForUs && <Badge tone="danger">short</Badge>}</td>
                 <td className="num"><Money value={(it?.unitCost || 0) * d.qty} currency={ev.currency} /></td>
-                <td><Button variant="ghost" size="sm" onClick={() => setDraft(draft.filter((_, j) => j !== i))}>✕</Button></td>
+                <td><Button variant="ghost" size="sm" onClick={() => setDraft(draft.filter((_, j) => j !== i))}><Icon name="x" size={14} /></Button></td>
               </tr>
             );
           })}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Badge } from '../atoms/Badge.jsx';
+import { Icon } from '../atoms/Icon.jsx';
 import { stageLabel } from '../../lib/lifecycle.js';
 import { useDialog } from '../organisms/Dialogs.jsx';
 
@@ -124,5 +125,28 @@ export function ConfirmButton({ onConfirm, children, variant = 'secondary', size
 }
 
 export function Toast({ kind = 'ok', children }) {
-  return <div className={`toast ${kind}`} role="status">{kind === 'err' ? '⚠ ' : '✓ '}{children}</div>;
+  return <div className={`toast ${kind}`} role="status"><Icon name={kind === 'err' ? 'alert' : 'check'} size={15} /> <span>{children}</span></div>;
+}
+
+/**
+ * Molecule: attention list — scannable rows with a severity stripe + icon instead of a wall of filled alerts.
+ * items: [{ tone: 'danger'|'warning'|'info'|'success', icon, node }]
+ */
+export function AttentionList({ items, empty = 'Nothing needs your attention right now.', max = 12 }) {
+  const [all, setAll] = useState(false);
+  if (!items.length) return <EmptyState>{empty}</EmptyState>;
+  const shown = all ? items : items.slice(0, max);
+  return (
+    <div>
+      <ul className="attention">
+        {shown.map((a, i) => (
+          <li key={i} className={`attention-row sev-${a.tone}`}>
+            <span className="attention-icon"><Icon name={a.icon ?? 'info'} size={15} /></span>
+            <span className="attention-text">{a.node}</span>
+          </li>
+        ))}
+      </ul>
+      {items.length > max && <button className="btn ghost sm mt" onClick={() => setAll((x) => !x)}>{all ? 'Show fewer' : `Show all ${items.length}`}</button>}
+    </div>
+  );
 }

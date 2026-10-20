@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, CommitInput, Button, useDialog, printDocument } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, CommitInput, Button, useDialog, printDocument, Icon } from '../../design-system/index.js';
 import { proposalHtml } from '../../lib/documents.js';
 import { proposalTotals } from '../../lib/derived.js';
 import { proposalExpired, diffProposals } from '../../lib/pricing.js';
@@ -51,7 +51,7 @@ export function ProposalTable({ ev, version, totals, internal, editable, onToggl
                   onToggleOptional ? <input type="checkbox" checked={l.selected} onChange={() => onToggleOptional(l)} /> : editable ? <input type="checkbox" checked={l.selected} onChange={() => upd(l.id, { selected: !l.selected })} title="selected by default" /> : <Badge tone={l.selected ? 'ok' : ''}>{l.selected ? 'selected' : 'optional'}</Badge>
                 ) : editable ? <Button variant="ghost" size="sm" title="Make optional (upsell)" onClick={() => upd(l.id, { optional: true, selected: false })}>make opt.</Button> : null}
               </td>
-              {editable && <td><Button variant="ghost" size="sm" onClick={() => act('PROPOSAL_LINE_REMOVE', { eventId: ev.id, versionId: version.id, lineId: l.id })}>✕</Button></td>}
+              {editable && <td><Button variant="ghost" size="sm" onClick={() => act('PROPOSAL_LINE_REMOVE', { eventId: ev.id, versionId: version.id, lineId: l.id })}><Icon name="x" size={14} /></Button></td>}
             </tr>
           ))}
         </tbody>

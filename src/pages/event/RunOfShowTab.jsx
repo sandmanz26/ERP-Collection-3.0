@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, Alert, download, CommitInput, Button } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, Alert, download, CommitInput, Button, Icon } from '../../design-system/index.js';
 import { sortRos, rosForVendor } from '../../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -93,7 +93,7 @@ export default function RunOfShowTab({ ev }) {
                       <td style={{ fontSize: 12 }}>{i.cue}</td>
                       <td><StatusBadge status={i.liveStatus} />{i.delayedBy ? <span className="faint"> +{i.delayedBy}m</span> : null}</td>
                       <td className="text-xs">{(i.resourceIds || []).map((r) => ev.production?.resources.find((x) => x.id === r)?.name).filter(Boolean).join(', ')}{(i.dependsOn || []).length > 0 && <div className="faint">after: {i.dependsOn.map((d) => ev.ros.items.find((x) => x.id === d)?.activity).filter(Boolean).join(', ')}</div>}</td>
-                      <td><div className="row" style={{ gap: 2 }}><Button size="sm" onClick={() => setEdit(i)}>Edit</Button><Button variant="ghost" size="sm" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}>✕</Button></div></td>
+                      <td><div className="row" style={{ gap: 2 }}><Button size="sm" onClick={() => setEdit(i)}>Edit</Button><Button variant="ghost" size="sm" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}><Icon name="x" size={14} /></Button></div></td>
                     </tr>
                   ))}
                 </tbody>

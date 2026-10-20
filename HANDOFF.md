@@ -17,10 +17,26 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 26 unit/integration tests (node --test)
+npm test         # 28 unit/integration tests (node --test)
 npm run build    # static output in dist/
 ```
-Switch persona with **Switch role/user** in the top bar (admin, sales, planner, production, finance, crew, four client users with different permissions, two vendors, one staffing agency).
+**Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
+
+| Account | Role | Notes |
+|---|---|---|
+| olivia@lumiere.events | Owner / Admin | MFA flag on |
+| rachel@lumiere.events | Owner / Admin | operations admin |
+| marcus@lumiere.events · sofia@lumiere.events | Sales | Sofia covers Europe |
+| ava@lumiere.events · lucas@lumiere.events | Planner | Lucas = Paris office |
+| diego@lumiere.events | Production | |
+| hannah@lumiere.events | Finance | MFA flag on |
+| jamal@lumiere.events | Crew (freelance) | lands on Day-of mode |
+| mei@lumiere.events | Planner | *invited* — first sign-in activates |
+| tyler@lumiere.events | Sales | *suspended* — sign-in refused |
+| emily.carter@… · robert.carter@… · nina@acmerobotics.com · david.lee@acmerobotics.com | Client portal | different permissions |
+| hello@bloomvine.com · ops@soundwave.av · booking@staffpro.events | Vendor / agency portal | |
+
+5 wrong passwords lock an e-mail for 15 minutes (admins can *Reset password* in Settings → Users). The user menu (top right) switches theme and offers a demo-only account switch.
 *Settings → Reset demo data* restores the seed. Public pages (no login): `#/inquiry`, `#/rsvp?event=<id>`.
 
 ## 3. Architecture & data flow
@@ -42,14 +58,15 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 ## 4. Design system (`src/design-system/`)
 | Layer | Contents |
 |---|---|
-| `tokens/` | `tokens.css` (color, typography, spacing, radius, elevation, motion, z-index — the only place raw values live), `tokens.js` mirror |
+| `tokens/` | `tokens.css` (color incl. **full dark palette**, typography, spacing, radius, elevation, motion, z-index — the only place raw values live), `tokens.js` mirror |
 | `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
-| `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
-| `molecules/` | `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
+| `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), **`Icon`** (47 stroke icons — never emoji), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
+| `molecules/` | **`AttentionList`**, `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
 | `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`** |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
-Rules: components reference tokens only; status colors (success/warning/danger/info) are reserved for state; add new atoms to the style guide page.
+Fonts: self-hosted via `@fontsource` (Fraunces display, Hanken Grotesk UI, JetBrains Mono data), imported in `main.jsx`. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
+Rules: components reference tokens only (no literal colors in CSS); status colors (success/warning/danger/info) are reserved for state; add new atoms to the style guide page.
 
 ## 4b. Events are not projects — how the system models that
 An event is a **one-day (or few-day) production assembled from many companies and many temporary people**, so beyond tasks it models:
@@ -61,6 +78,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | Path | Contents |
 |---|---|
 | `src/data/config.js` | Company, FX, tax jurisdictions, catalog (base currency), payment schedules, cancellation policies, contract template, **Event Types** (segment configuration), email templates, automations, QuickBooks/Xero mapping, roles, client permissions, lost reasons |
+| `src/data/accounts.js` | mock credentials, lockout policy, account profiles/statuses |
 | `src/data/seed.js` | `buildSeed()` — users, clients, vendors, staff, 14 events across all stages (relative to today) |
 | `src/lib/pricing.js` | fixed / per_guest / percentage lines, optional items, US sales tax (service-fee taxability per jurisdiction), EU/UK/CH VAT + B2B reverse charge, `diffProposals` |
 | `src/lib/contracts.js` | payment schedule from template, cancellation table, template variables |
@@ -77,7 +95,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
 | `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`, `workforce`) |
-| `src/pages/*.jsx` | Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
+| `src/pages/*.jsx` | **Login**, Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
 | `src/pages/event/*.jsx` | event workspace tabs (Overview, **Timeline**, Proposal, Contract, Planning, Vendors, Guests, Seating, Budget, Change Orders, Run of Show, **People**, **Site plan**, Crew shifts, Finance, Messages, Post-Event, Activity) + `DecorPanel` |
 | `tests/logic.test.js` | logic + store flow tests |
 
@@ -102,10 +120,11 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | §4.13 communication & automation | `Automation.jsx`, `MessagesTab.jsx` (template composer), `system.js#SYSTEM_TICK` |
 | §4.14 post-event | `PostEventTab.jsx`, `ops.js` |
 | §4.15 reporting (with segment/date filters) | `Reports.jsx`, `Finance.jsx`, `Dashboard.jsx` |
-| §2 user management | `Settings.jsx` → Users & roles |
+| §2 user management + mock login | `Login.jsx`, `system.js#LOGIN/LOGOUT`, `accounts.js`, `Settings.jsx` → Users (status, last sign-in, reset, suspend) |
 | §8 Decor Inventory integration | `decorApi.js`, `DecorPanel.jsx`, effects in `AppStore.jsx` |
 
 ## 7. Demo script
+0. **Sign in**: try a wrong password a few times on Marcus (lockout warning), Tyler (suspended), then sign in as Olivia.
 1. **Admin** dashboard → attention list (expiring holds, overdue invoices, exception CO, guarantee warning, vendor compliance). Switch to **Hannah (finance)** / **Diego (production)** to see role-tailored dashboards.
 2. **CRM** → *Simulate marketplace lead* or open *Public inquiry form* → open the lead → *Place hold* → advance → Proposal *Build* → *Send* → *Record acceptance* → *Client PDF* → Contract *Generate* → *Send* → e-sign → Finance *Record payment* → 🔒 date locked → Planning.
 3. **Calendar**: release Stellar's hold #1 → Nguyen promoted, email in Communication → Outbox.
@@ -125,4 +144,5 @@ An event is a **one-day (or few-day) production assembled from many companies an
 - Static FX rates (Settings); FX locked per invoice (`fxRateToUSD`); catalog in base currency, converted when lines are added.
 - Revenue is recognized when stage ≥ `post_event` (or after a client cancellation).
 - RBAC is enforced in the UI and selected reducers — a real backend must enforce every capability server-side.
+- Authentication is mock: plain-text passwords in seed data, client-side lockout, no sessions/tokens/SSO/MFA. Replace with a real identity provider (hashed credentials, server sessions, SSO, MFA) before any real use.
 - See `docs/FEATURE_REVIEW.md` → *Deferred* for the backlog.

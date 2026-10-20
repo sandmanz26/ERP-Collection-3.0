@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Badge, StatusBadge, PillSelect, Alert, Button, QrCode, MobileTemplate, Card } from '../design-system/index.js';
+import { Badge, StatusBadge, PillSelect, Alert, Button, QrCode, MobileTemplate, Card, Icon } from '../design-system/index.js';
 import { sortRos } from '../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../lib/dates.js';
 import { ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
@@ -32,9 +32,9 @@ export default function DayOf() {
       <div className="page-head">
         <div className="grow"><h1>Day-of mode</h1><div className="muted">Mobile view for coordinators & crew. Works offline: toggle the connection to simulate a venue with no signal — actions are stored locally and synced when back online.</div></div>
         <select value={ev.id} onChange={(e) => nav(`/dayof/${e.target.value}`)}>{candidates.map((e) => <option key={e.id} value={e.id}>{e.name} — {fmtDate(e.date)}</option>)}</select>
-        <Button variant={state.online ? 'secondary' : 'danger-solid'} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? '📶 Online — simulate offline' : '📵 Offline — reconnect & sync'}</Button>
+        <Button variant={state.online ? 'secondary' : 'danger-solid'} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? <><Icon name="wifi" /> Online · simulate offline</> : <><Icon name="wifiOff" /> Offline · reconnect and sync</>}</Button>
       </div>
-      <div className="grid" style={{ gridTemplateColumns: user.role === 'crew' ? '1fr' : 'minmax(360px, 430px) minmax(0, 1fr)', alignItems: 'start' }}>
+      <div className={`grid dayof-grid ${user.role === 'crew' ? 'solo' : ''}`}>
       <MobileTemplate title={ev.name} status={<Badge tone={state.online ? 'ok' : 'danger'}>{state.online ? 'online' : `offline · ${state.offlineQueue.length} queued`}</Badge>}>
           <div>
             <div className="row between mb"><span className="muted">{fmtDate(ev.date, { weekday: 'short' })} · {ev.venue?.name}</span><span className="badge">{user.name.split(' ')[0]}</span></div>
@@ -57,7 +57,7 @@ export default function DayOf() {
                       <div className="time">{i.start}<div className="faint" style={{ fontSize: 10, fontWeight: 400 }}>→{addMinutes(i.start, i.duration)}</div></div>
                       <div>
                         <b>{i.activity}</b> {i.track === 'production' && <Badge tone="warn">prod</Badge>}
-                        <div className="faint" style={{ fontSize: 11.5 }}>{i.location} · {state.staff.find((s) => s.id === i.ownerStaffId)?.name}{i.cue && <> · 🎵 {i.cue}</>}</div>
+                        <div className="faint" style={{ fontSize: 11.5 }}>{i.location} · {state.staff.find((s) => s.id === i.ownerStaffId)?.name}{i.cue && <> · <Icon name="music" size={11} /> {i.cue}</>}</div>
                         <div className="row" style={{ marginTop: 4, gap: 4 }}>
                           {i.liveStatus !== 'in_progress' && i.liveStatus !== 'done' && <Button variant="primary" size="sm" onClick={() => live(i.id, 'in_progress')}>Start</Button>}
                           {i.liveStatus === 'in_progress' && <Button variant="success" size="sm" onClick={() => live(i.id, 'done')}>Done</Button>}
@@ -98,7 +98,7 @@ function CheckIn({ ev }) {
           {h.guests.map((g) => (
             <div key={g.id} className="row between" style={{ fontSize: 13 }}>
               <span>{g.name} {g.dietary && <Badge tone="warn">{g.dietary}</Badge>}</span>
-              <Button size="sm" variant={g.checkedIn ? 'success' : 'secondary'} onClick={() => act('GUEST_CHECKIN', { eventId: ev.id, guestId: g.id, value: !g.checkedIn, via: q && h.code.toLowerCase() === q.toLowerCase() ? 'QR' : 'manual' })}>{g.checkedIn ? '✓ in' : 'Check in'}</Button>
+              <Button size="sm" variant={g.checkedIn ? 'success' : 'secondary'} onClick={() => act('GUEST_CHECKIN', { eventId: ev.id, guestId: g.id, value: !g.checkedIn, via: q && h.code.toLowerCase() === q.toLowerCase() ? 'QR' : 'manual' })}>{g.checkedIn ? <><Icon name="check" size={12} /> In</> : 'Check in'}</Button>
             </div>
           ))}
         </div>
@@ -153,7 +153,7 @@ function CrewCheckIn({ ev }) {
                 <span>{w.name} {w.status === 'no_show' && <Badge tone="danger">no-show</Badge>}</span>
                 <span className="row" style={{ gap: 4 }}>
                   {w.status !== 'checked_in' && w.status !== 'no_show' && <Button size="sm" onClick={() => act('CREW_CHECKIN', { eventId: ev.id, code: w.credentialCode })}>In</Button>}
-                  {w.status === 'checked_in' && <Button size="sm" variant="success" onClick={() => act('CREW_CHECKIN', { eventId: ev.id, code: w.credentialCode, direction: 'out' })}>✓ Out</Button>}
+                  {w.status === 'checked_in' && <Button size="sm" variant="success" onClick={() => act('CREW_CHECKIN', { eventId: ev.id, code: w.credentialCode, direction: 'out' })}><Icon name="check" size={12} /> Out</Button>}
                   {w.status !== 'checked_in' && w.status !== 'no_show' && <Button size="sm" variant="ghost" onClick={() => act('CREW_NO_SHOW', { eventId: ev.id, workerId: w.id })}>No-show</Button>}
                 </span>
               </div>

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Icon } from '../atoms/Icon.jsx';
 
 /** Organism: Modal dialog. Esc and backdrop click close it. size = narrow | default | wide. */
 export function Modal({ title, onClose, children, footer, wide, size }) {
@@ -13,7 +14,7 @@ export function Modal({ title, onClose, children, footer, wide, size }) {
       <div className={`modal ${cls}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="modal-head">
           <h3>{title}</h3>
-          <button className="btn ghost" onClick={onClose} aria-label="Close">✕</button>
+          <button className="btn ghost" onClick={onClose} aria-label="Close"><Icon name="x" size={16} /></button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}

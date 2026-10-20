@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
 import { useStore } from './store/AppStore.jsx';
@@ -21,6 +21,7 @@ import VendorPortal from './pages/VendorPortal.jsx';
 import RsvpPublic from './pages/RsvpPublic.jsx';
 import InquiryPublic from './pages/InquiryPublic.jsx';
 import DesignSystem from './pages/DesignSystem.jsx';
+import Login from './pages/Login.jsx';
 
 function Guard({ path, children }) {
   const { user } = useStore();
@@ -30,13 +31,20 @@ function Guard({ path, children }) {
 }
 
 export default function App() {
+  const { user, state } = useStore();
+  // Apply the theme choice: "system" leaves data-theme unset so prefers-color-scheme decides.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (state.theme === 'light' || state.theme === 'dark') root.dataset.theme = state.theme;
+    else delete root.dataset.theme;
+  }, [state.theme]);
   return (
     <Routes>
       <Route path="/rsvp" element={<RsvpPublic />} />
       <Route path="/inquiry" element={<InquiryPublic />} />
       <Route
         path="*"
-        element={
+        element={!user ? <Login /> : (
           <AppShell>
             <Routes>
               <Route path="/" element={<Guard path="/"><Dashboard /></Guard>} />
@@ -60,7 +68,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AppShell>
-        }
+        )}
       />
     </Routes>
   );

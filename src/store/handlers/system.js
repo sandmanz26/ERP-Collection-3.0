@@ -1,5 +1,7 @@
 import { buildSeed } from '../../data/seed.js';
 import { visibleNotifications } from '../../lib/permissions.js';
+import { MAX_FAILED_LOGINS, LOCKOUT_MINUTES } from '../../data/accounts.js';
+import { assert } from './common.js';
 import { addDays, diffDays, fmtDate } from '../../lib/dates.js';
 import { fmtMoney } from '../../lib/money.js';
 import { invoiceStatus, invoiceBalance } from '../../lib/derived.js';
@@ -8,9 +10,48 @@ import { automationsFor, sendTemplateEmail, eventVars, clientEmail, promoteHolds
 import { createInvoiceForSchedule } from './finance.js';
 
 export const systemHandlers = {
+  /**
+   * Mock sign-in. Wrong credentials are counted per e-mail; after MAX_FAILED_LOGINS the account is locked for
+   * LOCKOUT_MINUTES. Failures return { error } so the attempt counter persists while the UI shows the message.
+   */
+  LOGIN(ctx, { email, password }) {
+    const { state } = ctx;
+    const key = String(email || '').trim().toLowerCase();
+    const u = state.users.find((x) => x.email.toLowerCase() === key);
+    const att = (state.loginAttempts ??= {})[key] ?? { count: 0, lockedUntil: null };
+    if (att.lockedUntil && new Date(att.lockedUntil) > new Date()) {
+      return { summary: `Sign-in blocked for ${key}: account temporarily locked`, error: `Too many failed attempts. Try again after ${new Date(att.lockedUntil).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} or ask an admin to reset your password.`, actor: key };
+    }
+    if (!u || u.password !== password) {
+      att.count += 1;
+      if (att.count >= MAX_FAILED_LOGINS) att.lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000).toISOString();
+      state.loginAttempts[key] = att;
+      const left = MAX_FAILED_LOGINS - att.count;
+      return { summary: `Failed sign-in for ${key} (${att.count}/${MAX_FAILED_LOGINS})`, error: left > 0 ? `That email and password don't match. ${left} attempt${left === 1 ? '' : 's'} left before the account is locked.` : `Too many failed attempts. The account is locked for ${LOCKOUT_MINUTES} minutes.`, actor: key };
+    }
+    if (u.status === 'suspended') return { summary: `Sign-in refused for ${u.name}: account suspended`, error: 'This account is suspended. Contact your administrator.', actor: key };
+    delete state.loginAttempts[key];
+    if (u.status === 'invited') u.status = 'active';
+    u.lastLoginAt = new Date().toISOString();
+    state.currentUserId = u.id;
+    return { summary: `${u.name} signed in (${u.role})`, actorId: u.id };
+  },
+  LOGOUT(ctx) {
+    const name = ctx.user?.name;
+    ctx.state.currentUserId = null;
+    return `${name} signed out`;
+  },
+  /** Demo-only shortcut from the user menu: jump to another seeded account without typing a password. */
   SET_USER(ctx, { userId }) {
+    const u = ctx.state.users.find((x) => x.id === userId);
+    assert(u && u.status !== 'suspended', 'That account is suspended');
     ctx.state.currentUserId = userId;
-    return `Switched active user to ${ctx.state.users.find((u) => u.id === userId)?.name}`;
+    u.lastLoginAt = new Date().toISOString();
+    return { summary: `Switched to demo account ${u.name} (${u.role})`, actorId: u.id };
+  },
+  THEME_SET(ctx, { theme }) {
+    ctx.state.theme = theme;
+    return { skipLog: true };
   },
   SET_ONLINE(ctx, { online }) {
     ctx.state.online = online;

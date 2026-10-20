@@ -312,3 +312,33 @@ test('postponing moves staffing plan and access windows', () => {
   assert.ok(after.positions.every((p) => p.date === newDate));
   assert.equal(after.production.accessWindows[0].date, newDate);
 });
+
+// ---------- mock authentication ----------
+test('login: success, wrong password counter, lockout, suspended account, logout', () => {
+  let s = { ...buildSeed(), effects: [] };
+  assert.equal(s.currentUserId, null, 'seed starts signed out');
+  s = reducer(s, { type: 'LOGIN', payload: { email: 'OLIVIA@lumiere.events', password: 'demo1234' } });
+  assert.equal(s.currentUserId, 'u_admin');
+  assert.equal(s.activityLog[0].userName, 'Olivia Hart');
+  s = reducer(s, { type: 'LOGOUT', payload: {} });
+  assert.equal(s.currentUserId, null);
+  for (let i = 0; i < 5; i++) s = reducer(s, { type: 'LOGIN', payload: { email: 'marcus@lumiere.events', password: 'nope' } });
+  assert.ok(s.lastError.message.includes('locked'));
+  assert.equal(s.activityLog[0].status, 'rejected');
+  assert.equal(s.activityLog[0].userName, 'marcus@lumiere.events');
+  s = reducer(s, { type: 'LOGIN', payload: { email: 'marcus@lumiere.events', password: 'demo1234' } });
+  assert.equal(s.currentUserId, null, 'correct password is refused while locked');
+  s = reducer(s, { type: 'LOGIN', payload: { email: 'tyler@lumiere.events', password: 'demo1234' } });
+  assert.ok(s.lastError.message.includes('suspended'));
+  s = reducer(s, { type: 'LOGIN', payload: { email: 'mei@lumiere.events', password: 'demo1234' } });
+  assert.equal(s.users.find((u) => u.id === 'u_invited').status, 'active', 'first sign-in activates an invited account');
+});
+
+test('admin password reset clears a lockout', () => {
+  let s = { ...buildSeed(), effects: [] };
+  for (let i = 0; i < 5; i++) s = reducer(s, { type: 'LOGIN', payload: { email: 'hannah@lumiere.events', password: 'x' } });
+  s = run(s, 'USER_PASSWORD_RESET', { userId: 'u_fin' }, 'u_admin');
+  s = reducer(s, { type: 'LOGOUT', payload: {} });
+  s = reducer(s, { type: 'LOGIN', payload: { email: 'hannah@lumiere.events', password: 'welcome123' } });
+  assert.equal(s.currentUserId, 'u_fin');
+});

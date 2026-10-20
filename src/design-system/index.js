@@ -3,11 +3,12 @@
 export { tokens } from './tokens/tokens.js';
 // atoms
 export { Button } from './atoms/Button.jsx';
+export { Icon, ICON_NAMES } from './atoms/Icon.jsx';
 export { Badge } from './atoms/Badge.jsx';
 export { Input, Select, Textarea, Checkbox } from './atoms/Inputs.jsx';
 export { Money, Swatch, ProgressBar, Spinner, Avatar, QrCode } from './atoms/Display.jsx';
 // molecules
-export { Field, CommitInput, StageBadge, StatusBadge, StatTile, Alert, Tabs, PillSelect, KeyValue, EmptyState, SearchInput, ConfirmButton, Toast } from './molecules/index.jsx';
+export { Field, CommitInput, StageBadge, StatusBadge, StatTile, Alert, Tabs, PillSelect, KeyValue, EmptyState, SearchInput, ConfirmButton, Toast, AttentionList } from './molecules/index.jsx';
 // organisms
 export { Card, PageHeader } from './organisms/Card.jsx';
 export { Modal } from './organisms/Modal.jsx';

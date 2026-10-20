@@ -62,23 +62,24 @@ export function reducer(state, action) {
     const res = handler(ctx, action.payload || {});
     const r = typeof res === 'string' ? { summary: res } : res || {};
     if (r.skipLog) return { ...draft, lastError: null };
+    const actor = r.actorId ? draft.users.find((u) => u.id === r.actorId) : user;
     const offline = draft.online === false && action.type !== 'SET_ONLINE';
     draft.activityLog.unshift({
       id: `log_${Date.now().toString(36)}${(++seq).toString(36)}`,
       ts: new Date().toISOString(),
-      userId: user?.id ?? 'system',
-      userName: action.system ? 'System (automation)' : user?.name ?? 'System',
-      role: action.system ? 'system' : user?.role ?? 'system',
+      userId: actor?.id ?? 'system',
+      userName: action.system ? 'System (automation)' : actor?.name ?? r.actor ?? 'Anonymous',
+      role: action.system ? 'system' : actor?.role ?? (r.actor ? 'anonymous' : 'system'),
       type: action.type,
       eventId: r.eventId ?? action.payload?.eventId ?? null,
       summary: r.summary ?? action.type,
-      status: 'ok',
+      status: r.error ? 'rejected' : 'ok',
       sync: offline ? 'pending' : undefined,
     });
     if (offline) draft.offlineQueue.push({ type: action.type, at: new Date().toISOString() });
     draft.activityLog = draft.activityLog.slice(0, MAX_LOG);
-    draft.lastError = null;
-    draft.lastOk = { type: action.type, ts: Date.now(), summary: r.summary };
+    draft.lastError = r.error ? { message: r.error, ts: Date.now(), type: action.type } : null;
+    draft.lastOk = r.error ? null : { type: action.type, ts: Date.now(), summary: r.summary };
     return draft;
   } catch (err) {
     if (!(err instanceof BusinessError)) console.error(err);
@@ -89,7 +90,7 @@ export function reducer(state, action) {
         id: `log_${Date.now().toString(36)}${(++seq).toString(36)}`,
         ts: new Date().toISOString(),
         userId: user?.id ?? 'system',
-        userName: user?.name ?? 'System',
+        userName: user?.name ?? action.payload?.email ?? 'Anonymous',
         role: user?.role ?? 'system',
         type: action.type,
         eventId: action.payload?.eventId ?? null,
@@ -98,7 +99,7 @@ export function reducer(state, action) {
       },
       ...state.activityLog,
     ].slice(0, MAX_LOG);
-    next.lastError = { message: err.message, ts: Date.now() };
+    next.lastError = { message: err.message, ts: Date.now(), type: action.type };
     next.effects = [];
     return next;
   }

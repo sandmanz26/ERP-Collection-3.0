@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, CommitInput, EmptyState, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, CommitInput, EmptyState, Button, useDialog, Icon } from '../../design-system/index.js';
 import { Moodboard } from './ProposalTab.jsx';
 import DecorPanel from './DecorPanel.jsx';
 import { taskBlocked } from '../../lib/tasks.js';
@@ -123,7 +123,7 @@ function Functions({ ev }) {
               <td><CommitInput type="time" value={s.start} onCommit={(v) => upd(s.id, { start: v })} /></td>
               <td><CommitInput type="time" value={s.end} onCommit={(v) => upd(s.id, { end: v })} /></td>
               <td className="num"><CommitInput className="inline" type="number" value={s.guestCount} onCommit={(v) => upd(s.id, { guestCount: v })} /></td>
-              <td><Button variant="ghost" size="sm" onClick={() => act('SUBEVENT_REMOVE', { eventId: ev.id, subEventId: s.id })}>✕</Button></td>
+              <td><Button variant="ghost" size="sm" onClick={() => act('SUBEVENT_REMOVE', { eventId: ev.id, subEventId: s.id })}><Icon name="x" size={14} /></Button></td>
             </tr>
           ))}
         </tbody>
@@ -191,7 +191,7 @@ function Docs({ ev }) {
       </div>
       <table className="t">
         <thead><tr><th>Name</th><th>Type</th><th>Uploaded</th><th>By</th><th>Expires</th></tr></thead>
-        <tbody>{ev.documents.map((d) => <tr key={d.id}><td>📄 {d.name}</td><td>{d.type}</td><td>{fmtDateTime(d.at)}</td><td>{state.users.find((u) => u.id === d.uploadedBy)?.name}</td><td>{d.expiresAt ? <span style={{ color: diffDays(today, d.expiresAt) < 30 ? 'var(--danger)' : undefined }}>{fmtDate(d.expiresAt)}</span> : '—'}</td></tr>)}</tbody>
+        <tbody>{ev.documents.map((d) => <tr key={d.id}><td><Icon name="file" size={14} /> {d.name}</td><td>{d.type}</td><td>{fmtDateTime(d.at)}</td><td>{state.users.find((u) => u.id === d.uploadedBy)?.name}</td><td>{d.expiresAt ? <span style={{ color: diffDays(today, d.expiresAt) < 30 ? 'var(--danger)' : undefined }}>{fmtDate(d.expiresAt)}</span> : '—'}</td></tr>)}</tbody>
       </table>
     </Card>
   );

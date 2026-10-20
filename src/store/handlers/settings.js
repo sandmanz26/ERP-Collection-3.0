@@ -1,7 +1,9 @@
+import { assert } from './common.js';
+
 // Admin configuration handlers.
 export const settingsHandlers = {
   USER_CREATE(ctx, { data }) {
-    const u = { id: ctx.id('u'), permissions: data.role === 'client' ? ['view_all', 'message'] : undefined, ...data };
+    const u = { id: ctx.id('u'), permissions: data.role === 'client' ? ['view_all', 'message'] : undefined, status: 'invited', password: 'welcome123', lastLoginAt: null, ...data };
     ctx.state.users.push(u);
     return `User invited: ${u.name} (${u.role})`;
   },
@@ -9,6 +11,18 @@ export const settingsHandlers = {
     const u = ctx.state.users.find((x) => x.id === userId);
     Object.assign(u, patch);
     return `User ${u.name} updated (${Object.keys(patch).join(', ')})`;
+  },
+  USER_PASSWORD_RESET(ctx, { userId }) {
+    const u = ctx.state.users.find((x) => x.id === userId);
+    u.password = 'welcome123';
+    delete (ctx.state.loginAttempts ?? {})[u.email.toLowerCase()];
+    return `Password reset for ${u.name} (temporary password issued, lockout cleared)`;
+  },
+  USER_STATUS(ctx, { userId, status }) {
+    const u = ctx.state.users.find((x) => x.id === userId);
+    assert(status !== 'suspended' || u.id !== ctx.user.id, 'You cannot suspend your own account');
+    u.status = status;
+    return `${u.name} is now ${status}`;
   },
   CATALOG_ADD(ctx, { data }) {
     const c = { id: ctx.id('svc'), qty: 1, pct: 0, costPct: 0, ...data };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Modal, Field, useForm, Alert, PillSelect, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Modal, Field, useForm, Alert, PillSelect, Button, useDialog, Icon } from '../../design-system/index.js';
 import { vendorCompliance } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { round2 } from '../../lib/money.js';
@@ -54,7 +54,7 @@ export default function VendorsTab({ ev }) {
                           </div>
                           <div>
                             <h4>Vendor invoices & logistics</h4>
-                            {b.vendorInvoices.length ? b.vendorInvoices.map((vi) => <div key={vi.id}>📄 {vi.name} — <Money value={vi.amount} currency={cur} /> <span className="faint">{fmtDateTime(vi.at)}</span></div>) : <div className="faint">No invoices uploaded</div>}
+                            {b.vendorInvoices.length ? b.vendorInvoices.map((vi) => <div key={vi.id}><Icon name="file" size={14} /> {vi.name} — <Money value={vi.amount} currency={cur} /> <span className="faint">{fmtDateTime(vi.at)}</span></div>) : <div className="faint">No invoices uploaded</div>}
                             <div className="grid g2 mt">
                               <Field label="Load-in"><input type="datetime-local" defaultValue={b.loadIn} onBlur={(e) => e.target.value !== b.loadIn && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { loadIn: e.target.value } })} /></Field>
                               <Field label="Load-out"><input type="datetime-local" defaultValue={b.loadOut} onBlur={(e) => e.target.value !== b.loadOut && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { loadOut: e.target.value } })} /></Field>
@@ -95,7 +95,7 @@ function RfqBlock({ ev, r }) {
             const resp = r.responses.find((x) => x.vendorId === vid);
             return (
               <tr key={vid} style={r.awardedVendorId === vid ? { background: 'var(--ok-soft)' } : undefined}>
-                <td>{v.name}</td><td>★ {v.rating}</td>
+                <td>{v.name}</td><td><Icon name="star" size={12} /> {v.rating}</td>
                 <td className="num">{resp ? <><Money value={resp.amount} currency={ev.currency} /> {resp.amount === best && <Badge tone="ok">lowest</Badge>}</> : <span className="faint">awaiting</span>}</td>
                 <td>{resp?.notes}</td>
                 <td>

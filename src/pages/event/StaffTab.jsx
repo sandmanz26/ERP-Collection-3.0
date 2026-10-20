@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Modal, Field, useForm, Alert, Button } from '../../design-system/index.js';
+import { Card, Badge, Money, Modal, Field, useForm, Alert, Button, Icon } from '../../design-system/index.js';
 import { shiftCost, findConflicts, LABOR_RULES } from '../../lib/staff.js';
 import { fmtDate } from '../../lib/dates.js';
 import { sum } from '../../lib/money.js';
@@ -23,12 +23,12 @@ export default function StaffTab({ ev }) {
                 <td>{st?.name}</td>
                 <td><Badge tone={st?.type === 'freelancer' ? 'warn' : 'info'}>{st?.type}</Badge></td>
                 <td>{s.role}</td><td>{fmtDate(s.date)}</td><td>{s.start}–{s.end}</td>
-                <td className="faint" style={{ fontSize: 12 }}>{s.clockIn ? s.clockIn.slice(11, 16) : '—'} / {s.clockOut ? s.clockOut.slice(11, 16) : '—'}{s.clockLocation && <div>📍 {s.clockLocation}</div>}</td>
+                <td className="faint" style={{ fontSize: 12 }}>{s.clockIn ? s.clockIn.slice(11, 16) : '—'} / {s.clockOut ? s.clockOut.slice(11, 16) : '—'}{s.clockLocation && <div><Icon name="pin" size={11} /> {s.clockLocation}</div>}</td>
                 <td className="num">{c.hours}</td>
                 <td style={{ fontSize: 11.5 }}>{LABOR_RULES[st?.laborRegion]?.label}{c.warnings.map((w) => <div key={w} style={{ color: 'var(--warn)' }}>{w}</div>)}</td>
                 <td className="num"><Money value={c.cost} currency={ev.currency} /></td>
                 <td>{s.confirmed ? <Badge tone="ok">confirmed</Badge> : <><Badge tone="warn">awaiting</Badge><Button size="sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: s.id })}>confirm</Button></>}</td>
-                <td><Button variant="ghost" size="sm" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}>✕</Button></td>
+                <td><Button variant="ghost" size="sm" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}><Icon name="x" size={14} /></Button></td>
               </tr>
             ))}
           </tbody>

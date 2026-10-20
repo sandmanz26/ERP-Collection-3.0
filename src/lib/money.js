@@ -1,8 +1,9 @@
 export const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF'];
 
-export function fmtMoney(amount, currency = 'USD') {
+/** opts.whole drops cents (KPI tiles, summaries); line items and invoices keep cents. */
+export function fmtMoney(amount, currency = 'USD', opts = {}) {
   const n = Number(amount) || 0;
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: opts.whole ? 0 : 2, minimumFractionDigits: opts.whole ? 0 : undefined }).format(n);
 }
 
 export function round2(n) {

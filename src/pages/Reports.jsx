@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, BarChart, Money, Badge, download, Button, PillSelect } from '../design-system/index.js';
+import { Card, Tabs, BarChart, Money, Badge, download, Button, PillSelect, Icon } from '../design-system/index.js';
 import { eventFinancials, leakage, toUSD, proposalTotals, vendorScore, vendorCompliance } from '../lib/derived.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { stageIndex, isBookedOrLater } from '../lib/lifecycle.js';
@@ -142,7 +142,7 @@ export default function Reports() {
         <Card title="Vendor performance">
           <table className="t">
             <thead><tr><th>Vendor</th><th>Category</th><th className="num">Bookings</th><th className="num">Score</th><th>Reviews</th><th>Compliance</th></tr></thead>
-            <tbody>{vendors.sort((a, b) => b.score - a.score).map(({ v, score, bookings, issues }) => <tr key={v.id}><td>{v.name}</td><td>{v.category}</td><td className="num">{bookings}</td><td className="num">★ {score}</td><td>{v.performance.map((p) => `${p.onTime}/${p.quality}`).join(', ') || '—'}</td><td>{issues.length ? issues.map((i) => <Badge key={i.text} tone={i.level}>{i.text}</Badge>) : <Badge tone="ok">OK</Badge>}</td></tr>)}</tbody>
+            <tbody>{vendors.sort((a, b) => b.score - a.score).map(({ v, score, bookings, issues }) => <tr key={v.id}><td>{v.name}</td><td>{v.category}</td><td className="num">{bookings}</td><td className="num"><Icon name="star" size={12} /> {score}</td><td>{v.performance.map((p) => `${p.onTime}/${p.quality}`).join(', ') || '—'}</td><td>{issues.length ? issues.map((i) => <Badge key={i.text} tone={i.level}>{i.text}</Badge>) : <Badge tone="ok">OK</Badge>}</td></tr>)}</tbody>
           </table>
         </Card>
       )}

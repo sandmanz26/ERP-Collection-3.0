@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, Button } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, Button, Icon } from '../../design-system/index.js';
 import { clientOf, activeProposal } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -57,7 +57,7 @@ export default function ContractTab({ ev, et }) {
             <input placeholder="Name" value={s.name} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
             <input placeholder="Email" value={s.email} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))} />
             <input placeholder="Role" value={s.role} onChange={(e) => setSigners(signers.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)))} />
-            <Button variant="ghost" size="sm" onClick={() => setSigners(signers.filter((_, j) => j !== i))}>✕</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSigners(signers.filter((_, j) => j !== i))}><Icon name="x" size={14} /></Button>
           </div>
         ))}
         <div className="row">
@@ -76,7 +76,7 @@ export default function ContractTab({ ev, et }) {
   return (
     <div className="grid" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(280px,2fr)' }}>
       <Card title="Contract document" actions={<StatusBadge status={c.status} />}>
-        {c.immutable && <Alert tone="success">🔒 Signed {fmtDateTime(c.signedAt)} — this contract is immutable. Post-signature changes only via Change Orders. Original value <Money value={c.originalTotal} currency={c.currency} />, current value incl. approved COs <Money value={c.total} currency={c.currency} />.</Alert>}
+        {c.immutable && <Alert tone="success"><Icon name="lock" size={14} /> Signed {fmtDateTime(c.signedAt)} — this contract is immutable. Post-signature changes only via Change Orders. Original value <Money value={c.originalTotal} currency={c.currency} />, current value incl. approved COs <Money value={c.total} currency={c.currency} />.</Alert>}
         <div className="contract-body mt">{c.body}</div>
       </Card>
       <div>

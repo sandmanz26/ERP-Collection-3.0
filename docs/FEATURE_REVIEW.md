@@ -72,3 +72,20 @@ User feedback: events involve many people (often outsourced), many more vendors 
 | E7 | No visual of the space. | ✅ Site plan per room (drag elements, vendor footprint, seated counts from the seating chart); vendors see their own footprint. |
 
 Still deferred: multi-event crew pooling (one agency crew across two same-day events), union rules beyond a rate, per-zone access scanning hardware, CAD/PDF floor-plan import, Gantt drag for vendor booked windows (only ROS items are draggable today).
+
+
+---
+
+## Addendum (#024–#026) — Login & UI/UX review
+
+| # | Finding | Status |
+|---|---|---|
+| L1 | No login: anyone could switch to any role from a dropdown. | ✅ Mock sign-in with credentials, statuses (active/invited/suspended), lockout after 5 failures, audit of every attempt; admin reset/suspend. Account switch kept only as a labelled demo tool in the user menu. |
+| U7 | Emoji used as icons (inconsistent rendering, no accessible names). | ✅ `Icon` atom; all emoji/glyph icons replaced. |
+| U8 | Generic default typeface; no dark theme; literal colors in CSS. | ✅ Self-hosted type pairing; full token-based dark palette with System/Light/Dark switch. |
+| U9 | 18 workspace tabs in one overflowing row. | ✅ Five phase groups with attention dots. |
+| U10 | Dashboard attention area was a wall of filled red/yellow boxes. | ✅ `AttentionList` with severity stripes, danger first, collapsible. |
+| U11 | Page scrolled sideways at phone width; sidebar unusable on mobile. | ✅ Drawer navigation, overflow fixes; verified 0 horizontal scroll on every route at 400px. |
+| U12 | No way to find a record quickly. | ✅ Global search with `/` shortcut and keyboard navigation. |
+
+Deferred: real identity provider (SSO, MFA, server sessions), per-user saved preferences on a server, i18n string extraction.

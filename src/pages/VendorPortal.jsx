@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog, Gantt, hourTicks, SitePlan, PillSelect } from '../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog, Gantt, hourTicks, SitePlan, PillSelect, Icon } from '../design-system/index.js';
 import { dayTimeline, productionIssues } from '../lib/timeline.js';
 import { positionFill, WORKER_STATUSES } from '../lib/workforce.js';
 import { sortRos, rosForVendor } from '../lib/ros.js';
@@ -49,7 +49,7 @@ export default function VendorPortal() {
                 <h4>Your payments</h4>
                 {b.model === 'direct' ? <div className="faint">Direct contract — invoice the client directly.</div> : b.payments.map((p) => <div key={p.id} className="row between"><span>{p.label} · {fmtDate(p.dueDate)}</span><span><Money value={p.amount} currency={e.currency} /> <StatusBadge status={p.status} /></span></div>)}
                 <h4 className="mt">Invoices uploaded</h4>
-                {b.vendorInvoices.map((vi) => <div key={vi.id}>📄 {vi.name} — <Money value={vi.amount} currency={e.currency} /></div>)}
+                {b.vendorInvoices.map((vi) => <div key={vi.id}><Icon name="file" size={14} /> {vi.name} — <Money value={vi.amount} currency={e.currency} /></div>)}
                 <div className="row mt"><input type="file" onChange={async (ev) => { const f = ev.target.files?.[0]; if (!f) return; const amount = await dialog.prompt({ title: `Upload ${f.name}`, label: 'Invoice amount', type: 'number', defaultValue: b.cost }); if (amount === null) return; act('VENDOR_INVOICE_UPLOAD', { eventId: e.id, bookingId: b.id, name: f.name, amount: Number(amount) }); }} /></div>
               </div>
             </div>

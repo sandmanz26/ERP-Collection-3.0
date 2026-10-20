@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Modal, Field, useForm, Badge, Money, PillSelect, Button } from '../design-system/index.js';
+import { Card, Modal, Field, useForm, Badge, Money, PillSelect, Button, Icon } from '../design-system/index.js';
 import { AvailabilityCheck } from '../components/Availability.jsx';
 import { stageLabel, transitionBlockers } from '../lib/lifecycle.js';
 import { fmtDate, diffDays } from '../lib/dates.js';
@@ -40,7 +40,7 @@ export default function Pipeline() {
           <h1>CRM & Sales Pipeline</h1>
           <div className="muted">Drag cards between stages. Transitions are validated (e.g. Booked requires a fully signed contract).</div>
         </div>
-        <a className="btn" href="#/inquiry" target="_blank" rel="noreferrer">Public inquiry form ↗</a>
+        <a className="btn" href="#/inquiry" target="_blank" rel="noreferrer">Public inquiry form <Icon name="external" size={13} /></a>
         <Button onClick={simulateMarketplace}>Simulate marketplace lead</Button>
         <Button variant="primary" onClick={() => setShowNew(true)}>+ New inquiry</Button>
       </div>

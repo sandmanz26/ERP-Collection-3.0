@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StageBadge, ConfirmButton, Button, Gantt, dayTicks } from '../design-system/index.js';
+import { Card, Badge, StageBadge, ConfirmButton, Button, Gantt, dayTicks, Icon } from '../design-system/index.js';
 import { AvailabilityCheck } from '../components/Availability.jsx';
 import { availability } from '../lib/availability.js';
 import { toISODate, parseDate, fmtDate, diffDays } from '../lib/dates.js';
@@ -47,7 +47,7 @@ export default function CalendarPage() {
               return (
                 <div key={d} className={`day ${d.slice(0, 7) !== month ? 'other' : ''} ${d === today ? 'today' : ''} ${a.status === 'full' ? 'full' : a.holds.length ? 'held' : ''}`} onClick={() => setSel(d)} style={sel === d ? { outline: '2px solid var(--brand)' } : undefined}>
                   <div className="row between"><span className="num">{Number(d.slice(8))}</span><span className="faint">{a.booked.length}/{a.capacity}</span></div>
-                  {a.booked.map((e) => <span key={e.id} className={`chip ${e.dateStatus === 'locked' ? 'locked' : 'hold'}`}>{e.dateStatus === 'locked' ? '🔒' : '⏳'} {e.name}</span>)}
+                  {a.booked.map((e) => <span key={e.id} className={`chip ${e.dateStatus === 'locked' ? 'locked' : 'hold'}`}><Icon name={e.dateStatus === 'locked' ? 'lock' : 'hourglass'} size={10} /> {e.name}</span>)}
                   {a.holds.filter((h) => !a.booked.some((b) => b.id === h.eventId)).map((h) => <span key={h.id} className="chip hold">#{h.priority} {state.events.find((e) => e.id === h.eventId)?.name}</span>)}
                 </div>
               );

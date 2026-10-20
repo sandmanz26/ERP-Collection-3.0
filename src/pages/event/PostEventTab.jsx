@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, KeyValue, StatTile, Button } from '../../design-system/index.js';
+import { Card, Badge, Money, Alert, KeyValue, StatTile, Button, Icon } from '../../design-system/index.js';
 import { closingChecklist, eventFinancials, eventContext } from '../../lib/derived.js';
 import { transitionBlockers, stageIndex } from '../../lib/lifecycle.js';
 import * as decorApi from '../../lib/decorApi.js';
@@ -29,7 +29,7 @@ export default function PostEventTab({ ev }) {
       {!happened && <Alert tone="info">The event hasn't happened yet — this tab becomes the close-out workspace after the event date.</Alert>}
       <div className="grid g2 mt">
         <Card title="Close-out checklist" actions={ev.stage === 'post_event' && <Button variant="primary" disabled={blockers.length > 0} onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'financial_close' })}>Financial close</Button>}>
-          {checklist.map((c) => <div key={c.key} className="row" style={{ padding: '5px 0' }}><span style={{ color: c.done ? 'var(--ok)' : 'var(--ink-3)', fontSize: 16 }}>{c.done ? '☑' : '☐'}</span>{c.label}</div>)}
+          {checklist.map((c) => <div key={c.key} className="row" style={{ padding: '5px 0' }}><span style={{ color: c.done ? 'var(--color-success)' : 'var(--color-ink-3)' }}><Icon name={c.done ? 'checkSquare' : 'square'} size={18} /></span>{c.label}</div>)}
           <div className="row mt">
             <label className="row"><input type="checkbox" checked={!!ev.closing.venueDepositReturned} onChange={(e) => act('CLOSING_UPDATE', { eventId: ev.id, patch: { venueDepositReturned: e.target.checked } })} />Venue security deposit returned</label>
           </div>
@@ -69,10 +69,10 @@ export default function PostEventTab({ ev }) {
         </Card>
         <Card title="Client feedback">
           <div className="row">
-            <Button disabled={ev.closing.surveySent} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { surveySent: true } })}>{ev.closing.surveySent ? 'Survey sent ✓' : 'Send satisfaction survey'}</Button>
-            <Button disabled={ev.closing.reviewRequested} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { reviewRequested: true } })}>{ev.closing.reviewRequested ? 'Review requested ✓' : 'Request review (Google / The Knot)'}</Button>
+            <Button disabled={ev.closing.surveySent} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { surveySent: true } })}>{ev.closing.surveySent ? 'Survey sent' : 'Send satisfaction survey'}</Button>
+            <Button disabled={ev.closing.reviewRequested} onClick={() => act('CLOSING_UPDATE', { eventId: ev.id, patch: { reviewRequested: true } })}>{ev.closing.reviewRequested ? 'Review requested' : 'Request review (Google / The Knot)'}</Button>
           </div>
-          {ev.closing.survey ? <Alert tone="success">★ {ev.closing.survey.rating}/5 — “{ev.closing.survey.comment}”</Alert> : <div className="faint mt">No survey response yet (client answers in the portal).</div>}
+          {ev.closing.survey ? <Alert tone="success"><Icon name="star" size={14} /> {ev.closing.survey.rating}/5 — “{ev.closing.survey.comment}”</Alert> : <div className="faint mt">No survey response yet (client answers in the portal).</div>}
           <h4 className="mt2">Internal vendor ratings</h4>
           <VendorRatings ev={ev} />
         </Card>

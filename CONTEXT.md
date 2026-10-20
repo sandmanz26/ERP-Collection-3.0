@@ -143,3 +143,28 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 
 ### [2026-10-20] #023 — Commit & push attempt
 - Committed the workforce / production / visual-timeline work on `claude/exciting-einstein-b58ibb`. `git push` still fails with HTTP 403 (no GitHub App access to `sandmanz26/ERP-Collection-3.0`); all commits remain local until access is granted.
+
+### [2026-10-20] #024 — New request: mock login for admin & team + UI/UX clean-up with the design skill
+- Request: add mock login data for the admin and team side; re-check the UI so it is clean with good UX; use the design skill.
+- Loaded the `artifact-design` skill as the review lens (fundamentals only — this is an app, not a published artifact): extend the existing design system instead of replacing it, deliberate type pairing (Inter is a generic default), both light & dark themes from tokens, no emoji as icons, summary-before-detail for tool UIs, active-voice copy.
+- Plan: (A) mock accounts + login/logout/session + failed-login & suspended-account handling, all audited; (B) self-hosted fonts + SVG `Icon` atom replacing emoji/glyph icons; (C) dark theme via tokens + theme switch; (D) grouped sidebar, mobile drawer, user menu, global search; (E) grouped event-workspace tabs (18 tabs no longer in one overflowing row); (F) portal hero restyle, screenshot review in light/dark/mobile and fixes.
+
+### [2026-10-20] #025 — Mock authentication (admin & team)
+- `src/data/accounts.js`: `DEMO_PASSWORD` (`demo1234`), lockout policy (5 failures → 15 min), profile data (title, phone, timezone, status, MFA flag) per account, extra team accounts: Rachel Ng (2nd admin), Mei Tan (invited planner), Tyler Grant (suspended former sales).
+- Seed: every user gets `password`, `status`, `lastLoginAt`; state starts signed out (`currentUserId: null`), new `loginAttempts`, `theme`; seed `version: 4`.
+- Handlers: `LOGIN` (case-insensitive email, attempt counter, lockout, suspended refusal, invited → active on first sign-in), `LOGOUT`, `SET_USER` (demo account switch from the user menu; refuses suspended), `THEME_SET`, `USER_PASSWORD_RESET` (temp password, clears lockout), `USER_STATUS` (suspend/reactivate; cannot suspend yourself). `USER_CREATE` now creates *invited* users with a temporary password.
+- Reducer: handlers may return `{ error }` to persist state (e.g. the attempt counter) while reporting a rejection; log rows record the acting account (`actorId`) or the attempted e-mail for anonymous attempts.
+- UI: `pages/Login.jsx` (sign-in form with inline validation, show/hide password, lockout notice, one-click demo accounts for team and portals, mock-auth disclaimer); `App.jsx` renders Login when signed out and applies the theme; Settings → Users shows status, MFA, failed attempts, last sign-in, Reset password, Suspend/Reactivate.
+- Tests +2 (login/lockout/suspended/invited/logout; password reset clears lockout) → 28/28. Browser check of the real form: empty-field errors, lockout message, suspended message, role-scoped nav, theme switch, sign-out.
+
+### [2026-10-20] #026 — UI/UX clean-up (design skill fundamentals)
+- Typography: self-hosted `@fontsource` Fraunces (display headings), Hanken Grotesk (UI), JetBrains Mono (times, codes, credential IDs) — work offline on venue day; heading `text-wrap: balance`, uppercase labels letter-spaced.
+- Tokens: all ~60 literal colors moved into tokens (`tokens.css`), complete dark palette under `prefers-color-scheme` (guarded by `:not([data-theme="light"])`) and `[data-theme="dark"]`, `color-scheme` set; sidebar intentionally dark in both themes. Theme switch (System / Light / Dark) in the user menu.
+- Icons: new `Icon` atom (47 stroke icons); every emoji/glyph icon replaced (nav, alerts, badges, buttons, modal close, checklists, ratings, toast).
+- App shell rebuilt: grouped sidebar (Overview / Sales / Operations / Money / Workspace / Admin), mobile drawer with scrim, global search (`/` shortcut, arrow keys, events/clients/vendors/staff/crew), notifications popover with severity stripes, user menu (profile, theme, demo-account switch, sign out), focus-visible styles, reduced-motion support.
+- Event workspace: 18 flat tabs regrouped into 5 phases (Sell / Plan / Produce / Money & close / Messages & log) with red dots where something needs attention.
+- Dashboard: new `AttentionList` molecule (severity stripe + icon, danger first, "Show all") replaces the wall of filled alerts; KPI money without cents; "Days out" column.
+- Layout fixes from screenshot review: grid children `min-width: 0`, cards scroll their own overflow, long links wrap, Day-of layout stacks below 1100px → **no horizontal scroll on any route at 400px**; login brand panel centered, submit label centered; portal hero flat ink with accent edge (no purple gradient).
+- Living style guide gained the icon set and AttentionList.
+- Verification: build OK, 28/28 tests, Playwright smoke + E2E flow with real sign-in → 0 runtime errors; screenshots reviewed in light, dark and 400px.
+- Test scripts (scratchpad, not committed) now sign in through the login form.

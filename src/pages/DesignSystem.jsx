@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Button, Badge, Input, Select, Textarea, Checkbox, Money, Swatch, ProgressBar, Spinner, Avatar, QrCode,
   Field, CommitInput, StageBadge, StatusBadge, StatTile, Alert, Tabs, PillSelect, KeyValue, EmptyState, SearchInput, ConfirmButton,
-  Card, PageHeader, Modal, BarChart, useDialog, MobileTemplate, Gantt, hourTicks, CoverageChart, SitePlan,
+  Card, PageHeader, Modal, BarChart, useDialog, MobileTemplate, Gantt, hourTicks, CoverageChart, SitePlan, Icon, ICON_NAMES, AttentionList,
 } from '../design-system/index.js';
 
 const COLOR_TOKENS = ['--color-brand', '--color-brand-soft', '--color-ink', '--color-ink-2', '--color-ink-3', '--color-surface', '--color-surface-2', '--color-border', '--color-success', '--color-warning', '--color-danger', '--color-info'];
@@ -37,6 +37,12 @@ export default function DesignSystem() {
           <div className="row">{SPACE.map((s) => <div key={s} style={{ textAlign: 'center', fontSize: 11 }}><div style={{ width: `var(--space-${s})`, height: 24, background: 'var(--color-brand)' }} /><div className="faint">space-{s}</div></div>)}</div>
           <div className="row">{['sm', 'md', 'lg', 'xl', 'pill'].map((r) => <div key={r} style={{ width: 48, height: 32, border: '1px solid var(--color-border)', borderRadius: `var(--radius-${r})`, display: 'grid', placeItems: 'center', fontSize: 10 }}>{r}</div>)}</div>
           <div><span style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>2xl</span> · <span style={{ fontSize: 'var(--text-xl)' }}>xl</span> · <span style={{ fontSize: 'var(--text-md)' }}>md</span> · <span style={{ fontSize: 'var(--text-xs)' }}>xs</span></div>
+        </Section>
+        <Section level="Atoms" title={`Icons (${ICON_NAMES.length}) — never emoji`}>
+          <div className="row" style={{ gap: 14 }}>{ICON_NAMES.map((n) => <span key={n} title={n} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: 56, fontSize: 10, color: 'var(--color-ink-3)' }}><Icon name={n} size={20} />{n}</span>)}</div>
+        </Section>
+        <Section level="Molecules" title="Attention list">
+          <AttentionList items={[{ tone: 'danger', icon: 'money', node: 'INV-1002 overdue since Oct 11' }, { tone: 'warning', icon: 'hourglass', node: 'Hold #1 expires tomorrow' }, { tone: 'info', icon: 'edit', node: 'CO-102 awaiting client approval' }]} />
         </Section>
         <Section level="Atoms" title="Button & Badge">
           <div className="row"><Button variant="primary">Primary</Button><Button>Secondary</Button><Button variant="success">Success</Button><Button variant="danger">Danger</Button><Button variant="danger-solid">Danger solid</Button><Button variant="ghost">Ghost</Button><Button size="sm">Small</Button><Button loading>Loading</Button><Button disabled>Disabled</Button></div>

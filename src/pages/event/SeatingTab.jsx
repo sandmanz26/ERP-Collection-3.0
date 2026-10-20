@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Alert, download, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, Alert, download, Button, useDialog, Icon } from '../../design-system/index.js';
 
 export function seatingViolations(ev) {
   const all = ev.households.flatMap((h) => h.guests);
@@ -26,7 +26,7 @@ export function SeatingBoard({ ev, readOnly }) {
   const badIds = new Set(violations.flatMap((v) => [v.a.id, v.b.id]));
   const chip = (g) => (
     <span key={g.id} className={`gchip ${g.isChild ? 'child' : ''} ${g.dietary ? 'diet' : ''} ${badIds.has(g.id) ? 'bad' : ''}`} draggable={!readOnly} onDragStart={() => setDrag(g.id)} title={`${g.household}${g.dietary ? ` · ${g.dietary}` : ''}${g.meal ? ` · ${g.meal}` : ''}`}>
-      {g.name}{g.dietary ? ' ⚠' : ''}
+      {g.name}{g.dietary ? <Icon name="alert" size={10} /> : null}
     </span>
   );
   const drop = (tableId) => { setOver(null); if (drag) act('SEAT_GUEST', { eventId: ev.id, guestId: drag, tableId }); setDrag(null); };
@@ -34,7 +34,7 @@ export function SeatingBoard({ ev, readOnly }) {
     <div className="seating">
       <div className={`card ${over === 'none' ? 'dragover' : ''}`} onDragOver={(e) => { e.preventDefault(); setOver('none'); }} onDrop={() => drop(null)}>
         <h3>Unseated ({unseated.length})</h3>
-        <div className="faint" style={{ fontSize: 12 }}>Drag guests onto tables. ⚠ = dietary need.</div>
+        <div className="faint" style={{ fontSize: 12 }}>Drag guests onto tables. Amber outline marks a dietary need.</div>
         <div className="mt">{unseated.map(chip)}</div>
       </div>
       <div>
@@ -94,7 +94,7 @@ export default function SeatingTab({ ev }) {
           <Button variant="primary" disabled={!rule.a || !rule.b} onClick={() => act('SEATING_RULE_ADD', { eventId: ev.id, guestA: rule.a, guestB: rule.b, type: rule.type, note: rule.note })}>Add rule</Button>
         </div>
         {ev.seatingRules.map((r) => (
-          <div key={r.id} className="row">• {all.find((g) => g.id === r.guestA)?.name} {r.type === 'apart' ? '≠' : '='} {all.find((g) => g.id === r.guestB)?.name} <span className="faint">{r.note}</span><Button variant="ghost" size="sm" onClick={() => act('SEATING_RULE_REMOVE', { eventId: ev.id, ruleId: r.id })}>✕</Button></div>
+          <div key={r.id} className="row">• {all.find((g) => g.id === r.guestA)?.name} {r.type === 'apart' ? '≠' : '='} {all.find((g) => g.id === r.guestB)?.name} <span className="faint">{r.note}</span><Button variant="ghost" size="sm" onClick={() => act('SEATING_RULE_REMOVE', { eventId: ev.id, ruleId: r.id })}><Icon name="x" size={14} /></Button></div>
         ))}
       </Card>
     </div>

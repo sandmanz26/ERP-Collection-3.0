@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, StatTile, Button, ProgressBar, Alert, PillSelect, CoverageChart, EmptyState, useDialog, download, printDocument } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, StatTile, Button, ProgressBar, Alert, PillSelect, CoverageChart, EmptyState, useDialog, download, printDocument, Icon } from '../../design-system/index.js';
 import { staffingSummary, positionFill, positionCost, positionHours, coverage, DEPARTMENTS, SOURCES, CREDENTIAL_ZONES, WORKER_STATUSES } from '../../lib/workforce.js';
 import { findConflicts } from '../../lib/staff.js';
 import { fmtDate } from '../../lib/dates.js';
@@ -107,7 +107,7 @@ export default function PeopleTab({ ev }) {
                           <td>
                             <div className="row" style={{ gap: 4 }}>
                               <Button size="sm" onClick={() => setOpen(open === p.id ? null : p.id)}>{open === p.id ? 'Hide' : `People (${f.assigned})`}</Button>
-                              <Button size="sm" variant="ghost" aria-label="Remove position" onClick={async () => (await dialog.confirm({ title: 'Remove position', message: `Remove ${p.role} and its ${f.workers.length} external worker(s)?`, danger: true })) && act('POSITION_REMOVE', { eventId: ev.id, positionId: p.id })}>✕</Button>
+                              <Button size="sm" variant="ghost" aria-label="Remove position" onClick={async () => (await dialog.confirm({ title: 'Remove position', message: `Remove ${p.role} and its ${f.workers.length} external worker(s)?`, danger: true })) && act('POSITION_REMOVE', { eventId: ev.id, positionId: p.id })}><Icon name="x" size={14} /></Button>
                             </div>
                           </td>
                         </tr>
@@ -155,9 +155,9 @@ function PositionPeople({ ev, p }) {
   const assignStaff = async () => {
     const options = state.staff.map((s) => {
       const clash = findConflicts([...allShifts, { id: 'new', staffId: s.id, date: p.date, start: p.start, end: p.end }]).some(([a, b]) => a.id === 'new' || b.id === 'new');
-      return { value: s.id, label: `${s.name} — ${s.type}, ${s.skills.join('/')}${clash ? ' ⚠ busy' : ''}` };
+      return { value: s.id, label: `${s.name} — ${s.type}, ${s.skills.join('/')}${clash ? ' (already booked)' : ''}` };
     });
-    const r = await dialog.form({ title: `Assign staff to ${p.role}`, description: 'Internal employees and registered freelancers get a shift (overtime & conflict rules apply). ⚠ = already booked at that time.', fields: [{ name: 'staffId', label: 'Person', type: 'select', options, defaultValue: options[0].value }] });
+    const r = await dialog.form({ title: `Assign staff to ${p.role}`, description: 'Internal employees and registered freelancers get a shift (overtime & conflict rules apply). "(already booked)" means the person has another shift at that time.', fields: [{ name: 'staffId', label: 'Person', type: 'select', options, defaultValue: options[0].value }] });
     r && act('POSITION_ASSIGN_STAFF', { eventId: ev.id, positionId: p.id, staffId: r.staffId });
   };
   const addWorkers = async () => {
@@ -181,7 +181,7 @@ function PositionPeople({ ev, p }) {
               <tr key={s.id}>
                 <td>{st?.name} <Badge tone="info">{st?.type}</Badge></td><td>{st?.type === 'employee' ? state.settings.company.name : 'Freelance'}</td><td>{st?.phone}</td><td className="faint">staff login</td><td className="text-sm">{p.zones.join(', ')}</td>
                 <td>{s.confirmed ? <StatusBadge status="confirmed" /> : <><StatusBadge status="pending" /> <Button size="sm" onClick={() => act('SHIFT_CONFIRM', { eventId: ev.id, shiftId: s.id })}>confirm</Button></>}{s.clockIn && <Badge tone="ok">on site</Badge>}</td>
-                <td><Button size="sm" variant="ghost" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}>✕</Button></td>
+                <td><Button size="sm" variant="ghost" onClick={() => act('SHIFT_REMOVE', { eventId: ev.id, shiftId: s.id })}><Icon name="x" size={14} /></Button></td>
               </tr>
             );
           })}
@@ -190,7 +190,7 @@ function PositionPeople({ ev, p }) {
               <td>{w.name}</td><td>{w.company}</td><td>{w.phone}</td><td><code>{w.credentialCode}</code></td>
               <td><PillSelect multi options={CREDENTIAL_ZONES} value={w.zones} onChange={(z) => act('WORKER_UPDATE', { eventId: ev.id, workerId: w.id, patch: { zones: z } })} /></td>
               <td><select value={w.status} onChange={(e) => act('WORKER_UPDATE', { eventId: ev.id, workerId: w.id, patch: { status: e.target.value } })}>{WORKER_STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select></td>
-              <td><Button size="sm" variant="ghost" onClick={() => act('WORKER_REMOVE', { eventId: ev.id, workerId: w.id })}>✕</Button></td>
+              <td><Button size="sm" variant="ghost" onClick={() => act('WORKER_REMOVE', { eventId: ev.id, workerId: w.id })}><Icon name="x" size={14} /></Button></td>
             </tr>
           ))}
         </tbody>

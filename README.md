@@ -15,4 +15,4 @@ npm run build
 - 🧾 In the app, every user action is recorded in the **Activity Log** and can be exported to `.md`.
 - 🎨 Living style guide at `#/design-system` (admin).
 
-Use **Switch role/user** (top right) to try each persona: Admin, Sales, Planner, Production, Finance, Crew, Client portal users, Vendor portal users. Public pages: `#/inquiry`, `#/rsvp`.
+**Sign in** with a demo account (password `demo1234`), e.g. `olivia@lumiere.events` (admin), `ava@lumiere.events` (planner), `hannah@lumiere.events` (finance). The login page lists every team and portal account. Light/dark theme and a demo account switcher are in the user menu. Public pages: `#/inquiry`, `#/rsvp`.

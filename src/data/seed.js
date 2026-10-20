@@ -4,6 +4,7 @@ import { calcProposal } from '../lib/pricing.js';
 import { generatePaymentSchedule, renderTemplate } from '../lib/contracts.js';
 import { generateTasks } from '../lib/tasks.js';
 import { round2 } from '../lib/money.js';
+import { ACCOUNT_PROFILES, EXTRA_TEAM_USERS, DEMO_PASSWORD } from './accounts.js';
 import {
   COMPANY, FX_RATES_TO_USD, JURISDICTIONS, CATALOG, PAYMENT_SCHEDULES, CANCELLATION_POLICIES, CONTRACT_TEMPLATES,
   EVENT_TYPES, LEAD_SOURCES, EMAIL_TEMPLATES, AUTOMATIONS, ACCOUNT_MAPPING,
@@ -230,6 +231,11 @@ export function buildSeed() {
     { id: 'u_vendor2', name: 'SoundWave AV', role: 'vendor', email: 'ops@soundwave.av', vendorId: 'vd_soundwave' },
     { id: 'u_vendor3', name: 'StaffPro Events (agency)', role: 'vendor', email: 'booking@staffpro.events', vendorId: 'vd_staffpro' },
   ];
+
+  // Credentials & profiles (mock auth). Every account signs in with DEMO_PASSWORD except suspended ones.
+  users.push(...EXTRA_TEAM_USERS);
+  users.forEach((u, i) => Object.assign(u, { password: DEMO_PASSWORD, status: 'active', lastLoginAt: ts(today, -((i * 3) % 9), `0${(i % 9) + 1}:15`), ...(ACCOUNT_PROFILES[u.id] || {}) }));
+  users.find((u) => u.id === 'u_invited').lastLoginAt = null;
 
   // ---------- Clients ----------
   const clients = [
@@ -657,9 +663,11 @@ export function buildSeed() {
   events.forEach((e) => { if (decorReservations.find((r) => r.eventId === e.id)) e.decorReservationId = `res_${e.id}`; });
 
   return {
-    version: 3,
+    version: 4,
     seededAt: new Date().toISOString(),
-    currentUserId: 'u_admin',
+    currentUserId: null,
+    loginAttempts: {},
+    theme: 'system',
     online: true,
     offlineQueue: [],
     settings,

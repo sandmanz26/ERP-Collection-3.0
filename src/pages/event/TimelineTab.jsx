@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, PillSelect, Alert, Badge, Button, Gantt, hourTicks, dayTicks, CoverageChart, EmptyState, useDialog } from '../../design-system/index.js';
+import { Card, PillSelect, Alert, Badge, Button, Gantt, hourTicks, dayTicks, CoverageChart, EmptyState, useDialog, Icon } from '../../design-system/index.js';
 import { planningTimeline, dayTimeline, productionIssues } from '../../lib/timeline.js';
 import { coverage, DEPARTMENTS } from '../../lib/workforce.js';
 import { addMinutes, fmtDate } from '../../lib/dates.js';
@@ -122,7 +122,7 @@ function ProductionSetup({ ev }) {
         {prod.resources.map((r) => (
           <div key={r.id} className="row between" style={{ padding: '4px 0' }}>
             <span>{r.name} {r.exclusive ? <Badge tone="warn">exclusive</Badge> : <Badge>shared</Badge>} <span className="faint">{ev.ros.items.filter((i) => (i.resourceIds || []).includes(r.id)).length} item(s)</span></span>
-            <Button variant="ghost" size="sm" aria-label={`Remove ${r.name}`} onClick={() => act('RESOURCE_REMOVE', { eventId: ev.id, resourceId: r.id })}>✕</Button>
+            <Button variant="ghost" size="sm" aria-label={`Remove ${r.name}`} onClick={() => act('RESOURCE_REMOVE', { eventId: ev.id, resourceId: r.id })}><Icon name="x" size={14} /></Button>
           </div>
         ))}
       </Card>
@@ -132,7 +132,7 @@ function ProductionSetup({ ev }) {
       }}>+ Window</Button>}>
         {prod.accessWindows.map((w, i) => (
           <div key={i} className="row between"><span>{fmtDate(w.date, { weekday: 'short' })} · {w.start} → {w.end}{w.end < w.start ? ' (+1 day)' : ''}</span>
-            <Button variant="ghost" size="sm" onClick={() => act('ACCESS_WINDOW_SET', { eventId: ev.id, windows: prod.accessWindows.filter((_, j) => j !== i) })}>✕</Button></div>
+            <Button variant="ghost" size="sm" onClick={() => act('ACCESS_WINDOW_SET', { eventId: ev.id, windows: prod.accessWindows.filter((_, j) => j !== i) })}><Icon name="x" size={14} /></Button></div>
         ))}
         {prod.accessWindows.length === 0 && <div className="faint">No restrictions recorded.</div>}
         <div className="muted mt">Curfew (guest activity must end): <b>{ev.venue?.curfew || '—'}</b> — edit in Overview → Venue.</div>
