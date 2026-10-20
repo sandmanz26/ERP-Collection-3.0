@@ -140,3 +140,6 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 - Day-of: *Crew* check-in tab (scan CRW code, in/out, no-show → alert) + desktop **Live production board** (Gantt with NOW line, drag = shift following items) beside the phone.
 - Calendar: **Planner workload** portfolio Gantt. Dashboard: KPIs *Open crew slots* and *Production conflicts* for planner/production + attention items.
 - Verification: build OK; Playwright smoke incl. new tabs on 8 events, groupings, keyboard reschedule (logged as `ROS_ITEM_UPDATE`), agency roster submission, crew check-in → 0 runtime errors; screenshots reviewed (planning Gantt, resource Gantt, people, site plan, day-of board, workload) and fixed (fit-to-width, milestone labels, tick collisions, table label sizing, missing `tone-info`).
+
+### [2026-10-20] #023 — Commit & push attempt
+- Committed the workforce / production / visual-timeline work on `claude/exciting-einstein-b58ibb`. `git push` still fails with HTTP 403 (no GitHub App access to `sandmanz26/ERP-Collection-3.0`); all commits remain local until access is granted.
