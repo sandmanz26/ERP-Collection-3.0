@@ -168,3 +168,6 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 - Living style guide gained the icon set and AttentionList.
 - Verification: build OK, 28/28 tests, Playwright smoke + E2E flow with real sign-in → 0 runtime errors; screenshots reviewed in light, dark and 400px.
 - Test scripts (scratchpad, not committed) now sign in through the login form.
+
+### [2026-10-20] #027 — Commit & push attempt
+- Committed the login + UI/UX work. `git push` still fails with HTTP 403 (no GitHub App access to `sandmanz26/ERP-Collection-3.0`); commits remain local.
