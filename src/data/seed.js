@@ -182,6 +182,7 @@ function emptyEventParts() {
     ros: { status: 'draft', version: 1, items: [], history: [] }, shifts: [], incidents: [], decorRequests: [], decorReturn: null,
     closing: { venueDepositReturned: false, surveySent: false, survey: null, reviewRequested: false, vendorRatingsDone: false, damageBilled: false },
     payers: [], clientBudget: {}, finalHeadcount: null, cancellation: null, postponements: [], interactions: [], accountingSync: [], approvals: [],
+    positions: [], workers: [], production: { accessWindows: [], resources: [] }, sitePlan: { rooms: [] },
   };
 }
 
@@ -227,6 +228,7 @@ export function buildSeed() {
     { id: 'u_client4', name: 'David Lee (Acme VP)', role: 'client', email: 'david.lee@acmerobotics.com', clientId: 'cl_acme', permissions: ['view_all', 'approve_costs', 'sign', 'pay', 'message', 'manage_guests', 'forms'] },
     { id: 'u_vendor1', name: 'Bloom & Vine (Florist)', role: 'vendor', email: 'hello@bloomvine.com', vendorId: 'vd_bloom' },
     { id: 'u_vendor2', name: 'SoundWave AV', role: 'vendor', email: 'ops@soundwave.av', vendorId: 'vd_soundwave' },
+    { id: 'u_vendor3', name: 'StaffPro Events (agency)', role: 'vendor', email: 'booking@staffpro.events', vendorId: 'vd_staffpro' },
   ];
 
   // ---------- Clients ----------
@@ -257,6 +259,8 @@ export function buildSeed() {
     { id: 'vd_chateau', name: 'Château de la Lune', category: 'Venue', regions: ['Provence', 'Côte d’Azur'], priceRange: '$$$$', rating: 4.9, country: 'FR', contact: 'Claire Martin', phone: '+33 4 55 55 12 12', email: 'events@chateaulune.fr', coiExpiry: addDays(today, 365), licenses: [], w9: false, commissionPct: 10, notes: 'Exclusive-use weekends. EU vendor — no W-9 needed.', performance: [] },
     { id: 'vd_paris', name: 'Maison Traiteur Paris', category: 'Catering', regions: ['Paris', 'Île-de-France'], priceRange: '$$$', rating: 4.7, country: 'FR', contact: 'Julien Bernard', phone: '+33 1 55 55 34 34', email: 'contact@maisontraiteur.fr', coiExpiry: addDays(today, 180), licenses: [], w9: false, commissionPct: 0, notes: '', performance: [] },
     { id: 'vd_london', name: 'Thames Production House', category: 'AV', regions: ['London'], priceRange: '$$$', rating: 4.6, country: 'GB', contact: 'Oliver Grant', phone: '+44 20 5555 0199', email: 'hello@thamesph.co.uk', coiExpiry: addDays(today, 140), licenses: [], w9: false, commissionPct: 0, notes: '', performance: [] },
+    { id: 'vd_shield', name: 'Shield Event Security', category: 'Security', regions: ['New York', 'California'], priceRange: '$$', rating: 4.5, country: 'US', contact: 'Marcus Webb', phone: '+1 212 555 0410', email: 'dispatch@shieldevents.com', coiExpiry: addDays(today, 210), licenses: [{ name: 'NY Security Guard Company License', expiry: addDays(today, 300) }], w9: true, commissionPct: 0, notes: 'Licensed guards; 4h minimum call.', performance: [], staffingAgency: true },
+    { id: 'vd_staffpro', name: 'StaffPro Events', category: 'Staffing agency', regions: ['New York', 'California', 'Florida'], priceRange: '$$', rating: 4.2, country: 'US', contact: 'Jenna Cole', phone: '+1 646 555 0420', email: 'booking@staffpro.events', coiExpiry: addDays(today, 150), licenses: [], w9: true, commissionPct: 0, notes: 'Registration, coat check, valet, brand ambassadors. Bills booked headcount.', performance: [], staffingAgency: true },
     { id: 'vd_miamiflor', name: 'Coral Petals Miami', category: 'Florist', regions: ['Florida'], priceRange: '$$', rating: 4.1, country: 'US', contact: 'Rosa Diaz', phone: '+1 305 555 0388', email: 'rosa@coralpetals.com', coiExpiry: addDays(today, 75), licenses: [], w9: true, commissionPct: 0, notes: '', performance: [] },
   ];
 
@@ -370,10 +374,10 @@ export function buildSeed() {
       { id: id('int'), type: 'meeting', at: ts(today, -150), by: 'u_sales', summary: 'Venue walkthrough at Glasshouse' },
     ];
     ev.vendorBookings = [
-      { id: id('vb'), vendorId: 'vd_gourmet', category: 'Catering', service: 'Dinner + bar for 150', qty: 1, cost: 19800, sellPrice: 30000, model: 'pass_through', markupPct: 0, minGuarantee: 120, contractedGuests: 150, commissionPct: 0, commissionStatus: 'n/a', status: 'confirmed', loadIn: `${date}T12:00`, loadOut: `${date}T23:59`, onsiteContact: 'Paolo — +1 212 555 0311', payments: [{ id: id('vp'), label: 'Deposit 50%', dueDate: addDays(today, -60), amount: 9900, status: 'paid', paidAt: ts(today, -60), proofRef: 'ACH-77812' }, { id: id('vp'), label: 'Balance', dueDate: addDays(date, -7), amount: 9900, status: 'scheduled' }], vendorInvoices: [], confirmedAt: ts(today, -100) },
-      { id: id('vb'), vendorId: 'vd_bloom', category: 'Florals', service: 'Ceremony arch florals, 15 centrepieces, bridal party', qty: 1, cost: 5600, sellPrice: 8500, model: 'pass_through', markupPct: 0, commissionPct: 0, commissionStatus: 'n/a', status: 'confirmed', loadIn: `${date}T10:00`, loadOut: `${date}T23:45`, onsiteContact: 'Hannah — +1 212 555 0300', payments: [{ id: id('vp'), label: 'Deposit', dueDate: addDays(today, -50), amount: 2800, status: 'paid', paidAt: ts(today, -50), proofRef: 'ACH-78001' }, { id: id('vp'), label: 'Balance', dueDate: addDays(date, -3), amount: 2800, status: 'scheduled' }], vendorInvoices: [], confirmedAt: ts(today, -90) },
+      { id: id('vb'), vendorId: 'vd_gourmet', category: 'Catering', service: 'Dinner + bar for 150', qty: 1, cost: 19800, sellPrice: 30000, model: 'pass_through', markupPct: 0, minGuarantee: 120, contractedGuests: 150, commissionPct: 0, commissionStatus: 'n/a', status: 'confirmed', loadIn: `${date}T12:00`, loadOut: `${addDays(date, 1)}T00:45`, onsiteContact: 'Paolo — +1 212 555 0311', payments: [{ id: id('vp'), label: 'Deposit 50%', dueDate: addDays(today, -60), amount: 9900, status: 'paid', paidAt: ts(today, -60), proofRef: 'ACH-77812' }, { id: id('vp'), label: 'Balance', dueDate: addDays(date, -7), amount: 9900, status: 'scheduled' }], vendorInvoices: [], confirmedAt: ts(today, -100) },
+      { id: id('vb'), vendorId: 'vd_bloom', category: 'Florals', service: 'Ceremony arch florals, 15 centrepieces, bridal party', qty: 1, cost: 5600, sellPrice: 8500, model: 'pass_through', markupPct: 0, commissionPct: 0, commissionStatus: 'n/a', status: 'confirmed', loadIn: `${date}T10:00`, loadOut: `${addDays(date, 1)}T00:45`, onsiteContact: 'Hannah — +1 212 555 0300', payments: [{ id: id('vp'), label: 'Deposit', dueDate: addDays(today, -50), amount: 2800, status: 'paid', paidAt: ts(today, -50), proofRef: 'ACH-78001' }, { id: id('vp'), label: 'Balance', dueDate: addDays(date, -3), amount: 2800, status: 'scheduled' }], vendorInvoices: [], confirmedAt: ts(today, -90) },
       { id: id('vb'), vendorId: 'vd_lens', category: 'Photo/Video', service: 'Photography 8h, 2 shooters', qty: 1, cost: 4500, sellPrice: 6000, model: 'direct', markupPct: 0, commissionPct: 10, commissionAmount: 450, commissionStatus: 'pending', status: 'confirmed', loadIn: `${date}T14:00`, loadOut: `${date}T22:00`, onsiteContact: 'Mia — +1 917 555 0322', payments: [], vendorInvoices: [], confirmedAt: ts(today, -110) },
-      { id: id('vb'), vendorId: 'vd_groove', category: 'Entertainment', service: '8-piece band + DJ sets', qty: 1, cost: 7500, sellPrice: 9500, model: 'pass_through', markupPct: 0, commissionPct: 5, commissionAmount: 375, commissionStatus: 'pending', status: 'requested', loadIn: `${date}T15:00`, loadOut: `${date}T23:59`, onsiteContact: 'Andre — +1 646 555 0333', payments: [{ id: id('vp'), label: 'Deposit', dueDate: addDays(today, 5), amount: 3750, status: 'scheduled' }], vendorInvoices: [] },
+      { id: id('vb'), vendorId: 'vd_groove', category: 'Entertainment', service: '8-piece band + DJ sets', qty: 1, cost: 7500, sellPrice: 9500, model: 'pass_through', markupPct: 0, commissionPct: 5, commissionAmount: 375, commissionStatus: 'pending', status: 'requested', loadIn: `${date}T14:00`, loadOut: `${addDays(date, 1)}T00:45`, onsiteContact: 'Andre — +1 646 555 0333', payments: [{ id: id('vp'), label: 'Deposit', dueDate: addDays(today, 5), amount: 3750, status: 'scheduled' }], vendorInvoices: [] },
     ];
     const tables = Array.from({ length: 15 }, (_, i) => ({ id: `tb_c${i + 1}`, name: i === 0 ? 'Head Table' : `Table ${i}`, capacity: i === 0 ? 12 : 10, shape: i === 0 ? 'rect' : 'round' }));
     ev.tables = tables;
@@ -633,6 +637,10 @@ export function buildSeed() {
     events.push(ev);
   }
 
+  // ===== Workforce, production coordination & site plans (multi-vendor, outsourced crews) =====
+  enrichCarter(events.find((e) => e.id === 'ev_carter'), today);
+  enrichAcme(events.find((e) => e.id === 'ev_acme'), today);
+
   const notifications = [
     { id: id('ntf'), ts: ts(today, 0, '08:00'), toRoles: ['planner', 'admin'], eventId: 'ev_carter', text: 'Vendor Groove Collective COI has EXPIRED — booking at risk for Carter–Walker Wedding.', read: false, level: 'danger' },
     { id: id('ntf'), ts: ts(today, 0, '08:01'), toRoles: ['sales', 'admin'], eventId: 'ev_lead_stellar', text: 'First hold for Stellar Bank expires tomorrow.', read: false, level: 'warning' },
@@ -649,7 +657,7 @@ export function buildSeed() {
   events.forEach((e) => { if (decorReservations.find((r) => r.eventId === e.id)) e.decorReservationId = `res_${e.id}`; });
 
   return {
-    version: 2,
+    version: 3,
     seededAt: new Date().toISOString(),
     currentUserId: 'u_admin',
     online: true,
@@ -666,4 +674,131 @@ export function buildSeed() {
     activityLog,
     decorReservations,
   };
+}
+
+
+const P = (o) => ({ id: id('pos'), zones: ['Front of house'], notes: '', vendorId: null, rate: 0, ...o });
+function W(ev, pos, names, status = 'confirmed') {
+  return names.map((n, i) => {
+    const w = { id: id('wk'), positionId: pos.id, name: n, phone: `+1 646 555 ${String(1000 + i * 37).slice(-4)}`, email: '', vendorId: pos.vendorId, company: pos.company ?? 'Freelance', status: Array.isArray(status) ? status[i] ?? 'confirmed' : status, zones: [...pos.zones], checkIn: null, checkOut: null };
+    w.credentialCode = `CRW-${ev.id.slice(-4).toUpperCase()}-${w.id.slice(-5).toUpperCase()}`;
+    return w;
+  });
+}
+const byAct = (ev, txt) => ev.ros.items.find((i) => i.activity.startsWith(txt));
+
+function enrichCarter(ev, today) {
+  const d = ev.date;
+  ev.production = {
+    accessWindows: [{ date: d, start: '08:00', end: '01:00' }],
+    resources: [
+      { id: 'res_c_dock', name: 'Loading dock (W 47th St)', exclusive: true },
+      { id: 'res_c_lift', name: 'Service elevator', exclusive: true },
+      { id: 'res_c_garden', name: 'Garden Room', exclusive: false },
+      { id: 'res_c_hall', name: 'Grand Hall', exclusive: false },
+      { id: 'res_c_kitchen', name: 'Kitchen', exclusive: false },
+    ],
+  };
+  const mk = (o) => ({ id: id('ros'), subEventId: 'se_c2', track: 'production', vendorIds: [], cue: '', notes: '', liveStatus: 'pending', resourceIds: [], dependsOn: [], ...o });
+  const rentals = mk({ start: '11:30', duration: 90, activity: 'Rental delivery — chairs, tables, linens', location: 'Dock → Grand Hall', ownerStaffId: 'st_diego', resourceIds: ['res_c_dock', 'res_c_lift', 'res_c_hall'], notes: 'Lumière decor truck' });
+  const lighting = mk({ start: '10:00', duration: 240, activity: 'Lighting & draping rig', location: 'Grand Hall', ownerStaffId: 'st_diego', resourceIds: ['res_c_hall'], notes: 'Festoon + uplights; ladders on dance floor' });
+  const centres = mk({ start: '13:30', duration: 90, activity: 'Reception centrepieces install', location: 'Grand Hall', ownerStaffId: 'st_maria', vendorIds: ['vd_bloom'], resourceIds: ['res_c_hall'], notes: 'Needs tables dressed & rig finished' });
+  ev.ros.items.push(rentals, lighting, centres);
+  const florist = byAct(ev, 'Florist load-in');
+  const catering = byAct(ev, 'Catering load-in');
+  const sound = byAct(ev, 'Band sound check');
+  const loadout = byAct(ev, 'Load-out');
+  Object.assign(florist, { resourceIds: ['res_c_dock', 'res_c_garden'] });
+  Object.assign(catering, { resourceIds: ['res_c_dock', 'res_c_lift', 'res_c_kitchen'] }); // overlaps rental delivery on the dock → demo conflict
+  Object.assign(sound, { resourceIds: ['res_c_hall'], dependsOn: [lighting.id] });
+  centres.dependsOn = [lighting.id, rentals.id]; // starts 13:30 but rig ends 14:00 → demo dependency violation
+  Object.assign(loadout, { resourceIds: ['res_c_dock', 'res_c_lift'] });
+  ev.ros.items.filter((i) => i.track === 'guest').forEach((i) => { i.resourceIds = i.subEventId === 'se_c2' ? ['res_c_garden'] : i.subEventId === 'se_c4' ? ['res_c_hall'] : []; i.dependsOn ??= []; });
+
+  const captain = P({ department: 'Front of house', role: 'Event captain', qty: 1, date: d, start: '12:00', end: '23:59', source: 'internal', zones: ['All access'] });
+  const servers = P({ department: 'Catering & bar', role: 'Banquet server', qty: 12, date: d, start: '15:00', end: '23:59', source: 'outsourced', vendorId: 'vd_gourmet', company: 'Gourmet Table Catering', rate: 38, zones: ['Kitchen', 'Front of house'] });
+  const bartenders = P({ department: 'Catering & bar', role: 'Bartender', qty: 4, date: d, start: '16:00', end: '23:30', source: 'outsourced', vendorId: 'vd_mixology', company: 'Mixology Bar Co.', rate: 45, zones: ['Front of house'] });
+  const security = P({ department: 'Security', role: 'Licensed security guard', qty: 2, date: d, start: '15:00', end: '01:00', source: 'outsourced', vendorId: 'vd_shield', company: 'Shield Event Security', rate: 52, zones: ['All access'] });
+  const valet = P({ department: 'Guest services', role: 'Coat check & valet', qty: 3, date: d, start: '15:00', end: '00:30', source: 'outsourced', vendorId: 'vd_staffpro', company: 'StaffPro Events', rate: 32 });
+  const stagehands = P({ department: 'Production', role: 'Stagehand', qty: 4, date: d, start: '09:30', end: '15:30', source: 'freelance', rate: 35, zones: ['Production', 'Backstage'] });
+  const florals = P({ department: 'Production', role: 'Florals assistant', qty: 2, date: d, start: '10:00', end: '18:00', source: 'internal', zones: ['Production'] });
+  const prodLead = P({ department: 'Production', role: 'Production lead', qty: 1, date: d, start: '09:30', end: '23:59', source: 'internal', zones: ['All access'] });
+  ev.positions = [captain, servers, bartenders, security, valet, stagehands, florals, prodLead];
+  ev.shifts.forEach((s) => {
+    if (s.staffId === 'st_jamal') s.positionId = captain.id;
+    if (s.staffId === 'st_maria') s.positionId = florals.id;
+    if (s.staffId === 'st_diego') s.positionId = prodLead.id;
+  });
+  ev.workers = [
+    ...W(ev, servers, ['Ana Ruiz', 'Ben Okoro', 'Carla Mendes', 'Dev Patel', 'Eli Grant', 'Fatima Noor', 'Gus Ward', 'Hana Sato', 'Ivan Petrov']),
+    ...W(ev, bartenders, ['Lena Ford', 'Max Hill'], ['confirmed', 'invited']),
+    ...W(ev, security, ['Tony Reyes', 'Kim Alvarez']),
+    ...W(ev, stagehands, ['Rob Chen', 'Sam Diaz', 'Zoe Park'], ['confirmed', 'confirmed', 'declined']),
+  ];
+  ev.sitePlan = { rooms: [
+    { id: 'room_c_hall', name: 'Grand Hall — reception', width: 36, height: 24, elements: [
+      { id: id('el'), type: 'stage', label: 'Band stage', x: 13, y: 1, w: 10, h: 4, shape: 'rect', vendorId: 'vd_groove' },
+      { id: id('el'), type: 'dance', label: 'Dance floor', x: 13, y: 6, w: 10, h: 7, shape: 'rect' },
+      { id: id('el'), type: 'table', label: 'Head Table', x: 13, y: 14.5, w: 10, h: 1.6, shape: 'rect', tableId: 'tb_c1' },
+      ...Array.from({ length: 14 }, (_, i) => ({ id: id('el'), type: 'table', label: `Table ${i + 1}`, x: i < 7 ? 2 + (i % 2) * 4.5 : 26 + (i % 2) * 4.5, y: 2 + Math.floor((i % 7) / 2) * 5 + ((i % 7) % 2) * 2.5, w: 3, h: 3, shape: 'circle', tableId: `tb_c${i + 2}` })),
+      { id: id('el'), type: 'bar', label: 'Bar 1', x: 1, y: 21, w: 6, h: 2, shape: 'rect', vendorId: 'vd_mixology' },
+      { id: id('el'), type: 'bar', label: 'Bar 2', x: 29, y: 21, w: 6, h: 2, shape: 'rect', vendorId: 'vd_mixology' },
+      { id: id('el'), type: 'service', label: 'Kitchen door', x: 33, y: 0, w: 3, h: 1, shape: 'rect', vendorId: 'vd_gourmet' },
+      { id: id('el'), type: 'feature', label: 'Photo booth', x: 15, y: 20.5, w: 3, h: 2.5, shape: 'rect' },
+      { id: id('el'), type: 'entry', label: 'Main entrance', x: 17, y: 23, w: 4, h: 1, shape: 'rect' },
+      { id: id('el'), type: 'power', label: 'Power 63A', x: 23.5, y: 1, w: 1, h: 1, shape: 'rect' },
+    ] },
+    { id: 'room_c_garden', name: 'Garden Room — ceremony', width: 24, height: 18, elements: [
+      { id: id('el'), type: 'feature', label: 'Moongate arch', x: 10, y: 1, w: 4, h: 2, shape: 'rect', vendorId: 'vd_bloom' },
+      { id: id('el'), type: 'seating', label: 'Ceremony seating L (75)', x: 2, y: 5, w: 8, h: 10, shape: 'rect' },
+      { id: id('el'), type: 'seating', label: 'Ceremony seating R (75)', x: 14, y: 5, w: 8, h: 10, shape: 'rect' },
+      { id: id('el'), type: 'feature', label: 'Aisle', x: 10.5, y: 4, w: 3, h: 12, shape: 'rect' },
+      { id: id('el'), type: 'stage', label: 'String trio', x: 19, y: 1, w: 4, h: 2.5, shape: 'rect', vendorId: 'vd_groove' },
+      { id: id('el'), type: 'entry', label: 'Guest entrance', x: 10, y: 17, w: 4, h: 1, shape: 'rect' },
+    ] },
+  ] };
+}
+
+function enrichAcme(ev, today) {
+  const d = ev.date;
+  const eve = addDays(d, -1);
+  ev.production = {
+    accessWindows: [{ date: eve, start: '18:00', end: '23:59' }, { date: d, start: '05:00', end: '23:30' }],
+    resources: [
+      { id: 'res_a_dock', name: 'Pico Blvd dock (2 bays)', exclusive: false },
+      { id: 'res_a_freight', name: 'Freight elevator B', exclusive: true },
+      { id: 'res_a_hallA', name: 'Hall A', exclusive: false },
+      { id: 'res_a_ball', name: 'Ballroom', exclusive: false },
+    ],
+  };
+  const mk = (o) => ({ id: id('ros'), track: 'production', vendorIds: [], cue: '', notes: '', liveStatus: 'pending', resourceIds: [], dependsOn: [], ...o });
+  const se = ev.subEvents;
+  const led = mk({ subEventId: se[1].id, start: '05:00', duration: 150, activity: 'LED wall build & line array fly', location: 'Hall A', ownerStaffId: 'st_tom', vendorIds: ['vd_soundwave'], resourceIds: ['res_a_hallA', 'res_a_freight'] });
+  const gala = mk({ subEventId: se[3].id, start: '14:00', duration: 180, activity: 'Ballroom flip — stage, gala tables, uplights', location: 'Ballroom', ownerStaffId: 'st_tom', vendorIds: ['vd_soundwave', 'vd_pacific'], resourceIds: ['res_a_ball', 'res_a_freight'] });
+  const rehearsal = mk({ subEventId: se[1].id, start: '07:45', duration: 60, activity: 'Keynote tech rehearsal', location: 'Hall A', ownerStaffId: 'st_ava', vendorIds: ['vd_soundwave'], resourceIds: ['res_a_hallA'], dependsOn: [led.id] });
+  ev.ros.items.push(led, gala, rehearsal);
+  ev.ros.items.forEach((i) => { i.resourceIds ??= []; i.dependsOn ??= []; });
+  const reg = P({ department: 'Guest services', role: 'Registration staff', qty: 6, date: d, start: '06:30', end: '13:00', source: 'outsourced', vendorId: 'vd_staffpro', company: 'StaffPro Events', rate: 30 });
+  const amb = P({ department: 'Guest services', role: 'Brand ambassador', qty: 4, date: d, start: '08:30', end: '22:30', source: 'freelance', rate: 34 });
+  const av = P({ department: 'Production', role: 'AV technician (union)', qty: 8, date: d, start: '05:00', end: '23:30', source: 'outsourced', vendorId: 'vd_soundwave', company: 'SoundWave AV', rate: 68, zones: ['Production', 'Backstage'] });
+  const sec = P({ department: 'Security', role: 'Security / bag check', qty: 4, date: d, start: '06:30', end: '23:00', source: 'outsourced', vendorId: 'vd_shield', company: 'Shield Event Security', rate: 52, zones: ['All access'] });
+  const stage = P({ department: 'Production', role: 'Stage manager', qty: 1, date: d, start: '06:00', end: '23:30', source: 'internal', zones: ['All access'] });
+  const regLead = P({ department: 'Guest services', role: 'Registration lead', qty: 1, date: d, start: '05:30', end: '17:30', source: 'internal' });
+  ev.positions = [reg, amb, av, sec, stage, regLead];
+  ev.shifts.forEach((s) => { if (s.staffId === 'st_tom') s.positionId = stage.id; if (s.staffId === 'st_priya') s.positionId = regLead.id; });
+  ev.workers = [
+    ...W(ev, reg, ['Alicia Gomez', 'Bryce Lam', 'Chen Wu', 'Dana Ortiz'], ['confirmed', 'confirmed', 'confirmed', 'invited']),
+    ...W(ev, av, ['K. Ito (crew chief)', 'L. Moreno', 'P. Singh', 'R. Adams', 'S. Kim', 'T. Brown', 'U. Ali', 'V. Cruz']),
+    ...W(ev, amb, ['Mia Lopez', 'Noah Reed']),
+  ];
+  ev.sitePlan = { rooms: [
+    { id: 'room_a_hall', name: 'Hall A — keynote', width: 40, height: 30, elements: [
+      { id: id('el'), type: 'stage', label: 'Main stage + LED wall', x: 10, y: 1, w: 20, h: 5, shape: 'rect', vendorId: 'vd_soundwave' },
+      { id: id('el'), type: 'seating', label: 'Theatre seating (300)', x: 6, y: 9, w: 28, h: 15, shape: 'rect' },
+      { id: id('el'), type: 'service', label: 'FOH mix position', x: 17, y: 25, w: 6, h: 2.5, shape: 'rect', vendorId: 'vd_soundwave' },
+      { id: id('el'), type: 'feature', label: 'Livestream camera riser', x: 24, y: 25, w: 3, h: 2.5, shape: 'rect', vendorId: 'vd_soundwave' },
+      { id: id('el'), type: 'entry', label: 'Doors (registration side)', x: 1, y: 27, w: 5, h: 1, shape: 'rect' },
+      { id: id('el'), type: 'power', label: 'Power 3-phase', x: 31, y: 1, w: 1.5, h: 1.5, shape: 'rect' },
+    ] },
+  ] };
 }

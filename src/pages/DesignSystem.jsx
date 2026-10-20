@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Button, Badge, Input, Select, Textarea, Checkbox, Money, Swatch, ProgressBar, Spinner, Avatar, QrCode,
   Field, CommitInput, StageBadge, StatusBadge, StatTile, Alert, Tabs, PillSelect, KeyValue, EmptyState, SearchInput, ConfirmButton,
-  Card, PageHeader, Modal, BarChart, useDialog, MobileTemplate,
+  Card, PageHeader, Modal, BarChart, useDialog, MobileTemplate, Gantt, hourTicks, CoverageChart, SitePlan,
 } from '../design-system/index.js';
 
 const COLOR_TOKENS = ['--color-brand', '--color-brand-soft', '--color-ink', '--color-ink-2', '--color-ink-3', '--color-surface', '--color-surface-2', '--color-border', '--color-success', '--color-warning', '--color-danger', '--color-info'];
@@ -24,6 +24,8 @@ export default function DesignSystem() {
   const [q, setQ] = useState('');
   const [modal, setModal] = useState(false);
   const [val, setVal] = useState('Commit on blur');
+  const [ganttX, setGanttX] = useState(720);
+  const [siteEls, setSiteEls] = useState([{ id: 's', type: 'stage', label: 'Stage', x: 4, y: 0.5, w: 4, h: 2, shape: 'rect' }, { id: 't', type: 'table', label: 'T1', x: 1, y: 4, w: 2, h: 2, shape: 'circle', sub: '8/10' }, { id: 'b', type: 'bar', label: 'Bar', x: 8.5, y: 4.5, w: 3, h: 1.5, shape: 'rect' }]);
   return (
     <div>
       <PageHeader crumbs="Admin" title="Design System" subtitle="Atomic Design: tokens → atoms → molecules → organisms → templates → pages. Source: src/design-system/." />
@@ -70,6 +72,16 @@ export default function DesignSystem() {
             <Button onClick={async () => { const r = await dialog.form({ title: 'Form dialog', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'qty', label: 'Quantity', type: 'number', defaultValue: 1 }] }); r && dialog.alert({ title: 'Result', message: JSON.stringify(r) }); }}>Form dialog</Button>
           </div>
           <BarChart label="Example chart" rows={[{ label: 'Website', value: 42, display: '42%' }, { label: 'Referral', value: 71, display: '71%' }, { label: 'The Knot', value: 28, display: '28%' }]} max={100} />
+        </Section>
+        <Section level="Organisms" title="Gantt (drag the purple bar)">
+          <Gantt range={[600, 1080]} ticks={hourTicks([600, 1080], '2027-01-09')} pxPerUnit={0.5} fit snap={15}
+            markers={[{ at: 960, label: 'Curfew', tone: 'danger' }]} shading={[{ start: 600, end: 660, label: 'No access' }]}
+            lanes={[{ id: 'a', label: 'Florist', sub: 'confirmed', items: [{ id: 'w', start: 660, end: 1020, label: 'Booked window', tone: 'brand-soft', background: true }, { id: 'x', start: ganttX, end: ganttX + 90, label: 'Load-in', tone: 'brand', draggable: true }] }, { id: 'b', label: 'Milestones', items: [{ id: 'm', start: 900, label: 'Doors', milestone: true, showLabel: true, tone: 'warn' }] }]}
+            onItemMove={(it, d) => setGanttX(ganttX + d)} />
+        </Section>
+        <Section level="Organisms" title="Coverage chart & site plan">
+          <CoverageChart slots={[0, 1, 2, 3, 4, 5].map((i) => ({ t: 900 + i * 30, required: [4, 8, 12, 12, 10, 6][i], filled: [4, 7, 9, 12, 10, 6][i], gap: [0, 1, 3, 0, 0, 0][i] }))} formatT={(t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`} height={80} />
+          <SitePlan width={12} height={7} elements={siteEls} onMove={(el, x, y) => setSiteEls(siteEls.map((e) => (e.id === el.id ? { ...e, x, y } : e)))} />
         </Section>
         <Section level="Templates" title="Mobile template (day-of)">
           <div style={{ transform: 'scale(.7)', transformOrigin: 'top left', height: 300 }}>

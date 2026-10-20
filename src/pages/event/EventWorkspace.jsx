@@ -19,6 +19,11 @@ import FinanceTab from './FinanceTab.jsx';
 import MessagesTab from './MessagesTab.jsx';
 import PostEventTab from './PostEventTab.jsx';
 import EventActivity from './EventActivity.jsx';
+import TimelineTab from './TimelineTab.jsx';
+import PeopleTab from './PeopleTab.jsx';
+import SitePlanTab from './SitePlanTab.jsx';
+import { productionIssues } from '../../lib/timeline.js';
+import { staffingSummary } from '../../lib/workforce.js';
 
 export default function EventWorkspace() {
   const { id } = useParams();
@@ -28,9 +33,12 @@ export default function EventWorkspace() {
   if (!ev) return <EmptyState>Event not found. <Link to="/events">Back</Link></EmptyState>;
   const et = eventType(state, ev);
   const tab = sp.get('tab') || 'overview';
+  const issueCount = productionIssues(state, ev).filter((i) => i.level === 'danger').length;
+  const staffing = staffingSummary(ev);
   const f = et.features;
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'timeline', label: 'Timeline', count: issueCount },
     { id: 'proposal', label: 'Proposal', count: ev.proposals.length },
     { id: 'contract', label: 'Contract' },
     { id: 'planning', label: 'Planning', count: ev.tasks.filter((t) => t.status !== 'done').length },
@@ -40,13 +48,15 @@ export default function EventWorkspace() {
     { id: 'budget', label: 'Budget' },
     { id: 'co', label: 'Change Orders', count: ev.changeOrders.filter((c) => c.status !== 'approved' && c.status !== 'rejected').length },
     { id: 'ros', label: 'Run of Show' },
-    { id: 'staff', label: 'Crew' },
+    { id: 'people', label: 'People', count: staffing.open },
+    { id: 'site', label: 'Site plan' },
+    { id: 'staff', label: 'Crew shifts' },
     { id: 'finance', label: 'Finance' },
     { id: 'messages', label: 'Messages', count: ev.messages.length },
     { id: 'post', label: 'Post-Event' },
     { id: 'activity', label: 'Activity' },
   ].filter(Boolean);
-  const Comp = { overview: Overview, proposal: ProposalTab, contract: ContractTab, planning: PlanningTab, vendors: VendorsTab, guests: GuestsTab, seating: SeatingTab, budget: BudgetTab, co: ChangeOrdersTab, ros: RunOfShowTab, staff: StaffTab, finance: FinanceTab, messages: MessagesTab, post: PostEventTab, activity: EventActivity }[tab] ?? Overview;
+  const Comp = { overview: Overview, proposal: ProposalTab, contract: ContractTab, planning: PlanningTab, vendors: VendorsTab, guests: GuestsTab, seating: SeatingTab, budget: BudgetTab, co: ChangeOrdersTab, ros: RunOfShowTab, timeline: TimelineTab, people: PeopleTab, site: SitePlanTab, staff: StaffTab, finance: FinanceTab, messages: MessagesTab, post: PostEventTab, activity: EventActivity }[tab] ?? Overview;
   return (
     <div>
       <div className="page-head">

@@ -236,3 +236,79 @@ test('proposal diff lists added/removed/changed lines', async () => {
   const d = diffProposals(a, b);
   assert.deepEqual(d.map((x) => x.type).sort(), ['added', 'changed', 'changed', 'removed']);
 });
+
+// ---------- workforce & production timeline ----------
+test('staffing: outsourced billed per booked head, freelance per confirmed person', async () => {
+  const { positionCost, positionFill, coverage } = await import('../src/lib/workforce.js');
+  const ev = { shifts: [], workers: [{ id: 'w1', positionId: 'f', status: 'confirmed' }, { id: 'w2', positionId: 'f', status: 'declined' }], positions: [] };
+  const out = { id: 'o', qty: 10, start: '18:00', end: '22:00', source: 'outsourced', rate: 30, date: '2027-01-01' };
+  const fr = { id: 'f', qty: 3, start: '18:00', end: '20:00', source: 'freelance', rate: 50, date: '2027-01-01' };
+  ev.positions = [out, fr];
+  assert.equal(positionCost(ev, out), 1200);
+  assert.equal(positionCost(ev, fr), 100);
+  assert.equal(positionFill(ev, fr).confirmed, 1);
+  assert.equal(positionFill(ev, fr).unassigned, 2);
+  const cov = coverage(ev, '2027-01-01', { slot: 60 });
+  assert.equal(cov.find((c) => c.t === 18 * 60).required, 13);
+  assert.equal(cov.find((c) => c.t === 18 * 60).filled, 1);
+});
+
+test('production engine flags dock clash, broken hand-off and curfew', async () => {
+  const { productionIssues } = await import('../src/lib/timeline.js');
+  const s = buildSeed();
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const issues = productionIssues(s, ev);
+  assert.ok(issues.some((i) => i.kind === 'resource' && i.text.includes('Loading dock')));
+  assert.ok(issues.some((i) => i.kind === 'dependency' && i.text.includes('centrepieces')));
+  const toast = ev.ros.items.find((i) => i.activity === 'Dancing');
+  toast.duration = 400; // runs far past the 00:00 curfew
+  assert.ok(productionIssues(s, ev).some((i) => i.kind === 'curfew'));
+});
+
+test('moving the rental delivery off the dock window clears the clash', async () => {
+  const { productionIssues } = await import('../src/lib/timeline.js');
+  let s = { ...buildSeed(), effects: [] };
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const rental = ev.ros.items.find((i) => i.activity.startsWith('Rental delivery'));
+  s = run(s, 'ROS_ITEM_UPDATE', { eventId: 'ev_carter', itemId: rental.id, patch: { start: '08:15' } }, 'u_prod');
+  const after = productionIssues(s, s.events.find((e) => e.id === 'ev_carter'));
+  assert.equal(after.some((i) => i.kind === 'resource' && i.text.includes('Rental')), false);
+});
+
+test('agency submits roster, crew checks in by QR code, agency cannot touch other vendors', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const valet = ev.positions.find((p) => p.vendorId === 'vd_staffpro');
+  s = run(s, 'WORKER_ADD', { eventId: 'ev_carter', positionId: valet.id, workers: [{ name: 'Val One' }, { name: 'Val Two', phone: '123' }] }, 'u_vendor3');
+  let e2 = s.events.find((e) => e.id === 'ev_carter');
+  const w = e2.workers.find((x) => x.name === 'Val Two');
+  assert.ok(w.credentialCode.startsWith('CRW-'));
+  assert.equal(w.company, 'StaffPro Events');
+  const servers = e2.positions.find((p) => p.vendorId === 'vd_gourmet');
+  s = run(s, 'WORKER_ADD', { eventId: 'ev_carter', positionId: servers.id, workers: [{ name: 'Intruder' }] }, 'u_vendor3');
+  assert.ok(s.lastError);
+  s = run(s, 'CREW_CHECKIN', { eventId: 'ev_carter', code: w.credentialCode.toLowerCase() }, 'u_crew');
+  e2 = s.events.find((e) => e.id === 'ev_carter');
+  assert.equal(e2.workers.find((x) => x.id === w.id).status, 'checked_in');
+});
+
+test('assigning staff to a position creates a linked shift; workforce cost flows into crew cost', async () => {
+  const { crewCost } = await import('../src/lib/derived.js');
+  let s = { ...buildSeed(), effects: [] };
+  const before = crewCost(s, s.events.find((e) => e.id === 'ev_carter'));
+  const stage = s.events.find((e) => e.id === 'ev_carter').positions.find((p) => p.role === 'Stagehand');
+  s = run(s, 'POSITION_ASSIGN_STAFF', { eventId: 'ev_carter', positionId: stage.id, staffId: 'st_tom' }, 'u_prod');
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  assert.ok(ev.shifts.some((x) => x.positionId === stage.id && x.staffId === 'st_tom'));
+  assert.ok(crewCost(s, ev) > before);
+});
+
+test('postponing moves staffing plan and access windows', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const newDate = addDays(ev.date, 14);
+  s = run(s, 'EVENT_POSTPONE', { eventId: 'ev_carter', newDate, reason: 'test', fee: 0 }, 'u_admin');
+  const after = s.events.find((e) => e.id === 'ev_carter');
+  assert.ok(after.positions.every((p) => p.date === newDate));
+  assert.equal(after.production.accessWindows[0].date, newDate);
+});

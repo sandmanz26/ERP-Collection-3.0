@@ -5,6 +5,8 @@ import { Card, StatTile, StageBadge, Badge, Money, Alert, PageHeader, EmptyState
 import { fmtDate, diffDays, addDays, fmtDateTime } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
+import { productionIssues } from '../lib/timeline.js';
+import { staffingSummary } from '../lib/workforce.js';
 import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
 
 /**
@@ -29,6 +31,9 @@ export default function Dashboard() {
   const dueSoon = invoices.filter((x) => ['sent', 'partial'].includes(x.st) && x.i.dueDate <= addDays(today, 14));
   const loadIns = evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage)).flatMap((e) => e.vendorBookings.filter((b) => b.loadIn && b.loadIn.slice(0, 10) >= today && b.loadIn.slice(0, 10) <= addDays(today, 45)).map((b) => ({ b, e }))).sort((a, b) => a.b.loadIn.localeCompare(b.b.loadIn));
   const unconfirmedShifts = evs.flatMap((e) => e.shifts.filter((s) => !s.confirmed && s.date >= today).map((s) => ({ s, e })));
+  const soon = upcoming.filter((e) => diffDays(today, e.date) <= 60);
+  const crewGaps = soon.map((e) => ({ e, s: staffingSummary(e) })).filter((x) => x.s.open > 0);
+  const conflicts = soon.flatMap((e) => productionIssues(state, e).filter((i) => i.level === 'danger' && i.kind !== 'staffing').map((i) => ({ i, e })));
   const converted = evs.filter((e) => e.contract?.immutable).length;
   const decided = converted + evs.filter((e) => e.stage === 'lost').length;
 
@@ -43,12 +48,14 @@ export default function Dashboard() {
     upcoming: <StatTile key="u" label="Booked events ahead" value={upcoming.length} sub={upcoming[0] ? `next: ${fmtDate(upcoming[0].date)}` : '—'} />,
     loadins: <StatTile key="li" label="Load-ins next 45 days" value={loadIns.length} />,
     shifts: <StatTile key="s" label="Unconfirmed shifts" value={unconfirmedShifts.length} tone={unconfirmedShifts.length ? 'warn' : undefined} />,
+    crew: <StatTile key="cr" label="Open crew slots (≤ 60 days)" value={crewGaps.reduce((a, x) => a + x.s.open, 0)} sub={`${crewGaps.length} event(s)`} tone={crewGaps.length ? 'danger' : 'ok'} />,
+    conflicts: <StatTile key="cf" label="Production conflicts" value={conflicts.length} sub="docks, hand-offs, access" tone={conflicts.length ? 'danger' : 'ok'} />,
   };
   const KPI_BY_ROLE = {
     admin: ['pipeline', 'contracted', 'deferred', 'leakage', 'tasks'],
     sales: ['pipeline', 'conversion', 'contracted', 'upcoming', 'tasks'],
-    planner: ['upcoming', 'tasks', 'shifts', 'leakage', 'pipeline'],
-    production: ['upcoming', 'loadins', 'shifts', 'tasks'],
+    planner: ['upcoming', 'tasks', 'crew', 'conflicts', 'leakage'],
+    production: ['upcoming', 'loadins', 'crew', 'conflicts', 'shifts'],
     finance: ['overdue', 'deferred', 'contracted', 'leakage'],
   };
 
@@ -62,6 +69,8 @@ export default function Dashboard() {
     ...evs.flatMap((e) => e.changeOrders.filter((c) => ['draft', 'sent'].includes(c.status)).map((c) => ({ roles: ['planner', 'admin', 'sales'], tone: c.isException ? 'danger' : 'info', node: <>✎ {c.number} {c.title} — {c.status}{c.isException ? ' (EXCEPTION: needs special approval)' : ''} · <Link to={`/events/${e.id}?tab=co`}>{e.name}</Link></> }))),
     ...evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage)).flatMap((e) => guaranteeWarnings(e).map((w) => ({ roles: ['planner', 'admin'], tone: w.level, node: <>👥 <Link to={`/events/${e.id}?tab=guests`}>{e.name}</Link>: {w.text}</> }))),
     ...state.vendors.map((v) => ({ v, issues: vendorCompliance(v, today) })).filter((x) => x.issues.length).map(({ v, issues }) => ({ roles: ['planner', 'production', 'admin', 'finance'], tone: issues[0].level, node: <>⚑ {v.name}: {issues.map((i) => i.text).join(', ')}</> })),
+    ...conflicts.map(({ i, e }) => ({ roles: ['production', 'planner'], tone: 'danger', node: <>⏱ <Link to={`/events/${e.id}?tab=timeline`}>{e.name}</Link>: {i.text}</> })),
+    ...crewGaps.map(({ e, s }) => ({ roles: ['production', 'planner', 'admin'], tone: 'danger', node: <>👷 <Link to={`/events/${e.id}?tab=people`}>{e.name}</Link>: {s.open} of {s.required} crew slots not confirmed (T-{diffDays(today, e.date)})</> })),
     ...unconfirmedShifts.map(({ s, e }) => ({ roles: ['production', 'planner'], tone: 'warning', node: <>☺ {state.staff.find((x) => x.id === s.staffId)?.name} has not confirmed {s.role} on {fmtDate(s.date)} · <Link to={`/events/${e.id}?tab=staff`}>{e.name}</Link></> })),
   ].filter((a) => a.roles.includes(role) || role === 'admin');
 

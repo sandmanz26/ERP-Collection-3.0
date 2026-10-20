@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog } from '../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Button, useDialog, Gantt, hourTicks, SitePlan, PillSelect } from '../design-system/index.js';
+import { dayTimeline, productionIssues } from '../lib/timeline.js';
+import { positionFill, WORKER_STATUSES } from '../lib/workforce.js';
 import { sortRos, rosForVendor } from '../lib/ros.js';
 import { vendorCompliance } from '../lib/derived.js';
 import { fmtDate, fmtDateTime, addMinutes } from '../lib/dates.js';
@@ -24,6 +26,7 @@ export default function VendorPortal() {
         <div className="row mt">Certificate of Insurance valid until <b>{fmtDate(v.coiExpiry)}</b></div>
         <div className="row mt"><span>Upload renewed COI — new expiry:</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><Button variant="primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</Button></div>
       </Card>
+      <CrewRequests vendor={v} />
       <VendorRfqs vendor={v} />
       <VendorTasks vendor={v} />
       {bookings.length === 0 && <EmptyState>No bookings yet.</EmptyState>}
@@ -50,6 +53,8 @@ export default function VendorPortal() {
                 <div className="row mt"><input type="file" onChange={async (ev) => { const f = ev.target.files?.[0]; if (!f) return; const amount = await dialog.prompt({ title: `Upload ${f.name}`, label: 'Invoice amount', type: 'number', defaultValue: b.cost }); if (amount === null) return; act('VENDOR_INVOICE_UPLOAD', { eventId: e.id, bookingId: b.id, name: f.name, amount: Number(amount) }); }} /></div>
               </div>
             </div>
+            <VendorDayLane ev={e} booking={b} />
+            <VendorSiteFootprint ev={e} vendorId={v.id} />
             <h4 className="mt">Your run of show ({e.ros.status}, v{e.ros.version}) — only the items relevant to you</h4>
             {e.ros.status === 'draft' ? <div className="faint">Timeline not shared yet.</div> : (
               <table className="t"><tbody>{items.map((i) => <tr key={i.id}><td><b>{i.start}</b>–{addMinutes(i.start, i.duration)}</td><td>{i.activity}</td><td>{i.location}</td><td>{i.cue}</td><td>{i.notes}</td></tr>)}</tbody></table>
@@ -109,5 +114,72 @@ function VendorTasks({ vendor }) {
         </label>
       ))}
     </Card>
+  );
+}
+
+/** Staffing agencies / vendors that supply people: see requested headcount and submit their own crew roster. */
+function CrewRequests({ vendor }) {
+  const { state, act } = useStore();
+  const dialog = useDialog();
+  const reqs = state.events.flatMap((e) => (e.positions || []).filter((p) => p.vendorId === vendor.id).map((p) => ({ p, e })));
+  if (!reqs.length) return null;
+  return (
+    <Card title="Crew requested from you">
+      <div className="faint mb text-sm">Submit the names of the people you are sending — they receive QR credentials for venue access and are checked in on site. You are billed for the booked headcount.</div>
+      {reqs.map(({ p, e }) => {
+        const f = positionFill(e, p);
+        const named = f.workers.filter((w) => w.status !== 'declined').length;
+        return (
+          <div key={p.id} className="card compact">
+            <div className="row between">
+              <span><b>{p.qty} × {p.role}</b> · {e.name} · {fmtDate(p.date, { weekday: 'short' })} {p.start}–{p.end}</span>
+              <span className="row"><Badge tone={named >= p.qty ? 'ok' : 'danger'}>roster {named}/{p.qty}</Badge>
+                <Button size="sm" variant="primary" onClick={async () => {
+                  const r = await dialog.form({ title: `Submit crew — ${p.role}`, description: `${p.qty - named > 0 ? `${p.qty - named} more name(s) needed.` : 'Roster complete — you can still add stand-bys.'} One person per line, optional ", phone".`, fields: [{ name: 'names', label: 'Names', type: 'textarea', required: true }] });
+                  r && act('WORKER_ADD', { eventId: e.id, positionId: p.id, workers: r.names.split('\n').map((l) => { const [name, phone] = l.split(','); return { name, phone: phone?.trim(), status: 'confirmed' }; }) });
+                }}>+ Add names</Button></span>
+            </div>
+            {f.workers.length > 0 && (
+              <table className="t mt"><tbody>{f.workers.map((w) => (
+                <tr key={w.id}><td>{w.name}</td><td className="faint">{w.phone}</td><td><code>{w.credentialCode}</code></td>
+                  <td><select value={w.status} onChange={(ev) => act('WORKER_UPDATE', { eventId: e.id, workerId: w.id, patch: { status: ev.target.value } })}>{WORKER_STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select></td></tr>
+              ))}</tbody></table>
+            )}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
+/** The vendor's own lane of the production Gantt (booked window + their run-of-show items, conflicts in red). */
+function VendorDayLane({ ev, booking }) {
+  const { state } = useStore();
+  if (ev.ros.status === 'draft') return null;
+  const issues = productionIssues(state, ev);
+  const tl = dayTimeline(state, ev, 'vendor', issues);
+  const lane = tl?.lanes.find((l) => l.id === booking.id);
+  if (!lane) return null;
+  const mine = issues.filter((i) => (i.itemIds || []).some((id) => lane.items.some((x) => x.id === id)));
+  return (
+    <div className="mt">
+      <h4>Your production timeline</h4>
+      <Gantt range={tl.range} lanes={[lane]} ticks={hourTicks(tl.range, tl.day0)} markers={tl.markers} shading={tl.shading} pxPerUnit={0.5} fit labelWidth={150} />
+      {mine.map((i, n) => <Alert key={n} tone="warning">{i.text}</Alert>)}
+    </div>
+  );
+}
+
+function VendorSiteFootprint({ ev, vendorId }) {
+  const rooms = (ev.sitePlan?.rooms || []).filter((r) => r.elements.some((x) => x.vendorId === vendorId));
+  const [roomId, setRoomId] = useState(rooms[0]?.id);
+  const room = rooms.find((r) => r.id === roomId) ?? rooms[0];
+  if (!room) return null;
+  return (
+    <div className="mt">
+      <div className="row between"><h4>Where you set up</h4>{rooms.length > 1 && <PillSelect options={rooms.map((r) => ({ id: r.id, label: r.name }))} value={room.id} onChange={setRoomId} />}</div>
+      <div style={{ maxWidth: 640 }}><SitePlan readOnly width={room.width} height={room.height} elements={room.elements} highlightIds={room.elements.filter((x) => x.vendorId === vendorId).map((x) => x.id)} /></div>
+      <div className="faint text-sm">Your elements are outlined in red.</div>
+    </div>
   );
 }

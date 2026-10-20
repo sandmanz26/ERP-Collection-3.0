@@ -53,3 +53,22 @@ Severity: 🔴 bug / data-integrity · 🟠 spec gap · 🟡 UX / polish. Status
 - **i18n**: English is the base language; strings are not yet extracted into a dictionary.
 - **Offline**: simulated (local queue + sync flag); a real build needs a service worker + IndexedDB + conflict resolution.
 - **Bundle size** (~600 KB): route-level code splitting.
+
+
+---
+
+## Addendum (#019–#022) — "Events are not projects": people, vendors, visuals & timelines
+
+User feedback: events involve many people (often outsourced), many more vendors than a project, and **visuals and timelines are what usually gets missed**. Gaps found in the previous build and what was done:
+
+| # | Gap | Status |
+|---|---|---|
+| E1 | Only individual crew shifts existed — no staffing plan ("12 servers 15:00–24:00"), no way to represent agency-supplied crews, no headcount-vs-confirmed view. | ✅ Staffing plan per event (department, role, qty, call/wrap, source, rate, zones); internal/freelance/outsourced; agency rosters; coverage chart; open-slot alerts on dashboard. |
+| E2 | Outsourced labour cost was invisible in costing. | ✅ Agency positions billed on booked headcount, freelancers on confirmed people → crew cost → budget, profit, reports. |
+| E3 | No accreditation / venue access control for temporary crew. | ✅ Credential zones, `CRW-` QR credentials (printable), day-of crew check-in/out, no-show alerts. |
+| E4 | Agencies/vendors couldn't supply names. | ✅ Vendor-portal roster submission (restricted to their own positions). |
+| E5 | Vendors coordinated as a list; no shared-resource, hand-off, access-window or curfew logic. | ✅ Venue resources (exclusive vs shared), access windows, ROS dependencies, live conflict engine + Production check panel. |
+| E6 | Timelines were tables only. | ✅ Planning Gantt (one lane per vendor), event-day Gantt by vendor/function/resource/crew with drag-to-reschedule, live day-of board with NOW line, planner workload Gantt. |
+| E7 | No visual of the space. | ✅ Site plan per room (drag elements, vendor footprint, seated counts from the seating chart); vendors see their own footprint. |
+
+Still deferred: multi-event crew pooling (one agency crew across two same-day events), union rules beyond a rate, per-zone access scanning hardware, CAD/PDF floor-plan import, Gantt drag for vendor booked windows (only ROS items are draggable today).

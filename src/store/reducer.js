@@ -10,6 +10,7 @@ import { vendorHandlers } from './handlers/vendors.js';
 import { guestHandlers } from './handlers/guests.js';
 import { opsHandlers } from './handlers/ops.js';
 import { settingsHandlers } from './handlers/settings.js';
+import { workforceHandlers } from './handlers/workforce.js';
 
 export const HANDLERS = {
   ...systemHandlers,
@@ -21,6 +22,7 @@ export const HANDLERS = {
   ...guestHandlers,
   ...opsHandlers,
   ...settingsHandlers,
+  ...workforceHandlers,
 };
 
 const MAX_LOG = 2000;

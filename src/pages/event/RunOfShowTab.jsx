@@ -52,6 +52,7 @@ export default function RunOfShowTab({ ev }) {
   const [track, setTrack] = useState('all');
   const [add, setAdd] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [edit, setEdit] = useState(null);
   let items = sortRos(ev.ros.items);
   if (track !== 'all') items = items.filter((i) => i.track === track);
   if (view.startsWith('vd_')) items = rosForVendor(items, view);
@@ -78,7 +79,7 @@ export default function RunOfShowTab({ ev }) {
             <div key={se.id} className="mb">
               <h4 className="mt">{se.name} · {se.room}</h4>
               <table className="t">
-                <thead><tr><th>Start</th><th>End</th><th>Track</th><th>Activity</th><th>Location</th><th>Owner</th><th>Vendors</th><th>Cue</th><th>Live</th><th /></tr></thead>
+                <thead><tr><th>Start</th><th>End</th><th>Track</th><th>Activity</th><th>Location</th><th>Owner</th><th>Vendors</th><th>Cue</th><th>Live</th><th>Resources / after</th><th /></tr></thead>
                 <tbody>
                   {its.map((i) => (
                     <tr key={i.id}>
@@ -91,7 +92,8 @@ export default function RunOfShowTab({ ev }) {
                       <td style={{ fontSize: 12 }}>{i.vendorIds.map((v) => state.vendors.find((x) => x.id === v)?.name).join(', ')}</td>
                       <td style={{ fontSize: 12 }}>{i.cue}</td>
                       <td><StatusBadge status={i.liveStatus} />{i.delayedBy ? <span className="faint"> +{i.delayedBy}m</span> : null}</td>
-                      <td><Button variant="ghost" size="sm" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}>✕</Button></td>
+                      <td className="text-xs">{(i.resourceIds || []).map((r) => ev.production?.resources.find((x) => x.id === r)?.name).filter(Boolean).join(', ')}{(i.dependsOn || []).length > 0 && <div className="faint">after: {i.dependsOn.map((d) => ev.ros.items.find((x) => x.id === d)?.activity).filter(Boolean).join(', ')}</div>}</td>
+                      <td><div className="row" style={{ gap: 2 }}><Button size="sm" onClick={() => setEdit(i)}>Edit</Button><Button variant="ghost" size="sm" onClick={() => act('ROS_ITEM_REMOVE', { eventId: ev.id, itemId: i.id })}>✕</Button></div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -103,6 +105,7 @@ export default function RunOfShowTab({ ev }) {
         {ev.ros.history.map((h, i) => <div key={i} className="faint">v{h.version} · {h.status} · {fmtDateTime(h.at)} · {state.users.find((u) => u.id === h.by)?.name}</div>)}
       </Card>
       {add && <AddRos ev={ev} onClose={() => setAdd(false)} />}
+      {edit && <AddRos ev={ev} item={edit} onClose={() => setEdit(null)} />}
       {sheet && (
         <Modal wide title="Call sheet (auto-generated)" onClose={() => setSheet(false)} footer={<Button variant="primary" onClick={() => { download(`${ev.name}-call-sheet.txt`, callSheetText(state, ev)); act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: 'Call sheet downloaded/distributed' }); }}>Download</Button>}>
           <CallSheet ev={ev} />
@@ -112,12 +115,20 @@ export default function RunOfShowTab({ ev }) {
   );
 }
 
-function AddRos({ ev, onClose }) {
+function AddRos({ ev, item, onClose }) {
   const { state, act } = useStore();
-  const [v, , bind] = useForm({ subEventId: ev.subEvents[0]?.id, track: 'guest', start: '18:00', duration: 15, activity: '', location: '', ownerStaffId: '', cue: '', notes: '' });
-  const [vids, setVids] = useState([]);
+  const [v, , bind] = useForm(item ? { subEventId: item.subEventId, track: item.track, start: item.start, duration: item.duration, activity: item.activity, location: item.location, ownerStaffId: item.ownerStaffId || '', cue: item.cue, notes: item.notes } : { subEventId: ev.subEvents[0]?.id, track: 'guest', start: '18:00', duration: 15, activity: '', location: '', ownerStaffId: '', cue: '', notes: '' });
+  const [vids, setVids] = useState(item?.vendorIds ?? []);
+  const [res, setRes] = useState(item?.resourceIds ?? []);
+  const [deps, setDeps] = useState(item?.dependsOn ?? []);
+  const save = () => {
+    const data = { ...v, duration: Number(v.duration), vendorIds: vids, resourceIds: res, dependsOn: deps };
+    if (item) act('ROS_ITEM_UPDATE', { eventId: ev.id, itemId: item.id, patch: data });
+    else act('ROS_ITEM_ADD', { eventId: ev.id, data });
+    onClose();
+  };
   return (
-    <Modal title="Add run-of-show item" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.activity} onClick={() => { act('ROS_ITEM_ADD', { eventId: ev.id, data: { ...v, duration: Number(v.duration), vendorIds: vids } }); onClose(); }}>Add</Button></>}>
+    <Modal wide title={item ? `Edit: ${item.activity}` : 'Add run-of-show item'} onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!v.activity} onClick={save}>{item ? 'Save' : 'Add'}</Button></>}>
       <div className="grid g3">
         <Field label="Function"><select {...bind('subEventId')}>{ev.subEvents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
         <Field label="Track"><select {...bind('track')}><option value="guest">Guest timeline</option><option value="production">Production</option></select></Field>
@@ -130,6 +141,10 @@ function AddRos({ ev, onClose }) {
       <div className="grid g2 mt"><Field label="Cue (music/lights/MC)"><input {...bind('cue')} /></Field><Field label="Notes"><input {...bind('notes')} /></Field></div>
       <h4 className="mt">Vendors involved</h4>
       <PillSelect multi options={ev.vendorBookings.map((b) => ({ id: b.vendorId, label: state.vendors.find((x) => x.id === b.vendorId)?.name }))} value={vids} onChange={setVids} />
+      <h4 className="mt">Venue resources used</h4>
+      {(ev.production?.resources ?? []).length ? <PillSelect multi options={ev.production.resources.map((r) => ({ id: r.id, label: `${r.name}${r.exclusive ? ' (exclusive)' : ''}` }))} value={res} onChange={setRes} /> : <div className="faint">Define resources (dock, elevator, rooms) in Timeline → Event days.</div>}
+      <h4 className="mt">Must start after (vendor hand-offs)</h4>
+      <PillSelect multi options={ev.ros.items.filter((x) => x.id !== item?.id).map((x) => ({ id: x.id, label: `${x.start} ${x.activity}` }))} value={deps} onChange={setDeps} />
     </Modal>
   );
 }

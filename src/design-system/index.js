@@ -13,6 +13,9 @@ export { Card, PageHeader } from './organisms/Card.jsx';
 export { Modal } from './organisms/Modal.jsx';
 export { DialogProvider, useDialog } from './organisms/Dialogs.jsx';
 export { BarChart } from './organisms/BarChart.jsx';
+export { Gantt, hourTicks, dayTicks } from './organisms/Gantt.jsx';
+export { CoverageChart } from './organisms/CoverageChart.jsx';
+export { SitePlan } from './organisms/SitePlan.jsx';
 // templates
 export { PortalTemplate, MobileTemplate, PublicTemplate } from './templates/Templates.jsx';
 // hooks & utils

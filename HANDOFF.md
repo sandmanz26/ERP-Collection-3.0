@@ -17,10 +17,10 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 20 unit/integration tests (node --test)
+npm test         # 26 unit/integration tests (node --test)
 npm run build    # static output in dist/
 ```
-Switch persona with **Switch role/user** in the top bar (admin, sales, planner, production, finance, crew, four client users with different permissions, two vendors).
+Switch persona with **Switch role/user** in the top bar (admin, sales, planner, production, finance, crew, four client users with different permissions, two vendors, one staffing agency).
 *Settings → Reset demo data* restores the seed. Public pages (no login): `#/inquiry`, `#/rsvp?event=<id>`.
 
 ## 3. Architecture & data flow
@@ -46,10 +46,16 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 | `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
 | `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
 | `molecules/` | `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
-| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart` |
+| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`** |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
 Rules: components reference tokens only; status colors (success/warning/danger/info) are reserved for state; add new atoms to the style guide page.
+
+## 4b. Events are not projects — how the system models that
+An event is a **one-day (or few-day) production assembled from many companies and many temporary people**, so beyond tasks it models:
+- **Workforce**: `ev.positions` = staffing plan (department, role, qty, call/wrap, source internal | freelance | outsourced via agency/vendor, rate, credential zones). Filled by internal staff/registered freelancers (`ev.shifts[].positionId`, overtime & conflict rules apply) or external people (`ev.workers[]`: agency-supplied or one-off freelancers, each with a QR credential `CRW-…`). Agencies submit their own roster in the vendor portal; outsourced positions are costed on the **booked** headcount.
+- **Production coordination**: `ev.production.resources` (exclusive ones like docks/elevators can't be double-booked), `ev.production.accessWindows`, venue curfew, ROS `resourceIds` and `dependsOn` (vendor hand-offs). `lib/timeline.js#productionIssues` flags clashes live.
+- **Visuals first**: planning Gantt (one lane per vendor), event-day Gantt (by vendor/function/resource/crew, drag to reschedule), coverage chart, site plan, planner workload, live day-of board.
 
 ## 5. File map
 | Path | Contents |
@@ -63,14 +69,16 @@ Rules: components reference tokens only; status colors (success/warning/danger/i
 | `src/lib/tasks.js` | T-minus task templates, auto-shift |
 | `src/lib/staff.js` | crew cost, CA daily OT, `weeklyCompliance` (FLSA 40h, EU/UK/CH weekly max), conflicts, freelancer classification risk |
 | `src/lib/ros.js` | run of show sort/shift/filter |
+| `src/lib/workforce.js` | staffing plan: fill, cost (outsourced vs freelance vs internal), coverage, credentials |
+| `src/lib/timeline.js` | `productionIssues` conflict engine, `planningTimeline`, `dayTimeline`, `workloadTimeline` |
 | `src/lib/decorApi.js` | **Mock Decor Inventory API** (async + latency); REST mapping in header comment |
 | `src/lib/derived.js` | selectors: event financials, budget, headcount, guarantees, closing checklist, leakage, vendor compliance, payer summary |
 | `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
-| `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`) |
+| `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`, `workforce`) |
 | `src/pages/*.jsx` | Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
-| `src/pages/event/*.jsx` | event workspace tabs (Overview … Activity) + `DecorPanel` |
+| `src/pages/event/*.jsx` | event workspace tabs (Overview, **Timeline**, Proposal, Contract, Planning, Vendors, Guests, Seating, Budget, Change Orders, Run of Show, **People**, **Site plan**, Crew shifts, Finance, Messages, Post-Event, Activity) + `DecorPanel` |
 | `tests/logic.test.js` | logic + store flow tests |
 
 ## 6. Spec → implementation map
@@ -85,7 +93,9 @@ Rules: components reference tokens only; status colors (success/warning/danger/i
 | §4.6 guests & RSVP (households, per-function RSVP, public RSVP with deadline, seating rules, QR check-in, live headcount + guarantees) | `GuestsTab.jsx`, `SeatingTab.jsx`, `RsvpPublic.jsx`, `DayOf.jsx`, `guests.js` |
 | §4.7 budget & costing | `BudgetTab.jsx`, `derived.js#budgetByCategory` |
 | §4.8 change orders | `ChangeOrdersTab.jsx`, `ops.js#applyChangeOrder` |
-| §4.9 run of show + day-of + offline | `RunOfShowTab.jsx`, `DayOf.jsx`, `ops.js`, `reducer.js` |
+| §4.9 run of show + day-of + offline | `RunOfShowTab.jsx`, `DayOf.jsx` (+ live production board, crew check-in), `ops.js`, `reducer.js` |
+| Event workforce & outsourced crews (user request #019) | `PeopleTab.jsx`, `workforce.js` (lib + handlers), vendor portal *Crew requested*, `DayOf.jsx#CrewCheckIn` |
+| Multi-vendor production coordination & visual timelines (#019) | `TimelineTab.jsx`, `SitePlanTab.jsx`, `timeline.js`, `Gantt/CoverageChart/SitePlan` organisms, Calendar workload |
 | §4.10 staff & crew | `Staff.jsx`, `StaffTab.jsx`, `staff.js` |
 | §4.11 finance | `Finance.jsx`, `FinanceTab.jsx`, `finance.js`, `documents.js` |
 | §4.12 client portal (multi-user permissions) | `ClientPortal.jsx`, `permissions.js` |
@@ -105,7 +115,9 @@ Rules: components reference tokens only; status colors (success/warning/danger/i
 7. **Acme Summit**: CO-103 exception → client approval rejected until admin *Grant exception approval*.
 8. **Day-of Mobile**: start/done/+15 min, incident with photo, QR check-in, *simulate offline* → "pending sync" in Activity Log → reconnect.
 9. **Harper 50th** (post-event): pull Decor return report → bill damage → rate vendors → survey → Financial close.
-10. **Settings**: invite a user, edit client permissions, add a catalog item and a task-template row. **Activity Log** → *Export .md*.
+10. **Carter → Timeline**: planning Gantt (today/event markers, vendor lanes) → *Event days* → *By venue resource* shows the loading-dock clash; drag *Rental delivery* to 08:15 and watch the Production check clear. **People**: 13 open slots, assign Tom as stagehand, print QR credentials. **Site plan**: drag a table, assign a vendor.
+11. **StaffPro Events (agency)**: *Crew requested from you* → add names → credentials appear. **Day-of** (as admin): *Crew* tab check-in by code, live production board beside the phone. **Calendar**: planner workload.
+12. **Settings**: invite a user, edit client permissions, add a catalog item and a task-template row. **Activity Log** → *Export .md*.
 
 ## 8. Deliberate decisions & limits
 - No backend: email, Stripe, QuickBooks/Xero, e-signature, GPS and calendar sync are simulated; data shapes are ready for real integrations.

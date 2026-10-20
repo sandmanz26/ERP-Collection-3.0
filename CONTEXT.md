@@ -110,3 +110,33 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 ### [2026-10-20] #018 — Commit & push attempt
 - Committed `89b3bbb` (design system) and `6a18890` (feature roast + English docs) on `claude/exciting-einstein-b58ibb`.
 - `git push` failed again with HTTP 403: the Claude GitHub App has no access to `sandmanz26/ERP-Collection-3.0`. Commits remain local until access is granted (https://claude.ai/connect-github), then push with `git push -u origin claude/exciting-einstein-b58ibb`.
+
+### [2026-10-20] #019 — New request: event workforce, vendor-centric coordination, visual timelines
+- Request (user): events involve many people, often hired as outsourced labour; event management differs from task/project management because many more vendors are involved; visuals and timelines are what usually gets missed.
+- Plan:
+  1. **Workforce module** — per-event staffing plan (`positions`: department, role, qty, date/time, source internal | freelance | outsourced via agency/vendor, rate, credential zones) filled by internal staff (shifts with `positionId`) or external workers (`workers`: agency-supplied or freelance). Vendor portal lets agencies submit their crew roster. QR credentials, day-of crew check-in, workforce cost into costing, staffing-gap alerts.
+  2. **Production coordination** — shared venue resources (loading dock, service elevator, rooms; exclusive or not), venue access windows, curfew, vendor-to-vendor dependencies on run-of-show items, automatic conflict detection (`productionIssues`).
+  3. **Visuals** — design-system organisms `Gantt` (lanes, day/hour scales, markers, shading, drag-to-move), `CoverageChart` (required vs filled staff per slot), `SitePlan` (SVG floor plan, drag elements, tables linked to seating). New event tabs *People*, *Timeline*, *Site plan*; planner workload timeline in Calendar.
+
+### [2026-10-20] #020 — Workforce & production logic (`src/lib`, `src/store`)
+- `lib/workforce.js`: departments, sources (internal / freelance / outsourced), credential zones, `positionFill` (shifts with `positionId` + external `workers`), `staffingSummary`, `positionCost` (outsourced = booked headcount × hours × rate; freelance = confirmed people; internal = via shifts), `workforceCost`, `coverage` (required vs confirmed per slot), `credentialCode`.
+- `lib/timeline.js`: `productionIssues` (exclusive-resource clashes, vendor dependency violations, outside access window, past curfew, outside vendor booked window, unconfirmed vendors on shared/final ROS, staffing gaps), `planningTimeline` (milestones, task lanes, one lane per vendor with engagement + payables + deliverables, RFQs, client payments), `dayTimeline` (by vendor / function / resource / crew, access-window shading, curfew markers), `workloadTimeline` (planner portfolio).
+- `lib/derived.js#crewCost` now = shift cost + workforce cost (flows into budget "Staffing", profit, reports).
+- `store/handlers/workforce.js` (new): `POSITION_ADD/UPDATE/REMOVE`, `POSITION_ASSIGN_STAFF` (creates linked shift), `WORKER_ADD/UPDATE/REMOVE` (agency users restricted to their own positions/crew), `CREW_CHECKIN` (by credential code), `CREW_NO_SHOW`, `RESOURCE_ADD/REMOVE`, `ACCESS_WINDOW_SET`, `SITE_ROOM_ADD`, `SITE_ELEMENT_ADD/UPDATE/REMOVE`. `EVENT_POSTPONE` also moves positions and access windows.
+- Data shape: events gain `positions`, `workers`, `production { accessWindows, resources }`, `sitePlan { rooms[] }`; ROS items gain `resourceIds`, `dependsOn`. Seed `version: 3`.
+- Seed: vendors *Shield Event Security* and *StaffPro Events* (staffing agencies), user `u_vendor3` (agency portal). Carter wedding: 8 positions / 29 heads across 5 departments, 4 supplying vendors, named crews, 5 venue resources, access window 08:00–01:00, extra production items with **deliberate demo conflicts** (dock clash rentals vs catering, centrepieces before the lighting rig ends), 2-room site plan with tables linked to the seating chart. Acme summit: 6 positions incl. union AV crew via SoundWave, eve-of load-in window, freight elevator, keynote site plan.
+- Tests +7 (costing/coverage, conflict detection, conflict cleared by moving an item, agency roster + QR check-in + cross-vendor guard, staff assignment → linked shift → crew cost, postponement moves staffing) → 26/26.
+
+### [2026-10-20] #021 — Visual organisms (`src/design-system/organisms`)
+- `Gantt`: lanes with automatic sub-row stacking, day or hour ticks with collision-free label thinning, markers (today / now / event / curfew), hatched shading (no venue access), background windows, labelled milestones, fit-to-width + zoom, pointer drag and ←/→ keyboard move with snapping.
+- `CoverageChart`: required (outline) vs confirmed (brand) vs gap (danger), with text summary — identity never by color alone.
+- `SitePlan`: SVG floor plan in meters, 1 m / 5 m grid, drag elements with 0.5 m snap, selection and highlight states.
+- CSS for all three in `styles/organisms.css` (tone classes from tokens). Living style guide (`#/design-system`) now demos them.
+
+### [2026-10-20] #022 — Screens
+- Event workspace: new tabs **Timeline** (planning Gantt ↔ event-day production Gantt grouped by vendor/function/resource/crew, drag-to-reschedule, Production check panel, coverage chart, venue resources & access windows), **People** (staffing plan by department/source, assign staff, add external people, statuses & zones, roster CSV, printable QR crew credentials, agency summary, coverage), **Site plan** (rooms, element palette, inspector, vendor footprint, seated counts per table). "Crew" tab renamed "Crew shifts".
+- Run of show: edit dialog with venue resources and "must start after" dependencies; columns show them.
+- Vendor portal: *Crew requested from you* (agency submits names → credentials; edit status), own production lane Gantt with own issues, own site-plan footprint.
+- Day-of: *Crew* check-in tab (scan CRW code, in/out, no-show → alert) + desktop **Live production board** (Gantt with NOW line, drag = shift following items) beside the phone.
+- Calendar: **Planner workload** portfolio Gantt. Dashboard: KPIs *Open crew slots* and *Production conflicts* for planner/production + attention items.
+- Verification: build OK; Playwright smoke incl. new tabs on 8 events, groupings, keyboard reschedule (logged as `ROS_ITEM_UPDATE`), agency roster submission, crew check-in → 0 runtime errors; screenshots reviewed (planning Gantt, resource Gantt, people, site plan, day-of board, workload) and fixed (fit-to-width, milestone labels, tick collisions, table label sizing, missing `tone-info`).

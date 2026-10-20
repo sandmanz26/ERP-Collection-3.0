@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Badge, StatusBadge, PillSelect, Alert, Button, QrCode, MobileTemplate } from '../design-system/index.js';
+import { Badge, StatusBadge, PillSelect, Alert, Button, QrCode, MobileTemplate, Card } from '../design-system/index.js';
 import { sortRos } from '../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../lib/dates.js';
 import { ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
 import { headcount } from '../lib/derived.js';
 import { CallSheet } from './event/RunOfShowTab.jsx';
+import { DayView, IssuesPanel } from './event/TimelineTab.jsx';
+import { productionIssues } from '../lib/timeline.js';
+import { positionFill } from '../lib/workforce.js';
+import { diffDays } from '../lib/dates.js';
 
 export default function DayOf() {
   const { id } = useParams();
@@ -30,6 +34,7 @@ export default function DayOf() {
         <select value={ev.id} onChange={(e) => nav(`/dayof/${e.target.value}`)}>{candidates.map((e) => <option key={e.id} value={e.id}>{e.name} — {fmtDate(e.date)}</option>)}</select>
         <Button variant={state.online ? 'secondary' : 'danger-solid'} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? '📶 Online — simulate offline' : '📵 Offline — reconnect & sync'}</Button>
       </div>
+      <div className="grid" style={{ gridTemplateColumns: user.role === 'crew' ? '1fr' : 'minmax(360px, 430px) minmax(0, 1fr)', alignItems: 'start' }}>
       <MobileTemplate title={ev.name} status={<Badge tone={state.online ? 'ok' : 'danger'}>{state.online ? 'online' : `offline · ${state.offlineQueue.length} queued`}</Badge>}>
           <div>
             <div className="row between mb"><span className="muted">{fmtDate(ev.date, { weekday: 'short' })} · {ev.venue?.name}</span><span className="badge">{user.name.split(' ')[0]}</span></div>
@@ -42,7 +47,7 @@ export default function DayOf() {
                 </div>
               </div>
             )}
-            <PillSelect options={[{ id: 'timeline', label: 'Timeline' }, { id: 'mine', label: 'My cues' }, { id: 'checkin', label: 'Check-in' }, { id: 'incident', label: 'Incident' }, { id: 'sheet', label: 'Call sheet' }]} value={tab} onChange={setTab} />
+            <PillSelect options={[{ id: 'timeline', label: 'Timeline' }, { id: 'mine', label: 'My cues' }, { id: 'checkin', label: 'Guests' }, { id: 'crew', label: 'Crew' }, { id: 'incident', label: 'Incident' }, { id: 'sheet', label: 'Call sheet' }]} value={tab} onChange={setTab} />
             {(tab === 'timeline' || tab === 'mine') && (
               <>
                 <div className="mt"><select value={se} onChange={(e) => setSe(e.target.value)} style={{ width: '100%' }}><option value="all">All functions</option>{ev.subEvents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
@@ -67,10 +72,13 @@ export default function DayOf() {
               </>
             )}
             {tab === 'checkin' && <CheckIn ev={ev} />}
+            {tab === 'crew' && <CrewCheckIn ev={ev} />}
             {tab === 'incident' && <Incident ev={ev} />}
             {tab === 'sheet' && <div className="mt" style={{ fontSize: 12 }}><CallSheet ev={ev} /></div>}
           </div>
       </MobileTemplate>
+      {user.role !== 'crew' && <LiveBoard ev={ev} />}
+      </div>
     </div>
   );
 }
@@ -119,6 +127,58 @@ function Incident({ ev }) {
       <Button variant="danger-solid" disabled={!v.description} onClick={() => { act('INCIDENT_ADD', { eventId: ev.id, ...v }); setV({ ...v, description: '', photo: null }); }}>Report incident</Button>
       <h4 className="mt">Reported</h4>
       {ev.incidents.map((i) => <Alert key={i.id} tone={i.severity === 'high' ? 'danger' : 'warning'}><div><b>{i.type}</b> · {i.description}<div className="faint">{fmtDateTime(i.at)}</div></div></Alert>)}
+    </div>
+  );
+}
+
+/** Crew check-in: scan/type the QR credential; live headcount per position; mark no-shows to trigger replacement. */
+function CrewCheckIn({ ev }) {
+  const { act } = useStore();
+  const [code, setCode] = useState('');
+  const positions = ev.positions || [];
+  const scan = () => { if (code.trim()) { act('CREW_CHECKIN', { eventId: ev.id, code }); setCode(''); } };
+  if (!positions.length) return <div className="empty">No staffing plan for this event.</div>;
+  return (
+    <div className="mt">
+      <div className="row"><input style={{ flex: 1 }} placeholder="Scan crew QR / type CRW-… code" value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && scan()} /><Button variant="primary" onClick={scan}>Check in</Button></div>
+      {positions.map((p) => {
+        const f = positionFill(ev, p);
+        const onSite = f.workers.filter((w) => w.status === 'checked_in').length + f.shifts.filter((s) => s.clockIn && !s.clockOut).length;
+        return (
+          <div key={p.id} className="card compact mt">
+            <div className="row between"><b>{p.role}</b><Badge tone={onSite >= p.qty ? 'ok' : onSite ? 'warn' : 'danger'}>{onSite}/{p.qty} on site</Badge></div>
+            <div className="faint text-xs">{p.department} · call {p.start} · {p.vendorId ? f.workers[0]?.company ?? 'agency' : p.source}</div>
+            {f.workers.filter((w) => w.status !== 'declined').map((w) => (
+              <div key={w.id} className="row between text-sm" style={{ marginTop: 4 }}>
+                <span>{w.name} {w.status === 'no_show' && <Badge tone="danger">no-show</Badge>}</span>
+                <span className="row" style={{ gap: 4 }}>
+                  {w.status !== 'checked_in' && w.status !== 'no_show' && <Button size="sm" onClick={() => act('CREW_CHECKIN', { eventId: ev.id, code: w.credentialCode })}>In</Button>}
+                  {w.status === 'checked_in' && <Button size="sm" variant="success" onClick={() => act('CREW_CHECKIN', { eventId: ev.id, code: w.credentialCode, direction: 'out' })}>✓ Out</Button>}
+                  {w.status !== 'checked_in' && w.status !== 'no_show' && <Button size="sm" variant="ghost" onClick={() => act('CREW_NO_SHOW', { eventId: ev.id, workerId: w.id })}>No-show</Button>}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Desktop production board shown next to the phone: the live Gantt with a NOW line and open issues. */
+export function LiveBoard({ ev }) {
+  const { state, today, act } = useStore();
+  const issues = productionIssues(state, ev);
+  const now = new Date();
+  const days = [...new Set(ev.subEvents.map((s) => s.date).filter(Boolean))].sort();
+  const nowMarker = days.length && diffDays(days[0], today) >= 0 && diffDays(days[0], today) <= 2 ? [{ at: diffDays(days[0], today) * 1440 + now.getHours() * 60 + now.getMinutes(), label: 'Now', tone: 'brand' }] : [];
+  return (
+    <div className="stack">
+      <Card title="Live production board">
+        <DayView ev={ev} group="vendor" issues={issues} extraMarkers={nowMarker} onMove={(item, delta) => act('ROS_SHIFT', { eventId: ev.id, itemId: item.id, minutes: delta })} />
+        {!nowMarker.length && <div className="faint text-sm">The NOW line appears on the event days.</div>}
+      </Card>
+      <IssuesPanel ev={ev} issues={issues.filter((i) => i.kind !== 'staffing')} />
     </div>
   );
 }

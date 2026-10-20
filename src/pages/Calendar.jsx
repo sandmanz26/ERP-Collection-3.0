@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, StageBadge, ConfirmButton, Button } from '../design-system/index.js';
+import { Card, Badge, StageBadge, ConfirmButton, Button, Gantt, dayTicks } from '../design-system/index.js';
 import { AvailabilityCheck } from '../components/Availability.jsx';
 import { availability } from '../lib/availability.js';
 import { toISODate, parseDate, fmtDate, diffDays } from '../lib/dates.js';
 import { SALES_STAGES } from '../lib/lifecycle.js';
+import { workloadTimeline } from '../lib/timeline.js';
+import { useNavigate } from 'react-router-dom';
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -33,6 +35,9 @@ export default function CalendarPage() {
           <div className="muted">Capacity per date is configurable (Settings). A date is only <b>locked</b> once the deposit is received; before that it is a <b>hold</b> that expires after {state.settings.holdExpiryDays} days.</div>
         </div>
       </div>
+      <Card title="Planner workload — each event from T-45 to close-out" className="mb">
+        <WorkloadView />
+      </Card>
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(300px,1fr)' }}>
         <Card title={parseDate(`${month}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} actions={<div className="row"><Button size="sm" onClick={() => shift(-1)}>‹</Button><Button size="sm" onClick={() => setMonth(today.slice(0, 7))}>Today</Button><Button size="sm" onClick={() => shift(1)}>›</Button></div>}>
           <div className="cal">
@@ -95,5 +100,18 @@ export default function CalendarPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Portfolio Gantt: overlapping bars on one planner lane = crunch periods (several events peaking together). */
+function WorkloadView() {
+  const { state, today } = useStore();
+  const nav = useNavigate();
+  const tl = workloadTimeline(state, today);
+  return (
+    <>
+      <Gantt range={tl.range} lanes={tl.lanes} ticks={dayTicks(tl.range, tl.toDate)} markers={tl.markers} pxPerUnit={3} fit labelWidth={170} onItemClick={(it) => nav(`/events/${it.href}?tab=timeline`)} />
+      <div className="legend mt"><span><i className="tone-brand-soft" style={{ border: '1px solid' }} />Social event</span><span><i className="tone-info-soft" style={{ border: '1px solid' }} />Corporate event</span><span className="muted">Stacked bars on one lane = parallel events for that planner. Click to open the event timeline.</span></div>
+    </>
   );
 }

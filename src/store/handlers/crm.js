@@ -13,6 +13,7 @@ function emptyParts() {
     ros: { status: 'draft', version: 1, items: [], history: [] }, shifts: [], incidents: [], decorRequests: [], decorReturn: null,
     closing: { venueDepositReturned: false, surveySent: false, survey: null, reviewRequested: false, vendorRatingsDone: false, damageBilled: false },
     payers: [], clientBudget: {}, finalHeadcount: null, cancellation: null, postponements: [], interactions: [], accountingSync: [], approvals: [],
+    positions: [], workers: [], production: { accessWindows: [], resources: [] }, sitePlan: { rooms: [] },
   };
 }
 
@@ -122,6 +123,8 @@ export const crmHandlers = {
     ev.tasks = shiftTasks(ev.tasks, newDate);
     ev.subEvents.forEach((s) => { if (s.date) s.date = addDays(s.date, delta); });
     ev.shifts.forEach((s) => { s.date = addDays(s.date, delta); });
+    (ev.positions || []).forEach((p) => { p.date = addDays(p.date, delta); });
+    (ev.production?.accessWindows || []).forEach((w) => { w.date = addDays(w.date, delta); });
     ev.paymentSchedule.filter((p) => p.status === 'scheduled' && p.source === 'contract' && !p.isDeposit).forEach((p) => { p.dueDate = addDays(p.dueDate, delta); });
     ev.postponements.push({ from: old, to: newDate, at: new Date().toISOString(), by: ctx.user.id, reason, fee: Number(fee) || 0 });
     state.holds.filter((h) => h.eventId === eventId && h.status === 'active').forEach((h) => { h.status = 'released'; promoteHolds(ctx, h.date); });

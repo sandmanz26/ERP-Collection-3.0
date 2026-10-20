@@ -6,6 +6,7 @@ import { shiftCost } from './staff.js';
 import { contractFullySigned } from './contracts.js';
 import { stageIndex } from './lifecycle.js';
 import { decorSnapshot } from './decorApi.js';
+import { workforceCost } from './workforce.js';
 
 export function eventType(state, ev) {
   return state.settings.eventTypes.find((t) => t.id === ev.eventTypeId);
@@ -90,11 +91,13 @@ export function decorCost(ev) {
   return sum(ev.decorRequests, (r) => (db.items.find((i) => i.id === r.itemId)?.unitCost || 0) * r.qty);
 }
 
+/** Internal & registered-freelancer shifts (with OT rules) + outsourced/freelance positions from the staffing plan. */
 export function crewCost(state, ev) {
-  return sum(ev.shifts, (s) => {
+  const shifts = sum(ev.shifts, (s) => {
     const st = state.staff.find((x) => x.id === s.staffId);
     return st ? shiftCost(s, st).cost : 0;
   });
+  return round2(shifts + workforceCost(ev));
 }
 
 export function vendorCost(ev) {
