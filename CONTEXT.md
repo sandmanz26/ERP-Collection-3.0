@@ -106,3 +106,7 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 
 ### [2026-10-20] #017 — English as base language
 - Translated `CONTEXT.md` entries #001–#012 to English; rewrote `HANDOFF.md` and `README.md` in English; added `docs/FEATURE_REVIEW.md`. UI copy was already English.
+
+### [2026-10-20] #018 — Commit & push attempt
+- Committed `89b3bbb` (design system) and `6a18890` (feature roast + English docs) on `claude/exciting-einstein-b58ibb`.
+- `git push` failed again with HTTP 403: the Claude GitHub App has no access to `sandmanz26/ERP-Collection-3.0`. Commits remain local until access is granted (https://claude.ai/connect-github), then push with `git push -u origin claude/exciting-einstein-b58ibb`.
