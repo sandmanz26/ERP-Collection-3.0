@@ -1,0 +1,178 @@
+import './setup.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { calcLines, calcTax, calcProposal } from '../src/lib/pricing.js';
+import { generatePaymentSchedule, calcCancellation } from '../src/lib/contracts.js';
+import { shiftTasks, generateTasks } from '../src/lib/tasks.js';
+import { shiftCost, findConflicts } from '../src/lib/staff.js';
+import { shiftFrom } from '../src/lib/ros.js';
+import { availability } from '../src/lib/availability.js';
+import { buildSeed } from '../src/data/seed.js';
+import { reducer } from '../src/store/reducer.js';
+import { addDays, todayISO } from '../src/lib/dates.js';
+import { eventFinancials, leakage } from '../src/lib/derived.js';
+
+const JUR = [
+  { id: 'NY', region: 'US', rate: 10, taxServiceFees: true, name: 'NY' },
+  { id: 'CA', region: 'US', rate: 10, taxServiceFees: false, name: 'CA' },
+  { id: 'FR', region: 'EU', rate: 20, name: 'FR' },
+];
+const lines = [
+  { id: 'a', pricing: 'fixed', qty: 2, unitPrice: 100, unitCost: 40, optional: false, selected: true },
+  { id: 'b', pricing: 'per_guest', unitPrice: 10, unitCost: 5, optional: false, selected: true },
+  { id: 'c', pricing: 'fixed', qty: 1, unitPrice: 500, unitCost: 0, optional: true, selected: false },
+  { id: 'd', pricing: 'percentage', pct: 20, costPct: 0, optional: false, selected: true },
+];
+
+test('pricing: fixed, per-guest, percentage, optional', () => {
+  const r = calcLines(lines, 50);
+  assert.equal(r[0].amount, 200);
+  assert.equal(r[1].amount, 500);
+  assert.equal(r[2].active, false);
+  assert.equal(r[3].amount, 140); // 20% of 700
+});
+
+test('tax: US service fee taxability differs per jurisdiction', () => {
+  const r = calcLines(lines, 50);
+  assert.equal(calcTax({ lines: r, jurisdiction: JUR[0] }).taxAmount, 84);
+  assert.equal(calcTax({ lines: r, jurisdiction: JUR[1] }).taxAmount, 70);
+});
+
+test('tax: EU reverse charge for cross-border B2B', () => {
+  const r = calcLines(lines, 50);
+  const b2b = calcTax({ lines: r, jurisdiction: JUR[2], client: { type: 'company', vatId: 'DE1', country: 'DE' }, companyCountry: 'FR' });
+  assert.equal(b2b.reverseCharge, true);
+  assert.equal(b2b.taxAmount, 0);
+  const b2c = calcTax({ lines: r, jurisdiction: JUR[2], client: { type: 'individual', country: 'DE' }, companyCountry: 'FR' });
+  assert.equal(b2c.taxAmount, 168);
+  const p = calcProposal({ lines, guestCount: 50, jurisdictionId: 'FR' }, { jurisdictions: JUR, client: {}, companyCountry: 'FR' });
+  assert.equal(p.total, 1008);
+});
+
+test('payment schedule 30/40/30 sums to total; late booking due now', () => {
+  const tpl = { installments: [{ label: 'd', pct: 30, due: 'signing' }, { label: 's', pct: 40, due: { daysBefore: 90 } }, { label: 'f', pct: 30, due: { daysBefore: 14 } }] };
+  let i = 0;
+  const s = generatePaymentSchedule({ total: 1000.01, eventDate: '2027-06-01', signDate: '2027-04-01', template: tpl, idFn: () => `x${i++}` });
+  assert.equal(Math.round(s.reduce((a, x) => a + x.amount, 0) * 100) / 100, 1000.01);
+  assert.equal(s[1].dueDate, '2027-04-01'); // T-90 before signing -> due at signing
+  assert.equal(s[2].dueDate, '2027-05-18');
+});
+
+test('cancellation table', () => {
+  const policy = { rows: [{ minDaysBefore: 180, forfeitPct: 30 }, { minDaysBefore: 90, forfeitPct: 50 }, { minDaysBefore: 0, forfeitPct: 100 }] };
+  const r = calcCancellation({ policy, contractTotal: 10000, paid: 3000, eventDate: '2027-06-01', cancelDate: '2027-02-01' });
+  assert.equal(r.forfeitPct, 50);
+  assert.equal(r.fee, 5000);
+  assert.equal(r.balanceDue, 2000);
+  const eo = calcCancellation({ policy, contractTotal: 10000, paid: 3000, eventDate: '2027-06-01', cancelDate: '2027-02-01', byEO: true });
+  assert.equal(eo.refund, 3000);
+});
+
+test('tasks shift when event date moves', () => {
+  let i = 0;
+  const t = generateTasks([{ key: 'a', title: 'A', offsetDays: -14 }], '2027-06-01', () => `t${i++}`);
+  assert.equal(t[0].dueDate, '2027-05-18');
+  assert.equal(shiftTasks(t, '2027-07-01')[0].dueDate, '2027-06-17');
+});
+
+test('overtime CA daily rules & conflicts', () => {
+  const c = shiftCost({ start: '08:00', end: '22:00' }, { rate: 10, rateType: 'hourly', laborRegion: 'US-CA' });
+  assert.equal(c.ot, 4);
+  assert.equal(c.dt, 2);
+  assert.equal(c.cost, 80 + 60 + 40);
+  const conf = findConflicts([{ staffId: 's', date: 'd', start: '10:00', end: '14:00' }, { staffId: 's', date: 'd', start: '13:00', end: '18:00' }]);
+  assert.equal(conf.length, 1);
+});
+
+test('run of show shift moves later items only', () => {
+  const items = [{ id: '1', subEventId: 's', track: 'g', start: '10:00' }, { id: '2', subEventId: 's', track: 'g', start: '11:00' }, { id: '3', subEventId: 's', track: 'g', start: '09:00' }];
+  const r = shiftFrom(items, '1', 15);
+  assert.deepEqual(r.map((x) => x.start), ['10:15', '11:15', '09:00']);
+});
+
+function run(state, type, payload, userId) {
+  if (userId) state = reducer(state, { type: 'SET_USER', payload: { userId } });
+  return reducer(state, { type, payload });
+}
+
+test('store: lead -> proposal -> contract -> deposit locks date; all logged', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const date = addDays(todayISO(), 200);
+  s = run(s, 'LEAD_CREATE', { name: 'Test Wedding', eventTypeId: 'wedding', clientName: 'Jo Test', email: 'jo@x.com', source: 'Website form', date, guestCount: 100, budget: 50000 }, 'u_sales');
+  const id = s.events[0].id;
+  s = run(s, 'HOLD_CREATE', { eventId: id, date });
+  assert.equal(s.events[0].dateStatus, 'hold');
+  s = run(s, 'STAGE_CHANGE', { eventId: id, to: 'qualified' });
+  assert.equal(s.events[0].stage, 'qualified');
+  s = run(s, 'STAGE_CHANGE', { eventId: id, to: 'booked' });
+  assert.ok(s.lastError, 'booking without contract must be rejected');
+  assert.equal(s.activityLog[0].status, 'rejected');
+  s = run(s, 'PROPOSAL_CREATE', { eventId: id });
+  s = run(s, 'PROPOSAL_ACTIVATE', { eventId: id, versionId: s.events[0].proposals[0].id });
+  assert.equal(s.events[0].stage, 'proposal_sent');
+  s = run(s, 'PROPOSAL_ACCEPT', { eventId: id, versionId: s.events[0].proposals[0].id });
+  s = run(s, 'CONTRACT_GENERATE', { eventId: id, signers: [{ name: 'Jo Test', email: 'jo@x.com', role: 'Client' }], paymentScheduleId: 'ps_social', cancellationPolicyId: 'cp_social' });
+  s = run(s, 'CONTRACT_SEND', { eventId: id });
+  s = run(s, 'CONTRACT_SIGN', { eventId: id, signerId: s.events[0].contract.signers[0].id, typedName: 'Jo Test' });
+  let ev = s.events[0];
+  assert.equal(ev.stage, 'booked');
+  assert.equal(ev.contract.immutable, true);
+  assert.equal(ev.dateStatus, 'hold', 'signed but not paid = still hold');
+  assert.equal(ev.invoices.length, 1);
+  s = run(s, 'PAYMENT_RECORD', { eventId: id, invoiceId: ev.invoices[0].id, amount: ev.invoices[0].amount, method: 'card' });
+  ev = s.events[0];
+  assert.equal(ev.dateStatus, 'locked');
+  assert.equal(s.holds.find((h) => h.eventId === id).status, 'converted');
+  const f = eventFinancials(s, ev);
+  assert.ok(f.deferred > 0, 'deposit is deferred revenue');
+  s = run(s, 'STAGE_CHANGE', { eventId: id, to: 'planning' });
+  assert.equal(s.events[0].stage, 'planning');
+  assert.ok(s.activityLog.length > 10);
+});
+
+test('store: hold release promotes second hold & notifies', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const first = s.holds.find((h) => h.eventId === 'ev_lead_stellar');
+  s = run(s, 'HOLD_RELEASE', { holdId: first.id }, 'u_sales');
+  const second = s.holds.find((h) => h.eventId === 'ev_lead_nguyen');
+  assert.equal(second.priority, 1);
+  assert.ok(s.outbox.some((o) => o.key === `promoted:${second.id}`));
+});
+
+test('store: change order approval updates contract & leakage', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const before = ev.contract.total;
+  const co = ev.changeOrders.find((c) => c.status === 'sent');
+  s = run(s, 'CO_APPROVE', { eventId: 'ev_carter', coId: co.id, method: 'click' }, 'u_client1');
+  const after = s.events.find((e) => e.id === 'ev_carter');
+  assert.ok(after.contract.total > before);
+  assert.ok(after.paymentSchedule.some((p) => p.coId === co.id));
+  assert.ok(leakage(s, todayISO()).some((l) => l.type === 'Unbilled change order'));
+});
+
+test('store: exception CO needs special approval', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const co = s.events.find((e) => e.id === 'ev_acme').changeOrders[0];
+  s = run(s, 'CO_APPROVE', { eventId: 'ev_acme', coId: co.id, method: 'click' }, 'u_client4');
+  assert.ok(s.lastError);
+  s = run(s, 'CO_SPECIAL_APPROVE', { eventId: 'ev_acme', coId: co.id, note: 'ok' }, 'u_admin');
+  s = run(s, 'CO_APPROVE', { eventId: 'ev_acme', coId: co.id, method: 'click' }, 'u_client4');
+  assert.equal(s.events.find((e) => e.id === 'ev_acme').changeOrders[0].status, 'approved');
+});
+
+test('availability respects capacity', () => {
+  const s = buildSeed();
+  const ev = s.events.find((e) => e.id === 'ev_carter');
+  const a = availability(ev.date, { events: s.events, holds: s.holds, capacity: s.settings.capacity });
+  assert.equal(a.capacity, 2);
+  assert.equal(a.booked.length, 1);
+});
+
+test('system tick auto-invoices & is idempotent', () => {
+  let s = { ...buildSeed(), effects: [] };
+  s = reducer(s, { type: 'SYSTEM_TICK', payload: {}, system: true });
+  const n1 = s.outbox.length;
+  s = reducer(s, { type: 'SYSTEM_TICK', payload: {}, system: true });
+  assert.equal(s.outbox.length, n1);
+});
