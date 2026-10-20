@@ -176,3 +176,5 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 - User explicitly asked to push to `main` for a Vercel deployment.
 - Added `vercel.json` (framework vite, `npm run build`, output `dist`). No rewrites needed: the app uses HashRouter, so every route is served by `index.html`.
 - Pushing `HEAD` → `origin/main` (plus the working branch).
+- Result: `git push origin HEAD:main` → HTTP 403 (Claude GitHub App not installed on `sandmanz26/ERP-Collection-3.0`; the repo is readable and still empty). `add_repo` confirms the repo is attached, so the block is the GitHub App installation.
+- Workaround: created `release/eo-management-system.bundle` (full git history; `git clone` it, then `git push origin main`) and `release/eo-management-system-source.zip` (source without node_modules/dist) so the owner can push from their own machine.
