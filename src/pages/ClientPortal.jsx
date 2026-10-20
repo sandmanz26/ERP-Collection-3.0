@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button } from '../design-system/index.js';
+import { Card, Badge, Money, Alert, Tabs, EmptyState, Field, ProgressBar, StatusBadge, Button, printDocument } from '../design-system/index.js';
+import { proposalHtml } from '../lib/documents.js';
 import { proposalTotals, eventFinancials, clientOf, headcount } from '../lib/derived.js';
 import { proposalExpired } from '../lib/pricing.js';
 import { clientCan } from '../lib/permissions.js';
@@ -97,6 +98,7 @@ function PortalProposal({ ev }) {
       <Card title={`Proposal v${v.version}`} actions={<StatusBadge status={expired ? 'expired' : v.status} />}>
         {expired ? <Alert tone="danger">This proposal expired on {fmtDate(v.validUntil)}. Please ask your planner for an updated version.</Alert> : v.status === 'active' && <Alert tone="info">Valid until {fmtDate(v.validUntil)}. Tick optional extras to add them — the total updates instantly.</Alert>}
         <div className="mt"><ProposalTable ev={ev} version={v} totals={t} internal={false} editable={false} onToggleOptional={v.status === 'active' && canApprove && !expired ? (l) => act('PROPOSAL_TOGGLE_OPTIONAL', { eventId: ev.id, versionId: v.id, lineId: l.id }) : null} /></div>
+        <Button className="mt" onClick={() => { printDocument(`Proposal v${v.version}`, proposalHtml(state, ev, v)); act('DOCUMENT_GENERATED', { eventId: ev.id, kind: 'Proposal (client download)', ref: `v${v.version}` }); }}>Download PDF</Button>{' '}
         {v.status === 'active' && canApprove && <Button variant="primary" className="mt" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: v.id })}>Accept proposal</Button>}
         {!canApprove && <div className="faint mt">You don't have permission to approve costs.</div>}
       </Card>
@@ -108,7 +110,8 @@ function PortalProposal({ ev }) {
 function PortalContract({ ev }) {
   const { user } = useStore();
   if (!ev.contract || ev.contract.status === 'draft') return <EmptyState>Your contract is being prepared.</EmptyState>;
-  const allowed = ev.contract.signers.filter((s) => s.email === user.email || s.name.split(' ')[0] === user.name.split(' ')[0]).map((s) => s.id);
+  // Signers are matched to the logged-in portal user strictly by email address.
+  const allowed = ev.contract.signers.filter((s) => s.email?.toLowerCase() === user.email?.toLowerCase()).map((s) => s.id);
   return (
     <div className="grid" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(280px,2fr)' }}>
       <Card title="Agreement"><div className="contract-body">{ev.contract.body}</div></Card>

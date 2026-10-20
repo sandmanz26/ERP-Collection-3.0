@@ -1,16 +1,18 @@
 # EO Management System
 
-Sistem manajemen Event Organizer (social & corporate, pasar AS & Eropa Barat) berbasis **React + Vite**, **tanpa backend**, memakai **mock data** di `localStorage`.
+Event Organizer management system (social & corporate events, US & Western Europe) built with **React + Vite**, **no backend**, **mock data** in `localStorage`, on an in-house **Atomic Design system**.
 
 ```bash
 npm install
-npm run dev     # buka http://localhost:5173
+npm run dev     # http://localhost:5173
 npm test
 npm run build
 ```
 
-- 📘 **HANDOFF.md** — arsitektur, peta file, pemetaan spesifikasi → kode, skenario demo, batasan. Mulai dari sini.
-- 📒 **CONTEXT.md** — log kronologis setiap aksi engineering (wajib dilanjutkan).
-- 🧾 Di dalam aplikasi, setiap aksi pengguna tercatat di **Activity Log** dan bisa diexport ke `.md`.
+- 📘 **HANDOFF.md** — architecture, design system, file map, spec → code mapping, demo script, limits. Start here.
+- 📒 **CONTEXT.md** — chronological log of every engineering action (must be continued).
+- 🔥 **docs/FEATURE_REVIEW.md** — feature audit ("roast"): bugs found, gaps closed, deferred backlog.
+- 🧾 In the app, every user action is recorded in the **Activity Log** and can be exported to `.md`.
+- 🎨 Living style guide at `#/design-system` (admin).
 
-Gunakan dropdown **Switch role/user** di kanan atas untuk mencoba tiap peran (Admin, Sales, Planner, Production, Finance, Crew, Client portal, Vendor portal).
+Use **Switch role/user** (top right) to try each persona: Admin, Sales, Planner, Production, Finance, Crew, Client portal users, Vendor portal users. Public pages: `#/inquiry`, `#/rsvp`.

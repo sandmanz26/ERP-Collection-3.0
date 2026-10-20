@@ -16,4 +16,4 @@ export { BarChart } from './organisms/BarChart.jsx';
 // templates
 export { PortalTemplate, MobileTemplate, PublicTemplate } from './templates/Templates.jsx';
 // hooks & utils
-export { useForm, download } from './hooks/index.js';
+export { useForm, download, printDocument, escapeHtml } from './hooks/index.js';

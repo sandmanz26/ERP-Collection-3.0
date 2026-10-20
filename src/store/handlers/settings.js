@@ -1,5 +1,27 @@
 // Admin configuration handlers.
 export const settingsHandlers = {
+  USER_CREATE(ctx, { data }) {
+    const u = { id: ctx.id('u'), permissions: data.role === 'client' ? ['view_all', 'message'] : undefined, ...data };
+    ctx.state.users.push(u);
+    return `User invited: ${u.name} (${u.role})`;
+  },
+  USER_UPDATE(ctx, { userId, patch }) {
+    const u = ctx.state.users.find((x) => x.id === userId);
+    Object.assign(u, patch);
+    return `User ${u.name} updated (${Object.keys(patch).join(', ')})`;
+  },
+  CATALOG_ADD(ctx, { data }) {
+    const c = { id: ctx.id('svc'), qty: 1, pct: 0, costPct: 0, ...data };
+    ctx.state.settings.catalog.push(c);
+    return `Catalog item added: ${c.name} (${c.pricing})`;
+  },
+  /** Manual email from a template (logged on the event + outbox). */
+  EMAIL_SEND(ctx, { eventId, templateId, to, subject, body }) {
+    const ev = ctx.ev(eventId);
+    ctx.state.outbox.unshift({ id: ctx.id('mail'), key: null, ts: new Date().toISOString(), to, subject, body, eventId, templateId, automationId: null, status: 'sent (mock)', by: ctx.user.id });
+    ev.interactions.unshift({ id: ctx.id('int'), type: 'email', at: new Date().toISOString(), by: ctx.user.id, summary: `Outbound email to ${to}: ${subject}` });
+    return { summary: `Email sent to ${to}: "${subject}"`, eventId };
+  },
   SETTINGS_SET(ctx, { key, value, label }) {
     ctx.state.settings[key] = value;
     return `Settings: ${label || key} updated`;

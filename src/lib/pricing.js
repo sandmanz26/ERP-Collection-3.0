@@ -103,3 +103,22 @@ export function calcProposal(version, { jurisdictions, client, companyCountry })
 export function proposalExpired(version, today) {
   return !!version?.validUntil && version.validUntil < today && version.status !== 'accepted';
 }
+
+/** Version history: what changed between two proposal versions (matched by catalog id, else by name). */
+export function diffProposals(prev, next) {
+  const key = (l) => l.catalogId ?? l.name;
+  const pm = new Map(prev.lines.map((l) => [key(l), l]));
+  const nm = new Map(next.lines.map((l) => [key(l), l]));
+  const changes = [];
+  next.lines.forEach((l) => {
+    const o = pm.get(key(l));
+    if (!o) return changes.push({ type: 'added', name: l.name });
+    const diffs = ['unitPrice', 'qty', 'pct', 'selected', 'optional'].filter((f) => o[f] !== l[f]).map((f) => `${f} ${o[f]} → ${l[f]}`);
+    if (o.name !== l.name) diffs.unshift(`renamed from "${o.name}"`);
+    if (diffs.length) changes.push({ type: 'changed', name: l.name, detail: diffs.join(', ') });
+  });
+  prev.lines.forEach((l) => { if (!nm.has(key(l))) changes.push({ type: 'removed', name: l.name }); });
+  if (prev.guestCount !== next.guestCount) changes.unshift({ type: 'changed', name: 'Guest count', detail: `${prev.guestCount} → ${next.guestCount}` });
+  if (prev.jurisdictionId !== next.jurisdictionId) changes.unshift({ type: 'changed', name: 'Tax jurisdiction', detail: `${prev.jurisdictionId} → ${next.jurisdictionId}` });
+  return changes;
+}

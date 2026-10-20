@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, BarChart, Money, Badge, download, Button } from '../design-system/index.js';
+import { Card, Tabs, BarChart, Money, Badge, download, Button, PillSelect } from '../design-system/index.js';
 import { eventFinancials, leakage, toUSD, proposalTotals, vendorScore, vendorCompliance } from '../lib/derived.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { stageIndex, isBookedOrLater } from '../lib/lifecycle.js';
@@ -14,7 +14,11 @@ export default function Reports() {
   const { state, today, act } = useStore();
   const [tab, setTab] = useState('pipeline');
   const usd = (n, c) => toUSD(state, n, c);
-  const evs = state.events;
+  const [segment, setSegment] = useState('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  // Filters apply to every report: segment + event date window (events without a date are kept for pipeline only).
+  const evs = state.events.filter((e) => (segment === 'all' || e.segment === segment) && (!from || !e.date || e.date >= from) && (!to || !e.date || e.date <= to));
 
   // 1. pipeline & conversion by source
   const bySource = state.settings.leadSources.map((s) => {
@@ -63,13 +67,19 @@ export default function Reports() {
   const vendors = state.vendors.map((v) => ({ v, score: vendorScore(v), bookings: evs.flatMap((e) => e.vendorBookings).filter((b) => b.vendorId === v.id).length, issues: vendorCompliance(v, today) }));
 
   // 6. leakage
-  const leaks = leakage(state, today);
+  const evIds = new Set(evs.map((e) => e.id));
+  const leaks = leakage(state, today).filter((l) => evIds.has(l.eventId));
 
   const exportCsv = (name, rows) => { download(`${name}.csv`, rows.map((r) => r.join(',')).join('\n'), 'text/csv'); act('INTERACTION_ADD', { eventId: evs[0].id, type: 'note', summary: `Report "${name}" exported` }); };
 
   return (
     <div>
       <div className="page-head"><div className="grow"><h1>Reporting & analytics</h1><div className="muted">All money in USD equivalent (rates in Settings).</div></div></div>
+      <div className="row mb no-print">
+        <PillSelect options={[{ id: 'all', label: 'All segments' }, { id: 'social', label: 'Social' }, { id: 'corporate', label: 'Corporate' }]} value={segment} onChange={setSegment} />
+        <span className="muted">Event date</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" /><span className="muted">→</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
+        {(from || to || segment !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setFrom(''); setTo(''); setSegment('all'); }}>Clear filters</Button>}
+      </div>
       <Tabs tabs={[{ id: 'pipeline', label: 'Pipeline & conversion' }, { id: 'revenue', label: 'Contracted revenue' }, { id: 'profit', label: 'Profitability' }, { id: 'util', label: 'Utilization' }, { id: 'vendors', label: 'Vendor performance' }, { id: 'leak', label: `Leakage (${leaks.length})` }]} value={tab} onChange={setTab} />
       {tab === 'pipeline' && (
         <div className="grid g2">

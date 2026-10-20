@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, CommitInput, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, Alert, EmptyState, Field, CommitInput, Button, useDialog, printDocument } from '../../design-system/index.js';
+import { proposalHtml } from '../../lib/documents.js';
 import { proposalTotals } from '../../lib/derived.js';
-import { proposalExpired } from '../../lib/pricing.js';
+import { proposalExpired, diffProposals } from '../../lib/pricing.js';
 import { decorSnapshot } from '../../lib/decorApi.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { CURRENCIES } from '../../lib/money.js';
@@ -94,6 +95,7 @@ export default function ProposalTab({ ev }) {
     return <Card><EmptyState>No proposal yet.<div className="mt"><Button variant="primary" onClick={() => act('PROPOSAL_CREATE', { eventId: ev.id })}>Build proposal from event-type template</Button></div></EmptyState></Card>;
   }
   const totals = proposalTotals(state, ev, version);
+  const prevVersion = ev.proposals.filter((p) => p.version < version.version).sort((a, b) => b.version - a.version)[0];
   const editable = version.status === 'draft';
   const expired = proposalExpired(version, today);
   const db = decorSnapshot();
@@ -117,6 +119,7 @@ export default function ProposalTab({ ev }) {
           title={`Proposal v${version.version}`}
           actions={
             <div className="row">
+              <Button size="sm" onClick={() => { printDocument(`Proposal v${version.version}`, proposalHtml(state, ev, version)); act('DOCUMENT_GENERATED', { eventId: ev.id, kind: 'Proposal (client view)', ref: `v${version.version}` }); }}>Client PDF</Button>
               <label className="row" style={{ fontSize: 12 }}><input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />Internal view (cost & margin)</label>
               {version.status === 'draft' && <Button variant="primary" onClick={() => act('PROPOSAL_ACTIVATE', { eventId: ev.id, versionId: version.id })}>Send to client (make active)</Button>}
               {version.status === 'active' && <Button variant="success" disabled={expired} onClick={() => act('PROPOSAL_ACCEPT', { eventId: ev.id, versionId: version.id })}>Record client acceptance</Button>}
@@ -142,6 +145,21 @@ export default function ProposalTab({ ev }) {
             </div>
           )}
         </Card>
+        {prevVersion && (
+          <Card title={`What changed: v${prevVersion.version} → v${version.version}`}>
+            {(() => {
+              const changes = diffProposals(prevVersion, version);
+              const a = proposalTotals(state, ev, prevVersion);
+              return (
+                <>
+                  <div className="muted mb">Total {a.total.toFixed(2)} → {totals.total.toFixed(2)} {version.currency} ({totals.total - a.total >= 0 ? '+' : ''}{(totals.total - a.total).toFixed(2)})</div>
+                  {changes.length === 0 && <div className="faint">No line changes.</div>}
+                  {changes.map((c, i) => <div key={i}><Badge tone={c.type === 'added' ? 'ok' : c.type === 'removed' ? 'danger' : 'info'}>{c.type}</Badge> {c.name} {c.detail && <span className="faint">— {c.detail}</span>}</div>)}
+                </>
+              );
+            })()}
+          </Card>
+        )}
         <Card title="Visual moodboard (pulled from Decor Inventory)">
           <Moodboard itemIds={version.moodboard} />
           {editable && (

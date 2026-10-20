@@ -1,4 +1,4 @@
-import { addDays, fmtDate } from '../../lib/dates.js';
+import { addDays, fmtDate, diffDays } from '../../lib/dates.js';
 import { stageLabel, transitionBlockers, isExit } from '../../lib/lifecycle.js';
 import { nextPriority, availability } from '../../lib/availability.js';
 import { shiftTasks } from '../../lib/tasks.js';
@@ -86,7 +86,7 @@ export const crmHandlers = {
     const ev = ctx.ev(eventId);
     assert(date, 'Pick a date to hold');
     assert(!state.holds.some((h) => h.eventId === eventId && h.status === 'active' && h.date === date), 'This event already holds that date');
-    const av = availability(date, { events: state.events.filter((e) => e.id !== eventId), holds: state.holds, capacity: state.settings.capacity });
+    const av = availability(date, { events: state.events.filter((e) => e.id !== eventId), holds: state.holds, capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
     assert(av.free > 0, `Date ${fmtDate(date)} is at full capacity (${av.capacity} booked).`);
     const priority = nextPriority(date, state.holds);
     state.holds.push({ id: ctx.id('hold'), eventId, date, priority, createdAt: new Date().toISOString(), expiresAt: addDays(ctx.today, state.settings.holdExpiryDays), status: 'active' });
@@ -115,9 +115,9 @@ export const crmHandlers = {
     const ev = ctx.ev(eventId);
     const old = ev.date;
     assert(newDate && newDate !== old, 'Choose a new date');
-    const av = availability(newDate, { events: state.events.filter((e) => e.id !== eventId), holds: state.holds.filter((h) => h.eventId !== eventId), capacity: state.settings.capacity });
+    const av = availability(newDate, { events: state.events.filter((e) => e.id !== eventId), holds: state.holds.filter((h) => h.eventId !== eventId), capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
     assert(av.free > 0, `New date ${fmtDate(newDate)} has no capacity`);
-    const delta = (new Date(newDate) - new Date(old)) / 86400000;
+    const delta = diffDays(old, newDate);
     ev.date = newDate;
     ev.tasks = shiftTasks(ev.tasks, newDate);
     ev.subEvents.forEach((s) => { if (s.date) s.date = addDays(s.date, delta); });
@@ -130,7 +130,8 @@ export const crmHandlers = {
       ev.contract && (ev.contract.total = Math.round((ev.contract.total + Number(fee)) * 100) / 100);
     }
     ev.decisions.unshift({ id: ctx.id('dec'), decision: `Event postponed from ${fmtDate(old)} to ${fmtDate(newDate)}${reason ? ` — ${reason}` : ''}`, decidedBy: state.clients.find((c) => c.id === ev.clientId)?.name, approvedAt: new Date().toISOString(), recordedBy: ctx.user.id, reference: 'Postponement' });
-    ctx.notify({ toRoles: ['planner', 'production', 'finance'], eventId, level: 'warning', text: `${ev.name} POSTPONED to ${fmtDate(newDate)}. Tasks, shifts & payment due dates shifted.` });
+    ctx.notify({ toRoles: ['planner', 'production', 'finance', 'vendor', 'crew', 'client'], eventId, level: 'warning', text: `${ev.name} POSTPONED to ${fmtDate(newDate)}. Tasks, shifts, load-in dates & payment due dates shifted.` });
+    ev.vendorBookings.forEach((b) => { if (b.loadIn) b.loadIn = addDays(b.loadIn.slice(0, 10), delta) + b.loadIn.slice(10); if (b.loadOut) b.loadOut = addDays(b.loadOut.slice(0, 10), delta) + b.loadOut.slice(10); b.status = b.status === 'confirmed' ? 'requested' : b.status; });
     ctx.sideEffects.push({ type: 'decor.move', eventId, newDate });
     return { summary: `Postponed ${ev.name} ${fmtDate(old)} → ${fmtDate(newDate)}; ${ev.tasks.length} tasks shifted`, eventId };
   },

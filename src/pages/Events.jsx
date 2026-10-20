@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StageBadge, Badge, Money, PillSelect } from '../design-system/index.js';
+import { Card, StageBadge, Badge, Money, PillSelect, SearchInput } from '../design-system/index.js';
 import { fmtDate } from '../lib/dates.js';
 import { eventFinancials, clientOf } from '../lib/derived.js';
 import { STAGES, EXIT_STAGES } from '../lib/lifecycle.js';
@@ -11,11 +11,12 @@ export default function Events() {
   const [seg, setSeg] = useState('all');
   const [stage, setStage] = useState('');
   const [q, setQ] = useState('');
+  const [mine, setMine] = useState(['planner', 'sales'].includes(user.role));
   const list = state.events
     .filter((e) => seg === 'all' || e.segment === seg)
     .filter((e) => !stage || e.stage === stage)
     .filter((e) => !q || e.name.toLowerCase().includes(q.toLowerCase()))
-    .filter((e) => user.role !== 'planner' || e.plannerId === user.id || !e.plannerId || true)
+    .filter((e) => !mine || e.plannerId === user.id || e.salesId === user.id)
     .sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
   return (
     <div>
@@ -28,7 +29,8 @@ export default function Events() {
           <option value="">All stages</option>
           {[...STAGES, ...EXIT_STAGES].map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
-        <input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <SearchInput value={q} onChange={setQ} placeholder="Search events…" />
+        <label className="row"><input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />Only my events</label>
       </div>
       <Card>
         <div className="table-wrap">

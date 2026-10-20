@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue } from '../design-system/index.js';
+import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue, PillSelect, Button, useDialog } from '../design-system/index.js';
+import { ROLES, CLIENT_PERMISSIONS, BUDGET_CATEGORIES } from '../data/config.js';
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const FEATURES = { guestHouseholds: 'Household-based guest list', seating: 'Seating chart', registration: 'Attendee registration', poRequired: 'PO required', multiplePayers: 'Multiple payers', clientApprovalLayers: 'Layered client approvals', rsvp: 'RSVP', checkInQR: 'QR check-in' };
 
 export default function Settings() {
   const { state, act } = useStore();
+  const dialog = useDialog();
   const [tab, setTab] = useState('general');
   const s = state.settings;
   const set = (key, value, label) => act('SETTINGS_SET', { key, value, label });
@@ -30,6 +32,8 @@ export default function Settings() {
             <div className="row">Hold reminder (days before) <CommitInput className="inline" type="number" value={s.holdReminderDays} onCommit={(n) => set('holdReminderDays', n)} /></div>
             <div className="row">Proposal validity (days) <CommitInput className="inline" type="number" value={s.proposalValidityDays} onCommit={(n) => set('proposalValidityDays', n)} /></div>
             <div className="row">Final headcount deadline (T-days) <CommitInput className="inline" type="number" value={s.finalHeadcountDays} onCommit={(n) => set('finalHeadcountDays', n)} /></div>
+            <div className="row">RSVP deadline (T-days) <CommitInput className="inline" type="number" value={s.rsvpDeadlineDays} onCommit={(n) => set('rsvpDeadlineDays', n)} /></div>
+            <label className="row"><input type="checkbox" checked={!!s.capacity.plannerBased} onChange={(e) => set('capacity', { ...s.capacity, plannerBased: e.target.checked }, 'planner-based capacity')} />Cap daily capacity by number of lead planners</label>
             <div className="row">Late fee % / month <CommitInput className="inline" type="number" value={s.lateFeePct} onCommit={(n) => set('lateFeePct', n)} /></div>
             <div className="row">Accounting provider <select value={s.accountingProvider} onChange={(e) => set('accountingProvider', e.target.value)}><option value="quickbooks">QuickBooks</option><option value="xero">Xero</option></select></div>
           </Card>
@@ -52,13 +56,25 @@ export default function Settings() {
             </div>
             <div>
               <h4>Task template (T-minus)</h4>
-              <div style={{ fontSize: 12, maxHeight: 180, overflowY: 'auto' }}>{t.taskTemplate.map((x) => <div key={x.key}>T{x.offsetDays >= 0 ? '+' : ''}{x.offsetDays} · {x.title} {x.assigneeType === 'client' && <Badge>client</Badge>}</div>)}</div>
+              <div style={{ fontSize: 12, maxHeight: 220, overflowY: 'auto' }}>{[...t.taskTemplate].sort((a, b) => a.offsetDays - b.offsetDays).map((x) => (
+                <div key={x.key} className="row between">
+                  <span>T{x.offsetDays >= 0 ? '+' : ''}{x.offsetDays} · {x.title} {x.assigneeType === 'client' && <Badge>client</Badge>}</span>
+                  <Button variant="ghost" size="sm" aria-label="Remove task" onClick={() => act('EVENT_TYPE_UPDATE', { eventTypeId: t.id, patch: { taskTemplate: t.taskTemplate.filter((y) => y.key !== x.key) } })}>✕</Button>
+                </div>
+              ))}</div>
+              <Button size="sm" className="mt" onClick={async () => {
+                const r = await dialog.form({ title: `Add task to ${t.name} template`, fields: [{ name: 'title', label: 'Task', required: true }, { name: 'offsetDays', label: 'Days relative to event (e.g. -30)', type: 'number', required: true, defaultValue: -30 }, { name: 'assigneeType', label: 'Assignee', type: 'select', options: ['staff', 'client', 'vendor'], defaultValue: 'staff' }, { name: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high'], defaultValue: 'medium' }] });
+                r && act('EVENT_TYPE_UPDATE', { eventTypeId: t.id, patch: { taskTemplate: [...t.taskTemplate, { ...r, key: `k${Date.now()}`, category: 'general' }] } });
+              }}>+ Template task</Button>
             </div>
           </div>
         </Card>
       ))}
       {tab === 'catalog' && (
-        <Card>
+        <Card title={`Service catalog (prices in ${s.company.baseCurrency}, converted per proposal currency)`} actions={<Button variant="primary" onClick={async () => {
+          const r = await dialog.form({ title: 'Add catalog item', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category', type: 'select', options: BUDGET_CATEGORIES, defaultValue: 'Other' }, { name: 'pricing', label: 'Pricing', type: 'select', options: [{ value: 'fixed', label: 'Fixed' }, { value: 'per_guest', label: 'Per guest' }, { value: 'percentage', label: 'Percentage of subtotal' }], defaultValue: 'fixed' }, { name: 'unitPrice', label: 'Unit price', type: 'number', defaultValue: 0 }, { name: 'unitCost', label: 'Unit cost', type: 'number', defaultValue: 0 }, { name: 'pct', label: 'Percent (percentage pricing)', type: 'number', defaultValue: 0 }] });
+          r && act('CATALOG_ADD', { data: { ...r, isServiceFee: r.pricing === 'percentage' } });
+        }}>+ Item</Button>}>
           <table className="t">
             <thead><tr><th>Service</th><th>Category</th><th>Pricing</th><th className="num">Unit price / %</th><th className="num">Unit cost / cost %</th><th>Decor item</th></tr></thead>
             <tbody>{s.catalog.map((c) => (
@@ -90,10 +106,21 @@ export default function Settings() {
         </div>
       )}
       {tab === 'users' && (
-        <Card>
+        <Card title="Users & roles" actions={<Button variant="primary" onClick={async () => {
+          const r = await dialog.form({ title: 'Invite user', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'email', label: 'Email', type: 'email', required: true }, { name: 'role', label: 'Role', type: 'select', options: ROLES.map((x) => ({ value: x.id, label: x.label })), defaultValue: 'planner' }, { name: 'clientId', label: 'Client account (client role)', type: 'select', options: [{ value: '', label: '—' }, ...state.clients.map((c) => ({ value: c.id, label: c.name }))], defaultValue: '' }, { name: 'vendorId', label: 'Vendor (vendor role)', type: 'select', options: [{ value: '', label: '—' }, ...state.vendors.map((v) => ({ value: v.id, label: v.name }))], defaultValue: '' }] });
+          r && act('USER_CREATE', { data: { ...r, clientId: r.clientId || undefined, vendorId: r.vendorId || undefined } });
+        }}>+ Invite user</Button>}>
           <table className="t">
-            <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Linked to</th><th>Portal permissions</th></tr></thead>
-            <tbody>{state.users.map((u) => <tr key={u.id}><td>{u.name}</td><td><Badge>{u.role}</Badge></td><td>{u.email}</td><td>{u.clientId ? state.clients.find((c) => c.id === u.clientId)?.name : u.vendorId ? state.vendors.find((v) => v.id === u.vendorId)?.name : u.staffId ?? '—'}</td><td style={{ fontSize: 12 }}>{(u.permissions || []).join(', ')}{u.payerScope ? ` · pays: ${u.payerScope.join(', ')}` : ''}</td></tr>)}</tbody>
+            <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Linked to</th><th>Portal permissions (clients)</th></tr></thead>
+            <tbody>{state.users.map((u) => (
+              <tr key={u.id}>
+                <td>{u.name}</td>
+                <td><select value={u.role} disabled={u.id === state.currentUserId} onChange={(e) => act('USER_UPDATE', { userId: u.id, patch: { role: e.target.value } })}>{ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></td>
+                <td>{u.email}</td>
+                <td>{u.clientId ? state.clients.find((c) => c.id === u.clientId)?.name : u.vendorId ? state.vendors.find((v) => v.id === u.vendorId)?.name : u.staffId ?? '—'}</td>
+                <td>{u.role === 'client' ? <PillSelect multi options={CLIENT_PERMISSIONS.map((p) => ({ id: p.id, label: p.label }))} value={u.permissions || []} onChange={(perms) => act('USER_UPDATE', { userId: u.id, patch: { permissions: perms } })} /> : <span className="faint">role-based</span>}{u.payerScope && <div className="faint" style={{ fontSize: 11 }}>pays: {u.payerScope.join(', ')}</div>}</td>
+              </tr>
+            ))}</tbody>
           </table>
         </Card>
       )}

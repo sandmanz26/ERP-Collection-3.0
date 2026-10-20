@@ -11,6 +11,7 @@ export const NAV = [
   { path: '/automation', label: 'Communication', icon: '✉', roles: ['admin', 'sales', 'planner'] },
   { path: '/settings', label: 'Settings', icon: '⚙', roles: ['admin'] },
   { path: '/activity', label: 'Activity Log', icon: '☰', roles: ['admin', 'sales', 'planner', 'production', 'finance'] },
+  { path: '/design-system', label: 'Design System', icon: '◧', roles: ['admin'] },
   { path: '/dayof', label: 'Day-of Mobile', icon: '▶', roles: ['admin', 'planner', 'production', 'crew'] },
   { path: '/portal', label: 'Client Portal', icon: '♥', roles: ['client'] },
   { path: '/vendor-portal', label: 'Vendor Portal', icon: '⚑', roles: ['vendor'] },
@@ -47,4 +48,21 @@ export function homeFor(user) {
 
 export function clientCan(user, perm) {
   return user?.role !== 'client' || (user.permissions || []).includes(perm);
+}
+
+/**
+ * Notifications are addressed to roles, but external users must only ever see notifications for THEIR events:
+ * clients → events of their client account; vendors → events they are booked on; crew → events they have a shift on.
+ */
+export function visibleNotifications(state, user) {
+  return state.notifications.filter((n) => {
+    if (user.role === 'admin') return true;
+    const addressed = n.toRoles?.includes(user.role) || n.toUserIds?.includes(user.id);
+    if (!addressed) return false;
+    const ev = n.eventId ? state.events.find((e) => e.id === n.eventId) : null;
+    if (user.role === 'client') return !!ev && ev.clientId === user.clientId;
+    if (user.role === 'vendor') return !!ev && ev.vendorBookings.some((b) => b.vendorId === user.vendorId);
+    if (user.role === 'crew') return !ev || ev.shifts.some((s) => s.staffId === user.staffId);
+    return true;
+  });
 }

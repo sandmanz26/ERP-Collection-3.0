@@ -176,3 +176,63 @@ test('system tick auto-invoices & is idempotent', () => {
   s = reducer(s, { type: 'SYSTEM_TICK', payload: {}, system: true });
   assert.equal(s.outbox.length, n1);
 });
+
+test('weekly overtime across events (FLSA 40h)', async () => {
+  const { weeklyCompliance } = await import('../src/lib/staff.js');
+  const st = { rate: 20, rateType: 'hourly', laborRegion: 'US-NY' };
+  const shifts = [
+    { date: '2027-03-01', start: '08:00', end: '22:00' },
+    { date: '2027-03-02', start: '08:00', end: '22:00' },
+    { date: '2027-03-03', start: '08:00', end: '22:00' },
+  ];
+  const r = weeklyCompliance(st, shifts);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].otHours, 2);
+  assert.equal(r[0].premium, 20);
+});
+
+test('hold of a signed contract is not auto-released on expiry', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const h = s.holds.find((x) => x.eventId === 'ev_laurent');
+  h.expiresAt = addDays(todayISO(), -1);
+  s = reducer(s, { type: 'SYSTEM_TICK', payload: {}, system: true });
+  const after = s.holds.find((x) => x.eventId === 'ev_laurent');
+  assert.equal(after.status, 'active');
+  assert.equal(after.depositOverdue, true);
+  assert.equal(s.events.find((e) => e.id === 'ev_laurent').dateStatus, 'hold');
+});
+
+test('catalog prices convert into the proposal currency', () => {
+  let s = { ...buildSeed(), effects: [] };
+  s = run(s, 'PROPOSAL_CREATE', { eventId: 'ev_lead_rossi' }, 'u_sales2');
+  const ev = s.events.find((e) => e.id === 'ev_lead_rossi');
+  const planning = ev.proposals[0].lines.find((l) => l.catalogId === 'svc_planning');
+  assert.equal(ev.currency, 'EUR');
+  assert.ok(planning.unitPrice < 12000, 'USD 12,000 must convert to fewer EUR');
+});
+
+test('booking with expired COI cannot be confirmed', () => {
+  let s = { ...buildSeed(), effects: [] };
+  const b = s.events.find((e) => e.id === 'ev_carter').vendorBookings.find((x) => x.vendorId === 'vd_groove');
+  s = run(s, 'BOOKING_CONFIRM', { eventId: 'ev_carter', bookingId: b.id }, 'u_planner');
+  assert.ok(s.lastError?.message.includes('COI'));
+});
+
+test('client notifications never leak across clients', async () => {
+  const { visibleNotifications } = await import('../src/lib/permissions.js');
+  let s = { ...buildSeed(), effects: [] };
+  const co = s.events.find((e) => e.id === 'ev_acme').changeOrders[0];
+  s = run(s, 'CO_SEND', { eventId: 'ev_acme', coId: co.id }, 'u_planner');
+  const carterClient = s.users.find((u) => u.id === 'u_client1');
+  const acmeClient = s.users.find((u) => u.id === 'u_client4');
+  assert.equal(visibleNotifications(s, carterClient).some((n) => n.eventId === 'ev_acme'), false);
+  assert.equal(visibleNotifications(s, acmeClient).some((n) => n.eventId === 'ev_acme'), true);
+});
+
+test('proposal diff lists added/removed/changed lines', async () => {
+  const { diffProposals } = await import('../src/lib/pricing.js');
+  const a = { guestCount: 100, jurisdictionId: 'X', lines: [{ catalogId: 'a', name: 'A', unitPrice: 1, qty: 1 }, { catalogId: 'b', name: 'B', unitPrice: 1, qty: 1 }] };
+  const b = { guestCount: 120, jurisdictionId: 'X', lines: [{ catalogId: 'a', name: 'A', unitPrice: 2, qty: 1 }, { catalogId: 'c', name: 'C', unitPrice: 1, qty: 1 }] };
+  const d = diffProposals(a, b);
+  assert.deepEqual(d.map((x) => x.type).sort(), ['added', 'changed', 'changed', 'removed']);
+});

@@ -4,6 +4,11 @@ import { generateTasks } from '../../lib/tasks.js';
 import { assert } from './common.js';
 
 export const planningHandlers = {
+  /** Audit entry for generated/printed documents (invoice, proposal, badges, call sheet…). */
+  DOCUMENT_GENERATED(ctx, { eventId, kind, ref }) {
+    const ev = ctx.ev(eventId);
+    return { summary: `${kind} generated for print/PDF${ref ? ` (${ref})` : ''} — ${ev.name}`, eventId };
+  },
   SUBEVENT_ADD(ctx, { eventId, data }) {
     const ev = ctx.ev(eventId);
     ev.subEvents.push({ id: ctx.id('se'), date: ev.date, guestCount: ev.guestCount, start: '18:00', end: '22:00', venue: ev.venue?.name, room: '', ...data });

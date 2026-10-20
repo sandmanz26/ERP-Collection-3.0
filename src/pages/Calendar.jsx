@@ -21,7 +21,7 @@ export default function CalendarPage() {
   const days = Array.from({ length: 42 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return toISODate(d); });
   const shift = (n) => { const d = parseDate(`${month}-01`); d.setMonth(d.getMonth() + n); setMonth(toISODate(d).slice(0, 7)); };
 
-  const av = availability(sel, { events: state.events, holds: state.holds, capacity: state.settings.capacity });
+  const av = availability(sel, { events: state.events, holds: state.holds, capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
   const holdable = state.events.filter((e) => SALES_STAGES.includes(e.stage) || (e.stage === 'booked' && e.dateStatus !== 'locked'));
   const activeHolds = state.holds.filter((h) => h.status === 'active').sort((a, b) => a.date.localeCompare(b.date) || a.priority - b.priority);
 
@@ -38,7 +38,7 @@ export default function CalendarPage() {
           <div className="cal">
             {DOW.map((d) => <div key={d} className="dow">{d}</div>)}
             {days.map((d) => {
-              const a = availability(d, { events: state.events, holds: state.holds, capacity: state.settings.capacity });
+              const a = availability(d, { events: state.events, holds: state.holds, capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
               return (
                 <div key={d} className={`day ${d.slice(0, 7) !== month ? 'other' : ''} ${d === today ? 'today' : ''} ${a.status === 'full' ? 'full' : a.holds.length ? 'held' : ''}`} onClick={() => setSel(d)} style={sel === d ? { outline: '2px solid var(--brand)' } : undefined}>
                   <div className="row between"><span className="num">{Number(d.slice(8))}</span><span className="faint">{a.booked.length}/{a.capacity}</span></div>

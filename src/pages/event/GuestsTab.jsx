@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Modal, Field, useForm, Alert, StatTile, PillSelect, download, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, Modal, Field, useForm, Alert, StatTile, PillSelect, download, Button, useDialog, printDocument, QrCode } from '../../design-system/index.js';
+import { badgesHtml } from '../../lib/documents.js';
+import QRCode from 'qrcode';
 import { headcount, guaranteeWarnings, finalHeadcountDeadline } from '../../lib/derived.js';
-import { fmtDate } from '../../lib/dates.js';
+import { fmtDate, addDays } from '../../lib/dates.js';
 
 const CYCLE = { pending: 'yes', yes: 'no', no: 'pending' };
 
@@ -108,6 +110,12 @@ export default function GuestsTab({ ev, et }) {
     download(`${ev.name}-guests.csv`, rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n'), 'text/csv');
     act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: 'Guest list exported to CSV' });
   };
+  const printBadges = async () => {
+    const qrMap = {};
+    await Promise.all(ev.households.map(async (h) => { qrMap[h.code] = await QRCode.toDataURL(h.code, { margin: 1, width: 120 }); }));
+    printDocument(`${ev.name} badges`, badgesHtml(state, ev, qrMap));
+    act('DOCUMENT_GENERATED', { eventId: ev.id, kind: 'QR badges', ref: `${guests.length} guests` });
+  };
   const mainSe = ev.subEvents.reduce((a, s) => ((hc.bySubEvent[s.id] || 0) > (hc.bySubEvent[a?.id] || 0) ? s : a), ev.subEvents[0]);
   const meals = {};
   guests.filter((g) => mainSe && g.rsvp[mainSe.id] === 'yes').forEach((g) => (meals[g.meal || 'Not chosen'] = (meals[g.meal || 'Not chosen'] || 0) + 1));
@@ -138,8 +146,8 @@ export default function GuestsTab({ ev, et }) {
         <Card title="RSVP website">
           <p className="muted" style={{ fontSize: 12.5 }}>Each household has a unique code. Guests RSVP per function, choose meals and add allowed plus-ones on the public page.</p>
           <a className="btn" href={`#/rsvp?event=${ev.id}`} target="_blank" rel="noreferrer">Open public RSVP page ↗</a>
-          <div className="faint mt" style={{ fontSize: 12 }}>Try code: <code>{ev.households[0]?.code ?? '—'}</code></div>
-          <div className="row mt"><Button onClick={exportCsv}>Export CSV</Button></div>
+          {ev.households[0] && <div className="row mt"><QrCode value={ev.households[0].code} size={56} /><div className="faint" style={{ fontSize: 12 }}>Try code <code>{ev.households[0].code}</code><br />RSVP closes {fmtDate(addDays(ev.date, -state.settings.rsvpDeadlineDays))}</div></div>}
+          <div className="row mt"><Button onClick={exportCsv}>Export CSV</Button><Button onClick={printBadges}>{et.features.registration ? 'Print badges (QR)' : 'Print QR place cards'}</Button></div>
         </Card>
       </div>
       <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>

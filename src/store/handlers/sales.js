@@ -4,11 +4,15 @@ import { generatePaymentSchedule, renderTemplate, contractFullySigned } from '..
 import { proposalTotals, clientOf } from '../../lib/derived.js';
 import { generateTasks } from '../../lib/tasks.js';
 import { assert, runStageAutomations } from './common.js';
+import { convert } from '../../lib/money.js';
 import { createInvoiceForSchedule } from './finance.js';
 
-function lineFromCatalog(ctx, catalogId, extra = {}) {
+/** Catalog prices are maintained in the company base currency and converted into the proposal currency. */
+function lineFromCatalog(ctx, catalogId, extra = {}, currency) {
   const c = ctx.state.settings.catalog.find((x) => x.id === catalogId);
-  return { id: ctx.id('ln'), catalogId, name: c.name, category: c.category, pricing: c.pricing, unitPrice: c.unitPrice ?? 0, unitCost: c.unitCost ?? 0, qty: c.qty ?? 1, pct: c.pct ?? 0, costPct: c.costPct ?? 0, isServiceFee: !!c.isServiceFee, taxable: true, optional: false, selected: true, decorItemId: c.decorItemId ?? null, ...extra };
+  const base = ctx.state.settings.company.baseCurrency;
+  const fx = (n) => (currency && currency !== base ? convert(n ?? 0, base, currency, ctx.state.settings.fxRates) : n ?? 0);
+  return { id: ctx.id('ln'), catalogId, name: c.name, category: c.category, pricing: c.pricing, unitPrice: fx(c.unitPrice), unitCost: fx(c.unitCost), qty: c.qty ?? 1, pct: c.pct ?? 0, costPct: c.costPct ?? 0, isServiceFee: !!c.isServiceFee, taxable: true, optional: false, selected: true, decorItemId: c.decorItemId ?? null, ...extra };
 }
 
 function editableVersion(ev, versionId) {
@@ -22,7 +26,7 @@ export const salesHandlers = {
   PROPOSAL_CREATE(ctx, { eventId }) {
     const ev = ctx.ev(eventId);
     const et = ctx.state.settings.eventTypes.find((t) => t.id === ev.eventTypeId);
-    const lines = [...et.proposalTemplate.map((c) => lineFromCatalog(ctx, c)), ...et.optionalTemplate.map((c) => lineFromCatalog(ctx, c, { optional: true, selected: false }))];
+    const lines = [...et.proposalTemplate.map((c) => lineFromCatalog(ctx, c, {}, ev.currency)), ...et.optionalTemplate.map((c) => lineFromCatalog(ctx, c, { optional: true, selected: false }, ev.currency))];
     const v = { id: ctx.id('prop'), version: ev.proposals.length + 1, status: 'draft', lines, guestCount: ev.guestCount || 100, jurisdictionId: ev.jurisdictionId, currency: ev.currency, createdAt: new Date().toISOString(), validUntil: addDays(ctx.today, ctx.state.settings.proposalValidityDays), changeSummary: `Created from "${et.name}" template`, moodboard: [], notes: '' };
     ev.proposals.push(v);
     return { summary: `Proposal v${v.version} drafted from ${et.name} template for ${ev.name}`, eventId };
@@ -45,7 +49,7 @@ export const salesHandlers = {
   PROPOSAL_LINE_ADD(ctx, { eventId, versionId, catalogId, custom }) {
     const ev = ctx.ev(eventId);
     const v = editableVersion(ev, versionId);
-    const l = custom ? { id: ctx.id('ln'), catalogId: null, taxable: true, optional: false, selected: true, qty: 1, pct: 0, costPct: 0, unitCost: 0, ...custom } : lineFromCatalog(ctx, catalogId);
+    const l = custom ? { id: ctx.id('ln'), catalogId: null, taxable: true, optional: false, selected: true, qty: 1, pct: 0, costPct: 0, unitCost: 0, ...custom } : lineFromCatalog(ctx, catalogId, {}, v.currency);
     v.lines.push(l);
     return { summary: `Added line "${l.name}" to proposal v${v.version}`, eventId };
   },

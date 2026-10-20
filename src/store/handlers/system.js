@@ -1,4 +1,5 @@
 import { buildSeed } from '../../data/seed.js';
+import { visibleNotifications } from '../../lib/permissions.js';
 import { addDays, diffDays, fmtDate } from '../../lib/dates.js';
 import { fmtMoney } from '../../lib/money.js';
 import { invoiceStatus, invoiceBalance } from '../../lib/derived.js';
@@ -22,9 +23,9 @@ export const systemHandlers = {
     return online ? 'Device back online' : 'Device went OFFLINE — actions will be queued locally';
   },
   NOTIFICATIONS_READ(ctx) {
-    const me = ctx.user;
+    const visible = new Set(visibleNotifications(ctx.state, ctx.user).map((n) => n.id));
     ctx.state.notifications.forEach((n) => {
-      if (n.toRoles?.includes(me.role) || n.toUserIds?.includes(me.id) || me.role === 'admin') n.read = true;
+      if (visible.has(n.id)) n.read = true;
     });
     return 'Marked notifications as read';
   },
@@ -36,8 +37,17 @@ export const systemHandlers = {
     const done = [];
     // 1) expire holds
     state.holds.filter((h) => h.status === 'active' && h.expiresAt < today).forEach((h) => {
-      h.status = 'expired';
       const ev = state.events.find((e) => e.id === h.eventId);
+      if (ev?.contract?.immutable) {
+        // Signed but deposit unpaid: keep the hold (contractual), but escalate instead of silently releasing the date.
+        if (!h.depositOverdue) {
+          h.depositOverdue = true;
+          done.push(`Deposit overdue: ${ev.name} — date at risk`);
+          ctx.notify({ toRoles: ['finance', 'sales', 'admin'], eventId: ev.id, level: 'danger', text: `${ev.name}: contract signed but deposit still unpaid after hold expiry — date ${fmtDate(h.date)} at risk.` });
+        }
+        return;
+      }
+      h.status = 'expired';
       if (ev && ev.dateStatus === 'hold') ev.dateStatus = 'none';
       done.push(`Hold expired: ${ev?.name} (${fmtDate(h.date)})`);
       ctx.notify({ toRoles: ['sales', 'admin'], eventId: h.eventId, level: 'warning', text: `Hold for ${ev?.name} on ${fmtDate(h.date)} EXPIRED.` });

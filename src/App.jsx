@@ -19,6 +19,8 @@ import DayOf from './pages/DayOf.jsx';
 import ClientPortal from './pages/ClientPortal.jsx';
 import VendorPortal from './pages/VendorPortal.jsx';
 import RsvpPublic from './pages/RsvpPublic.jsx';
+import InquiryPublic from './pages/InquiryPublic.jsx';
+import DesignSystem from './pages/DesignSystem.jsx';
 
 function Guard({ path, children }) {
   const { user } = useStore();
@@ -31,6 +33,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/rsvp" element={<RsvpPublic />} />
+      <Route path="/inquiry" element={<InquiryPublic />} />
       <Route
         path="*"
         element={
@@ -48,6 +51,7 @@ export default function App() {
               <Route path="/automation" element={<Guard path="/automation"><Automation /></Guard>} />
               <Route path="/settings" element={<Guard path="/settings"><Settings /></Guard>} />
               <Route path="/activity" element={<Guard path="/activity"><ActivityLog /></Guard>} />
+              <Route path="/design-system" element={<Guard path="/design-system"><DesignSystem /></Guard>} />
               <Route path="/dayof" element={<Guard path="/dayof"><DayOf /></Guard>} />
               <Route path="/dayof/:id" element={<Guard path="/dayof"><DayOf /></Guard>} />
               <Route path="/portal" element={<Guard path="/portal"><ClientPortal /></Guard>} />

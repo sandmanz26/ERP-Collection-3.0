@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, StatusBadge, Money, StatTile, Modal, Field, Alert, Button, useDialog } from '../../design-system/index.js';
+import { Card, Badge, StatusBadge, Money, StatTile, Modal, Field, Alert, Button, useDialog, printDocument } from '../../design-system/index.js';
+import { invoiceHtml } from '../../lib/documents.js';
 import { eventFinancials, invoiceBalance, invoiceStatus } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 
@@ -60,7 +61,7 @@ export function InvoiceTable({ ev, portal, payerFilter }) {
                     <div className="row">
                       {bal > 0 && st !== 'void' && <Button variant="primary" size="sm" onClick={() => setPay(i)}>{portal ? 'Pay now' : 'Record payment'}</Button>}
                       {!portal && st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: ev.id, invoiceId: i.id })}>Apply late fee</Button>}
-                      {portal && st === 'paid' && <Button size="sm" onClick={() => act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: `${user.name} downloaded receipt for ${i.number}` })}>Receipt</Button>}
+                      <Button size="sm" onClick={() => { printDocument(i.number, invoiceHtml(state, ev, i)); act('DOCUMENT_GENERATED', { eventId: ev.id, kind: st === 'paid' ? 'Receipt' : 'Invoice', ref: i.number }); }}>{st === 'paid' ? 'Receipt' : 'View / PDF'}</Button>
                     </div>
                   </td>
                 </tr>

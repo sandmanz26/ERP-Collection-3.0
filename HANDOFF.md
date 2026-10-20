@@ -1,106 +1,116 @@
-# HANDOFF.md — EO Management System (untuk AI / engineer berikutnya)
+# HANDOFF.md — EO Management System (for the next AI / engineer)
 
-> Baca file ini dulu, lalu `CONTEXT.md` (log kronologis setiap aksi engineering).
-> **Aturan wajib:** setiap perubahan yang Anda buat HARUS dicatat sebagai entri baru di `CONTEXT.md`
-> (format `### [YYYY-MM-DD] #NNN — Judul` + Aksi/Alasan/File/Hasil), dan bagian terkait di file ini diperbarui.
+> Read this first, then `CONTEXT.md` (chronological log of every engineering action) and `docs/FEATURE_REVIEW.md` (latest audit + backlog).
+> **Mandatory rule:** every change you make MUST be logged as a new entry in `CONTEXT.md`
+> (`### [YYYY-MM-DD] #NNN — Title` + Action/Reason/Files/Result), and the relevant section of this file must be updated.
+> Base language for code, UI copy and docs: **English**.
 
-## 1. Ringkasan
-Sistem manajemen Event Organizer end-to-end (Lead → Archived) untuk segmen **social** (wedding, birthday, gala pribadi)
-dan **corporate** (konferensi, product launch, offsite) di pasar AS & Eropa Barat.
-- **Stack:** React 18 + Vite 6 + react-router-dom 6 (HashRouter). Tanpa backend, tanpa UI library. CSS di `src/styles.css`.
-- **Data:** mock (`src/data/`), dipersist ke `localStorage` (`eo-ms-state-v1`). Decor Inventory eksternal disimulasikan di key terpisah (`eo-decor-inventory-v1`).
-- **Audit:** setiap aksi lewat `act()` → reducer → tercatat di `state.activityLog` (termasuk aksi ditolak & automation). Bisa diexport ke Markdown dari halaman *Activity Log* atau tab *Activity* per event.
+## 1. Summary
+End-to-end Event Organizer management system (Lead → Archived) for **social** (weddings, birthdays, private galas) and
+**corporate** (conferences, product launches, offsites) events in the US and Western Europe.
+- **Stack:** React 18 + Vite 6 + react-router-dom 6 (HashRouter) + `qrcode`. No backend, no UI library.
+- **UI:** in-house **Atomic Design system** in `src/design-system/` (tokens → atoms → molecules → organisms → templates). Pages import only from `src/design-system/index.js`. Living style guide: `#/design-system` (admin).
+- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 2`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
+- **Audit:** every action goes through `act()` → reducer → `state.activityLog` (incl. rejected attempts, automation runs, offline-pending actions, generated documents). Export to Markdown from *Activity Log* or the event *Activity* tab.
 
-## 2. Menjalankan
+## 2. Running
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 14 unit/integration test (node --test)
-npm run build    # output ke dist/ (bisa di-host statis)
+npm test         # 20 unit/integration tests (node --test)
+npm run build    # static output in dist/
 ```
-Ganti peran/user lewat dropdown **Switch role/user** di topbar (admin, sales, planner, production, finance, crew, 4 user klien dengan hak berbeda, 2 vendor).
-*Settings → Reset demo data* mengembalikan seed.
+Switch persona with **Switch role/user** in the top bar (admin, sales, planner, production, finance, crew, four client users with different permissions, two vendors).
+*Settings → Reset demo data* restores the seed. Public pages (no login): `#/inquiry`, `#/rsvp?event=<id>`.
 
-## 3. Arsitektur & alur data
+## 3. Architecture & data flow
 ```
-UI (pages/*) ──act(type,payload)──► reducer.js ──► handlers/<domain>.js (mutasi draft clone)
-     ▲                                   │  ├─ append activityLog (ok / rejected / offline-pending)
-     │                                   │  ├─ ctx.notify() → state.notifications
-     │                                   │  └─ ctx.sideEffects → state.effects
-     └──── useStore() ◄── Context ◄──────┘
-AppStore.jsx: persist localStorage · proses effects async ke lib/decorApi.js · SYSTEM_TICK tiap 60s · listener online/offline
-Derived data (total, pajak, margin, headcount, leakage, closing) = lib/derived.js — TIDAK disimpan di state.
+UI (pages/*) ──act(type,payload)──► store/reducer.js ──► store/handlers/<domain>.js (mutate a cloned draft)
+     ▲                                     │  ├─ append activityLog (ok / rejected / offline-pending)
+     │                                     │  ├─ ctx.notify() → state.notifications (scoped by visibleNotifications)
+     │                                     │  └─ ctx.sideEffects → state.effects
+     └──── useStore() ◄── Context ◄────────┘
+store/AppStore.jsx: persistence · async effects to lib/decorApi.js · SYSTEM_TICK every 60 s · online/offline listeners
+Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js — NEVER stored in state.
 ```
-- Handler melempar `BusinessError` (via `assert`) untuk aturan bisnis → state tidak berubah, log `REJECTED`, toast merah.
-- Jangan ubah state langsung dari UI. Tambah aksi baru = tambah fungsi di `src/store/handlers/<domain>.js` (otomatis terdaftar lewat spread di `reducer.js`).
-- Input yang bisa diketik memakai `CommitInput` (commit saat blur/Enter) agar log tidak banjir per keystroke.
+- Business-rule violations throw `BusinessError` (via `assert`) → state unchanged, logged as `REJECTED`, red toast.
+- Never mutate state from the UI. New action = new function in `src/store/handlers/<domain>.js` (auto-registered by the spread in `reducer.js`).
+- Typed inputs that dispatch use `CommitInput` (commit on blur/Enter) so the audit log isn't flooded.
+- Never use `window.prompt/confirm/alert` — use `useDialog()` (`form`, `confirm`, `prompt`, `alert`).
+- When the state shape changes, bump `version` in `seed.js` and the check in `AppStore.jsx#init`.
 
-## 4. Peta file
-| Path | Isi |
+## 4. Design system (`src/design-system/`)
+| Layer | Contents |
 |---|---|
-| `src/data/config.js` | Company, kurs, yurisdiksi pajak, katalog layanan, jadwal bayar, kebijakan pembatalan, template kontrak, **Event Types** (konfigurasi segmen), template email, automation, mapping akun QuickBooks/Xero, peran |
-| `src/data/seed.js` | `buildSeed()` — user, klien, vendor, staf, 14 event lintas semua stage (relatif hari ini) |
-| `src/lib/pricing.js` | Line item fixed / per_guest / percentage, item opsional, pajak US (service fee taxable per yurisdiksi), VAT EU/UK/CH + reverse charge B2B lintas negara |
-| `src/lib/contracts.js` | Jadwal bayar dari template, tabel pembatalan, render variabel kontrak |
-| `src/lib/lifecycle.js` | 12 stage + 3 exit, `transitionBlockers()` (guard) |
-| `src/lib/availability.js` | Kapasitas per weekday, hold berprioritas |
-| `src/lib/tasks.js` | Template tugas T-minus, auto-shift saat tanggal berubah |
-| `src/lib/staff.js` | Biaya kru, lembur CA harian, WTD EU/UK/CH, bentrok jadwal, risiko klasifikasi freelancer (ABC test) |
-| `src/lib/ros.js` | Run of show: sort, geser timeline, filter per vendor/staf |
-| `src/lib/decorApi.js` | **Mock API Decor Inventory** (async + latency). Pemetaan endpoint REST ada di komentar header |
-| `src/lib/derived.js` | Selector: finansial event, budget per kategori, headcount, guarantee warning, closing checklist, leakage, compliance vendor, payer summary |
-| `src/lib/permissions.js` | Nav & capability per peran, `clientCan()` untuk izin multi-user klien |
-| `src/lib/exportMd.js` | Export activity log → Markdown |
-| `src/store/reducer.js` | Dispatcher + audit log |
-| `src/store/handlers/*.js` | `system`, `crm`, `sales` (proposal+kontrak), `finance`, `planning`, `vendors`, `guests`, `ops` (CO, ROS, insiden, shift, dekor, close-out), `settings` |
-| `src/pages/*.jsx` | Dashboard, Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic |
-| `src/pages/event/*.jsx` | Workspace event: Overview, Proposal, Contract, Planning (+Decor), Vendors, Guests, Seating, Budget, ChangeOrders, RunOfShow, Staff, Finance, Messages, PostEvent, Activity |
-| `tests/logic.test.js` | Test logika & alur store |
+| `tokens/` | `tokens.css` (color, typography, spacing, radius, elevation, motion, z-index — the only place raw values live), `tokens.js` mirror |
+| `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
+| `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, `Spinner`, `Avatar`, `QrCode` |
+| `molecules/` | `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
+| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart` |
+| `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
+| `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
+Rules: components reference tokens only; status colors (success/warning/danger/info) are reserved for state; add new atoms to the style guide page.
 
-## 5. Pemetaan spesifikasi → implementasi
-| Spec | Di mana |
+## 5. File map
+| Path | Contents |
 |---|---|
-| 3. Lifecycle + Lost/Cancelled/Postponed; tanggal terkunci hanya setelah deposit | `lifecycle.js`, `crm.js` (`STAGE_CHANGE`, `MARK_LOST`, `EVENT_CANCEL`, `EVENT_POSTPONE`), `finance.js` (`lockDateIfDeposit`) |
-| 4.1 CRM: sumber lead, kualifikasi, cek ketersediaan, hold 7 hari + reminder, first/second hold & notifikasi promosi, pipeline + probabilitas, interaksi | `Pipeline.jsx`, `Calendar.jsx`, `Availability.jsx`, `crm.js`, `system.js` (expiry/reminder) |
-| 4.2 Proposal: katalog, 3 jenis harga, opsional, versi (1 aktif), pajak per yurisdiksi, internal vs klien, moodboard dari Decor, masa berlaku, multi-currency | `ProposalTab.jsx`, `sales.js`, `pricing.js` |
-| 4.3 Kontrak: template variabel, multi-signer e-sign + audit, jadwal bayar otomatis, tabel pembatalan, force majeure, immutable | `ContractTab.jsx`, `sales.js` |
-| 4.4 Workspace: sub-event, tugas relatif + dependensi + assign staf/klien/vendor, form klien, design board, dokumen, decision log | `PlanningTab.jsx`, `planning.js` |
-| 4.5 Vendor: direktori, COI/lisensi/W-9 + reminder, RFQ & perbandingan, booking, pass-through vs direct, komisi, portal | `Vendors.jsx`, `VendorsTab.jsx`, `VendorPortal.jsx`, `vendors.js` |
-| 4.6 Tamu: household, kategori, plus-one, anak, RSVP per sub-event, menu/diet, RSVP publik ber-kode, seating drag-drop + aturan + export, check-in QR, headcount live + guarantee warning | `GuestsTab.jsx`, `SeatingTab.jsx`, `RsvpPublic.jsx`, `DayOf.jsx`, `guests.js`, `derived.js` |
-| 4.7 Budget: budget klien vs aktual, cost/sell/margin, sumber otomatis (proposal, vendor, dekor, kru), varians, multi-payer | `BudgetTab.jsx`, `derived.js#budgetByCategory` |
-| 4.8 Change Order: dampak biaya/vendor/dekor/timeline, approval portal + audit, update otomatis kontrak/jadwal/budget/dekor, exception setelah deadline headcount | `ChangeOrdersTab.jsx`, `ops.js` (`applyChangeOrder`) |
-| 4.9 Run of show: track guest & production, versi draft/shared/final + notifikasi, tampilan per vendor, call sheet, mode hari-H (status live, geser waktu, insiden + foto), offline + sync | `RunOfShowTab.jsx`, `DayOf.jsx`, `ops.js`, `reducer.js` (offline queue) |
-| 4.10 Staf: karyawan/freelancer, shift, bentrok, konfirmasi, clock in/out + lokasi, biaya + lembur per wilayah, klasifikasi | `Staff.jsx`, `StaffTab.jsx`, `staff.js` |
-| 4.11 Finance: invoice otomatis, bayar (card/ACH/SEPA mock Stripe, tanpa simpan kartu), reminder & late fee, deferred vs recognized, AP vendor, gratuity, refund/credit note, QuickBooks/Xero mapping, FX dikunci per invoice | `Finance.jsx`, `FinanceTab.jsx`, `finance.js`, `system.js` |
-| 4.12 Client portal multi-user dengan izin berbeda | `ClientPortal.jsx`, `permissions.js#clientCan`, user `u_client1..4` di seed |
-| 4.13 Template & workflow otomatis, sinkron email/kalender (mock + .ics) | `Automation.jsx`, `system.js#SYSTEM_TICK`, `Staff.jsx` (.ics) |
-| 4.14 Post-event: checklist penutupan, laporan kerusakan Decor → tagih klien/venue, survei & review, rating vendor, profitabilitas final | `PostEventTab.jsx`, `ops.js` |
-| 4.15 Laporan: konversi per sumber, revenue terkontrak per bulan + kas, profitabilitas per event/tipe/planner, utilisasi, kinerja vendor, leakage | `Reports.jsx`, `Finance.jsx`, `Dashboard.jsx` |
-| 8. Integrasi Decor Inventory | `decorApi.js`, `DecorPanel.jsx`, efek `decor.*` di `AppStore.jsx` |
+| `src/data/config.js` | Company, FX, tax jurisdictions, catalog (base currency), payment schedules, cancellation policies, contract template, **Event Types** (segment configuration), email templates, automations, QuickBooks/Xero mapping, roles, client permissions, lost reasons |
+| `src/data/seed.js` | `buildSeed()` — users, clients, vendors, staff, 14 events across all stages (relative to today) |
+| `src/lib/pricing.js` | fixed / per_guest / percentage lines, optional items, US sales tax (service-fee taxability per jurisdiction), EU/UK/CH VAT + B2B reverse charge, `diffProposals` |
+| `src/lib/contracts.js` | payment schedule from template, cancellation table, template variables |
+| `src/lib/lifecycle.js` | 12 stages + 3 exits, `transitionBlockers()` |
+| `src/lib/availability.js` | per-weekday & planner-based capacity, prioritized holds |
+| `src/lib/tasks.js` | T-minus task templates, auto-shift |
+| `src/lib/staff.js` | crew cost, CA daily OT, `weeklyCompliance` (FLSA 40h, EU/UK/CH weekly max), conflicts, freelancer classification risk |
+| `src/lib/ros.js` | run of show sort/shift/filter |
+| `src/lib/decorApi.js` | **Mock Decor Inventory API** (async + latency); REST mapping in header comment |
+| `src/lib/derived.js` | selectors: event financials, budget, headcount, guarantees, closing checklist, leakage, vendor compliance, payer summary |
+| `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
+| `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
+| `src/lib/exportMd.js` | activity log → Markdown |
+| `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`) |
+| `src/pages/*.jsx` | Dashboard (role-tailored), Pipeline, Calendar, Events, Vendors, Staff, Finance, Reports, Automation, Settings, ActivityLog, DayOf, ClientPortal, VendorPortal, RsvpPublic, InquiryPublic, DesignSystem |
+| `src/pages/event/*.jsx` | event workspace tabs (Overview … Activity) + `DecorPanel` |
+| `tests/logic.test.js` | logic + store flow tests |
 
-## 6. Skenario demo cepat
-1. **Admin** → Dashboard: lihat hold kedaluwarsa, invoice overdue, CO exception, peringatan guarantee, COI vendor.
-2. **CRM** → *New inquiry* → buka event → *Place hold* → Advance → Proposal *Build* → *Send* → *Record acceptance* → Contract *Generate* → *Send* → e-Sign → Finance *Record payment* deposit → tanggal 🔒 → Advance ke Planning.
-3. **Calendar**: tanggal Stellar/Nguyen punya hold #1/#2 → *Release* hold #1 → Nguyen dipromosikan + email di Communication → Outbox.
-4. **Carter–Walker Wedding**: Seating (aturan dilanggar sengaja), Budget (multi-payer), Change Orders (CO-102 menunggu), Run of Show → Call sheet.
-5. Switch ke **Emily Carter (client)**: approve CO-102, bayar invoice, isi form. Switch ke **Robert Carter**: hanya invoice Catering. **Nina Patel**: hanya tamu.
-6. **Acme Summit**: CO-103 exception → klien ditolak sampai admin *Grant exception approval*.
-7. **Day-of Mobile** (atau user Jamal/crew): Start/Done/+15 menit, insiden + foto, *simulate offline* → aksi “pending sync” di Activity Log → reconnect.
-8. **Harper 50th** (post-event): *Pull return report* dari Decor → tagih kerusakan → rating vendor → survei → Financial close.
-9. **Activity Log** → *Export .md*.
+## 6. Spec → implementation map
+| Spec | Where |
+|---|---|
+| §3 lifecycle, exits, date locked only after deposit | `lifecycle.js`, `crm.js`, `finance.js#lockDateIfDeposit`, `system.js` (signed holds never auto-released) |
+| §4.1 CRM (sources, qualification, availability, 7-day holds + reminders, 1st/2nd hold promotion, pipeline, interactions, web/marketplace intake) | `Pipeline.jsx`, `Calendar.jsx`, `Availability.jsx`, `InquiryPublic.jsx`, `crm.js`, `system.js` |
+| §4.2 proposals (catalog, 3 pricing types, optional upsells, versions + diff, tax, internal vs client view, moodboard, expiry, multi-currency, PDF) | `ProposalTab.jsx`, `sales.js`, `pricing.js`, `documents.js` |
+| §4.3 contracts & e-signature | `ContractTab.jsx`, `sales.js` |
+| §4.4 planning workspace | `PlanningTab.jsx`, `planning.js` |
+| §4.5 vendors (directory, COI/licenses/W-9 + guard, RFQ, pass-through vs direct, commissions, portal with quotes & tasks) | `Vendors.jsx`, `VendorsTab.jsx`, `VendorPortal.jsx`, `vendors.js` |
+| §4.6 guests & RSVP (households, per-function RSVP, public RSVP with deadline, seating rules, QR check-in, live headcount + guarantees) | `GuestsTab.jsx`, `SeatingTab.jsx`, `RsvpPublic.jsx`, `DayOf.jsx`, `guests.js` |
+| §4.7 budget & costing | `BudgetTab.jsx`, `derived.js#budgetByCategory` |
+| §4.8 change orders | `ChangeOrdersTab.jsx`, `ops.js#applyChangeOrder` |
+| §4.9 run of show + day-of + offline | `RunOfShowTab.jsx`, `DayOf.jsx`, `ops.js`, `reducer.js` |
+| §4.10 staff & crew | `Staff.jsx`, `StaffTab.jsx`, `staff.js` |
+| §4.11 finance | `Finance.jsx`, `FinanceTab.jsx`, `finance.js`, `documents.js` |
+| §4.12 client portal (multi-user permissions) | `ClientPortal.jsx`, `permissions.js` |
+| §4.13 communication & automation | `Automation.jsx`, `MessagesTab.jsx` (template composer), `system.js#SYSTEM_TICK` |
+| §4.14 post-event | `PostEventTab.jsx`, `ops.js` |
+| §4.15 reporting (with segment/date filters) | `Reports.jsx`, `Finance.jsx`, `Dashboard.jsx` |
+| §2 user management | `Settings.jsx` → Users & roles |
+| §8 Decor Inventory integration | `decorApi.js`, `DecorPanel.jsx`, effects in `AppStore.jsx` |
 
-## 7. Keputusan & batasan yang disengaja
-- Tanpa backend: “email terkirim”, “Stripe”, “QuickBooks/Xero sync”, “e-signature”, “GPS” adalah simulasi; struktur data sudah disiapkan untuk integrasi nyata.
-- Aturan pajak & ketenagakerjaan **ilustratif** (bukan nasihat hukum/pajak).
-- Kurs statis (Settings). FX dikunci di invoice (`fxRateToUSD`).
-- Pendapatan diakui saat stage ≥ `post_event` (atau setelah cancel by client).
-- Event = satu entitas sejak Lead (tidak ada entitas Lead terpisah).
-- Kapasitas tanggal dihitung dari event booked + hold aktif; hold melebihi slot = waitlist.
+## 7. Demo script
+1. **Admin** dashboard → attention list (expiring holds, overdue invoices, exception CO, guarantee warning, vendor compliance). Switch to **Hannah (finance)** / **Diego (production)** to see role-tailored dashboards.
+2. **CRM** → *Simulate marketplace lead* or open *Public inquiry form* → open the lead → *Place hold* → advance → Proposal *Build* → *Send* → *Record acceptance* → *Client PDF* → Contract *Generate* → *Send* → e-sign → Finance *Record payment* → 🔒 date locked → Planning.
+3. **Calendar**: release Stellar's hold #1 → Nguyen promoted, email in Communication → Outbox.
+4. **Carter–Walker Wedding**: seating (deliberate rule violation), budget (multiple payers), Change Orders (CO-102 pending), Vendors (Groove can't be confirmed — COI expired), Run of Show → call sheet, Guests → QR place cards.
+5. **Emily Carter (client)**: approve CO-102, pay, forms, download proposal PDF. **Robert Carter**: only catering invoices. **Nina Patel**: guests only.
+6. **Bloom & Vine (vendor)**: submit an RFQ quote, tick the assigned task, see only its own run-of-show rows.
+7. **Acme Summit**: CO-103 exception → client approval rejected until admin *Grant exception approval*.
+8. **Day-of Mobile**: start/done/+15 min, incident with photo, QR check-in, *simulate offline* → "pending sync" in Activity Log → reconnect.
+9. **Harper 50th** (post-event): pull Decor return report → bill damage → rate vendors → survey → Financial close.
+10. **Settings**: invite a user, edit client permissions, add a catalog item and a task-template row. **Activity Log** → *Export .md*.
 
-## 8. Ide pekerjaan lanjutan
-- Backend nyata (mis. Supabase/Postgres) — `handlers/*` bisa dipindah hampir 1:1 menjadi service layer.
-- Code-splitting per route (bundle ~550 KB).
-- Editor template kontrak & event type yang lebih lengkap (tambah/hapus task template dari UI).
-- Seating chart dengan koordinat bebas (floor plan canvas).
-- i18n (UI saat ini English; dokumentasi Indonesia).
-- Test UI (Playwright) di CI.
+## 8. Deliberate decisions & limits
+- No backend: email, Stripe, QuickBooks/Xero, e-signature, GPS and calendar sync are simulated; data shapes are ready for real integrations.
+- Tax and labor rules are **illustrative**, not legal/tax advice.
+- Static FX rates (Settings); FX locked per invoice (`fxRateToUSD`); catalog in base currency, converted when lines are added.
+- Revenue is recognized when stage ≥ `post_event` (or after a client cancellation).
+- RBAC is enforced in the UI and selected reducers — a real backend must enforce every capability server-side.
+- See `docs/FEATURE_REVIEW.md` → *Deferred* for the backlog.

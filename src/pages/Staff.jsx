@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Badge, Modal, Field, useForm, Alert, Money, download, Button } from '../design-system/index.js';
-import { findConflicts, shiftCost, classificationRisk, LABOR_RULES, shiftHours } from '../lib/staff.js';
+import { findConflicts, shiftCost, classificationRisk, LABOR_RULES, shiftHours, weeklyCompliance } from '../lib/staff.js';
 import { fmtDate, addDays } from '../lib/dates.js';
 
 export default function Staff() {
@@ -33,13 +33,14 @@ export default function Staff() {
               const hours = mine.reduce((a, s) => a + shiftHours(s), 0);
               const cost = mine.reduce((a, s) => a + shiftCost(s, st).cost, 0);
               const risk = classificationRisk(st, recent.length);
+              const weekly = weeklyCompliance(st, mine);
               return (
                 <tr key={st.id}>
                   <td><b>{st.name}</b><div className="faint">{st.region} · {st.phone}</div></td>
                   <td><Badge tone={st.type === 'freelancer' ? 'warn' : 'info'}>{st.type}</Badge></td>
                   <td style={{ fontSize: 12 }}>{st.skills.join(', ')}</td>
                   <td>{st.rate}/{st.rateType === 'hourly' ? 'h' : 'event'}</td>
-                  <td style={{ fontSize: 12 }}>{LABOR_RULES[st.laborRegion]?.label}</td>
+                  <td style={{ fontSize: 12 }}>{LABOR_RULES[st.laborRegion]?.label}{weekly.map((w) => <div key={w.week} className="text-danger">{w.warning}{w.premium ? ` (+${w.premium} premium)` : ''}</div>)}</td>
                   <td className="num">{recent.length}</td>
                   <td className="num">{hours.toFixed(1)}</td>
                   <td className="num"><Money value={cost} /></td>

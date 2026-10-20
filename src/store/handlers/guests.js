@@ -1,5 +1,6 @@
 // Guest management, RSVP, seating, check-in.
 import { assert } from './common.js';
+import { addDays } from '../../lib/dates.js';
 
 function guestById(ev, guestId) {
   for (const h of ev.households) {
@@ -65,8 +66,10 @@ export const guestHandlers = {
     return { summary: `Guest ${g.name} removed`, eventId };
   },
   /** RSVP per sub-event; can come from public RSVP page (by household code), portal or staff. */
-  RSVP_SET(ctx, { eventId, guestId, subEventId, value, meal, dietary }) {
+  RSVP_SET(ctx, { eventId, guestId, subEventId, value, meal, dietary, viaPublic }) {
     const ev = ctx.ev(eventId);
+    const deadline = addDays(ev.date, -ctx.state.settings.rsvpDeadlineDays);
+    assert(!viaPublic || ctx.today <= deadline, `The RSVP deadline (${deadline}) has passed — please contact the hosts.`);
     const { h, g } = guestById(ev, guestId);
     assert(h.invitedSubEventIds.includes(subEventId), `${g.name} is not invited to this function`);
     g.rsvp[subEventId] = value;

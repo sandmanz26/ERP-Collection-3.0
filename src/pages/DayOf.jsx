@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Badge, StatusBadge, PillSelect, Alert, Button } from '../design-system/index.js';
+import { Badge, StatusBadge, PillSelect, Alert, Button, QrCode, MobileTemplate } from '../design-system/index.js';
 import { sortRos } from '../lib/ros.js';
 import { addMinutes, fmtDate, fmtDateTime } from '../lib/dates.js';
 import { ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
@@ -30,13 +30,8 @@ export default function DayOf() {
         <select value={ev.id} onChange={(e) => nav(`/dayof/${e.target.value}`)}>{candidates.map((e) => <option key={e.id} value={e.id}>{e.name} — {fmtDate(e.date)}</option>)}</select>
         <Button variant={state.online ? 'secondary' : 'danger-solid'} onClick={() => act('SET_ONLINE', { online: !state.online })}>{state.online ? '📶 Online — simulate offline' : '📵 Offline — reconnect & sync'}</Button>
       </div>
-      <div className="phone">
-        <div className="screen">
-          <div className="bar">
-            <b style={{ flex: 1 }}>{ev.name}</b>
-            <span className={`badge ${state.online ? 'ok' : 'danger'}`}>{state.online ? 'online' : `offline · ${state.offlineQueue.length} queued`}</span>
-          </div>
-          <div style={{ padding: 12 }}>
+      <MobileTemplate title={ev.name} status={<Badge tone={state.online ? 'ok' : 'danger'}>{state.online ? 'online' : `offline · ${state.offlineQueue.length} queued`}</Badge>}>
+          <div>
             <div className="row between mb"><span className="muted">{fmtDate(ev.date, { weekday: 'short' })} · {ev.venue?.name}</span><span className="badge">{user.name.split(' ')[0]}</span></div>
             {myShift && (
               <div className="card" style={{ padding: 10, marginBottom: 10 }}>
@@ -75,8 +70,7 @@ export default function DayOf() {
             {tab === 'incident' && <Incident ev={ev} />}
             {tab === 'sheet' && <div className="mt" style={{ fontSize: 12 }}><CallSheet ev={ev} /></div>}
           </div>
-        </div>
-      </div>
+      </MobileTemplate>
     </div>
   );
 }
@@ -92,7 +86,7 @@ function CheckIn({ ev }) {
       <input className="mt" style={{ width: '100%' }} placeholder="Scan QR / type code or name" value={q} onChange={(e) => setQ(e.target.value)} />
       {hh.map((h) => (
         <div key={h.id} className="card" style={{ padding: 8, marginTop: 6 }}>
-          <div className="row between"><b>{h.name}</b><code>{h.code}</code></div>
+          <div className="row between"><b>{h.name}</b><span className="row"><code>{h.code}</code><QrCode value={h.code} size={40} /></span></div>
           {h.guests.map((g) => (
             <div key={g.id} className="row between" style={{ fontSize: 13 }}>
               <span>{g.name} {g.dietary && <Badge tone="warn">{g.dietary}</Badge>}</span>

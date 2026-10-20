@@ -76,3 +76,31 @@ export function classificationRisk(staff, shiftsLast90) {
   if (shiftsLast90 >= 15) return `Frequent engagement (${shiftsLast90} shifts/90d) — review contractor status.`;
   return null;
 }
+
+function isoWeek(dateISO) {
+  const d = new Date(`${dateISO}T00:00:00Z`);
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((d - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+/**
+ * Weekly rules across ALL events: US weekly overtime (> 40h, FLSA) and EU/UK/CH weekly maximums.
+ * Returns [{ week, hours, otHours, premium, warning }] for weeks that break a rule. Hourly staff only.
+ */
+export function weeklyCompliance(staff, shifts) {
+  const rule = LABOR_RULES[staff.laborRegion] ?? {};
+  const byWeek = {};
+  shifts.forEach((s) => { const w = isoWeek(s.date); byWeek[w] = (byWeek[w] || 0) + shiftHours(s); });
+  return Object.entries(byWeek).flatMap(([week, hours]) => {
+    hours = round2(hours);
+    if (rule.weeklyOT && hours > rule.weeklyOT && staff.rateType === 'hourly') {
+      const otHours = round2(hours - rule.weeklyOT);
+      return [{ week, hours, otHours, premium: round2(otHours * staff.rate * ((rule.otMult ?? 1.5) - 1)), warning: `${week}: ${hours}h > ${rule.weeklyOT}h weekly — ${otHours}h overtime (${rule.label})` }];
+    }
+    if (rule.maxWeekly && hours > rule.maxWeekly) return [{ week, hours, otHours: 0, premium: 0, warning: `${week}: ${hours}h exceeds ${rule.label} weekly max ${rule.maxWeekly}h` }];
+    return [];
+  });
+}

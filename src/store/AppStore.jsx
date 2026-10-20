@@ -4,6 +4,7 @@ import { buildSeed } from '../data/seed.js';
 import { todayISO } from '../lib/dates.js';
 import * as decorApi from '../lib/decorApi.js';
 
+// Bump `version` in seed.js whenever the state shape changes; older snapshots are re-seeded.
 const STORAGE_KEY = 'eo-ms-state-v1';
 const StoreCtx = createContext(null);
 
@@ -12,7 +13,7 @@ function init() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed?.version === 1) return { ...parsed, effects: [] };
+      if (parsed?.version === 2) return { ...parsed, effects: [] };
     }
   } catch { /* corrupted -> reseed */ }
   const seed = buildSeed();

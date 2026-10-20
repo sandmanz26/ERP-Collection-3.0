@@ -2,6 +2,7 @@
 import { fmtDate } from '../../lib/dates.js';
 import { round2 } from '../../lib/money.js';
 import { assert } from './common.js';
+import { vendorCompliance } from '../../lib/derived.js';
 
 export const vendorHandlers = {
   VENDOR_CREATE(ctx, { data }) {
@@ -59,6 +60,8 @@ export const vendorHandlers = {
   BOOKING_CONFIRM(ctx, { eventId, bookingId }) {
     const ev = ctx.ev(eventId);
     const b = ev.vendorBookings.find((x) => x.id === bookingId);
+    const blocking = vendorCompliance(ctx.state.vendors.find((x) => x.id === b.vendorId), ctx.today).filter((i) => i.level === 'danger');
+    assert(!blocking.length, `Cannot confirm: ${blocking.map((i) => i.text).join(', ')}. Upload a valid certificate first.`);
     b.status = 'confirmed';
     b.confirmedAt = new Date().toISOString();
     const v = ctx.state.vendors.find((x) => x.id === b.vendorId);

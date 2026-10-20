@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, Alert, Badge, Button, useDialog } from '../design-system/index.js';
-import { fmtDate } from '../lib/dates.js';
+import { Card, Alert, Badge, Button, QrCode, PublicTemplate, useDialog } from '../design-system/index.js';
+import { fmtDate, addDays } from '../lib/dates.js';
 
 /** Public RSVP website (no login). Guests look up their household by unique code. */
 export default function RsvpPublic() {
@@ -16,8 +16,8 @@ export default function RsvpPublic() {
   const hh = ev?.households.find((h) => h.id === hhId);
   if (!ev) return <div className="empty">Event not found</div>;
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#f4ecd8,#fff)', padding: 24 }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+    <PublicTemplate>
+      <div>
         <div style={{ textAlign: 'center', fontFamily: 'Georgia, serif' }}>
           <div className="faint">You're invited</div>
           <h1 style={{ fontSize: 32 }}>{ev.name}</h1>
@@ -30,7 +30,8 @@ export default function RsvpPublic() {
           </Card>
         )}
         {hh && (
-          <Card className="mt" title={`Welcome, ${hh.name}`}>
+          <Card className="mt" title={`Welcome, ${hh.name}`} actions={<QrCode value={hh.code} size={72} />}>
+            <div className="faint mb" style={{ fontSize: 12 }}>Please respond by {fmtDate(addDays(ev.date, -state.settings.rsvpDeadlineDays))}. Show this QR code at the entrance for fast check-in.</div>
             {done && <Alert tone="success">Thank you — your response is saved! You can change it until the RSVP deadline.</Alert>}
             {hh.guests.map((g) => (
               <div key={g.id} className="card" style={{ padding: 12 }}>
@@ -39,7 +40,7 @@ export default function RsvpPublic() {
                   <div key={s.id} className="row between mt">
                     <span>{s.name} <span className="faint">{fmtDate(s.date)} {s.start}</span></span>
                     <span className="row">
-                      {['yes', 'no'].map((val) => <Button key={val} size="sm" variant={g.rsvp[s.id] === val ? (val === 'yes' ? 'success' : 'danger-solid') : 'secondary'} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val }); setDone(true); }}>{val === 'yes' ? 'Joyfully accepts' : 'Regretfully declines'}</Button>)}
+                      {['yes', 'no'].map((val) => <Button key={val} size="sm" variant={g.rsvp[s.id] === val ? (val === 'yes' ? 'success' : 'danger-solid') : 'secondary'} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val, viaPublic: true }); setDone(true); }}>{val === 'yes' ? 'Joyfully accepts' : 'Regretfully declines'}</Button>)}
                     </span>
                   </div>
                 ))}
@@ -55,6 +56,6 @@ export default function RsvpPublic() {
         )}
         <div className="faint mt" style={{ textAlign: 'center', fontSize: 12 }}>Powered by {state.settings.company.name} · <a href="#/">back to app</a></div>
       </div>
-    </div>
+    </PublicTemplate>
   );
 }

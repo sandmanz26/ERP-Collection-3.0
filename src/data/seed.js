@@ -287,12 +287,13 @@ export function buildSeed() {
     emailTemplates: EMAIL_TEMPLATES,
     automations: AUTOMATIONS,
     accountMapping: ACCOUNT_MAPPING,
-    capacity: { default: 1, byWeekday: { 5: 2, 6: 2, 0: 1 } },
+    capacity: { default: 1, byWeekday: { 5: 2, 6: 2, 0: 1 }, plannerBased: true },
     holdExpiryDays: 7,
     holdReminderDays: 2,
     proposalValidityDays: 21,
     lateFeePct: 1.5,
     finalHeadcountDays: 14,
+    rsvpDeadlineDays: 30,
     accountingProvider: 'quickbooks',
     counters: { invoice: 2000, changeOrder: 100, creditNote: 500 },
   };
@@ -344,6 +345,7 @@ export function buildSeed() {
     ev.payments = [...r1.payments];
     ev.clientBudget = { Planning: 18000, Venue: 0, Catering: 36000, Decor: 9000, Florals: 9000, Entertainment: 11000, 'Photo/Video': 6000, Fees: 15000, Other: 2000 };
     ev.tasks = generateTasks(EVENT_TYPES[0].taskTemplate, date, id).map((t) => ({ ...t, status: t.dueDate < today ? 'done' : t.dueDate < addDays(today, 20) ? 'in_progress' : 'todo', assigneeId: t.assigneeType === 'client' ? 'u_client1' : 'st_ava' }));
+    ev.tasks.push({ id: id('task'), title: 'Submit final floral recipe & delivery schedule', offsetDays: -21, dueDate: addDays(date, -21), fixedDue: false, assigneeType: 'vendor', assigneeId: 'vd_bloom', status: 'todo', priority: 'high', dependsOn: [], category: 'vendors' });
     ev.forms = formsFor(EVENT_TYPES[0], true);
     ev.design = { palette: ['#9CAF88', '#F4ECD8', '#C9A227', '#E6A1B5', '#2F4F6F'], notes: 'Romantic garden glasshouse: sage, ivory and gold with blush accents. Candlelight heavy.', references: ['Pinterest board: carter-walker-garden', 'Florals: loose garden roses, ranunculus, olive branches'], decorItemIds: ['dec_1', 'dec_5', 'dec_6', 'dec_7', 'dec_9', 'dec_11'] };
     ev.documents = [
@@ -647,7 +649,7 @@ export function buildSeed() {
   events.forEach((e) => { if (decorReservations.find((r) => r.eventId === e.id)) e.decorReservationId = `res_${e.id}`; });
 
   return {
-    version: 1,
+    version: 2,
     seededAt: new Date().toISOString(),
     currentUserId: 'u_admin',
     online: true,

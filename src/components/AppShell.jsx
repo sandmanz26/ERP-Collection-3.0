@@ -2,7 +2,7 @@ import { Button } from '../design-system/index.js';
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { navFor, homeFor } from '../lib/permissions.js';
+import { navFor, homeFor, visibleNotifications } from '../lib/permissions.js';
 import { fmtDateTime } from '../lib/dates.js';
 
 export default function AppShell({ children }) {
@@ -11,7 +11,7 @@ export default function AppShell({ children }) {
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const myNotifs = state.notifications.filter((n) => user.role === 'admin' || n.toRoles?.includes(user.role) || n.toUserIds?.includes(user.id));
+  const myNotifs = visibleNotifications(state, user);
   const unread = myNotifs.filter((n) => !n.read).length;
 
   useEffect(() => {

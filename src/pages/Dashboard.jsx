@@ -1,103 +1,120 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StatTile, StageBadge, Badge, Money, Alert } from '../design-system/index.js';
-import { fmtDate, diffDays, addDays } from '../lib/dates.js';
+import { Card, StatTile, StageBadge, Badge, Money, Alert, PageHeader, EmptyState } from '../design-system/index.js';
+import { fmtDate, diffDays, addDays, fmtDateTime } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
-import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invoiceStatus, guaranteeWarnings } from '../lib/derived.js';
+import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
 
+/**
+ * Role-tailored home: every internal role sees the KPIs and attention items relevant to their job first.
+ * Attention items are tagged with the roles that act on them.
+ */
 export default function Dashboard() {
   const { state, today, user } = useStore();
+  const role = user.role;
   const evs = state.events;
+  const usd = (n, c) => toUSD(state, n, c);
   const pipeline = evs.filter((e) => SALES_STAGES.includes(e.stage));
-  const pipeValue = pipeline.reduce((a, e) => a + toUSD(state, (proposalTotals(state, e)?.total ?? e.budget ?? 0), e.currency) * (e.probability / 100), 0);
+  const pipeValue = pipeline.reduce((a, e) => a + usd(proposalTotals(state, e)?.total ?? e.budget ?? 0, e.currency) * (e.probability / 100), 0);
   const upcoming = evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage) && e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
-  const contracted = evs.filter((e) => e.contract?.immutable && !['cancelled_client', 'cancelled_eo'].includes(e.stage)).reduce((a, e) => a + toUSD(state, e.contract.total, e.currency), 0);
-  const deferred = evs.reduce((a, e) => a + toUSD(state, eventFinancials(state, e).deferred, e.currency), 0);
+  const contracted = evs.filter((e) => e.contract?.immutable && !['cancelled_client', 'cancelled_eo'].includes(e.stage)).reduce((a, e) => a + usd(e.contract.total, e.currency), 0);
+  const deferred = evs.reduce((a, e) => a + usd(eventFinancials(state, e).deferred, e.currency), 0);
   const leaks = leakage(state, today);
-  const leakUSD = leaks.reduce((a, l) => a + toUSD(state, l.amount, l.currency), 0);
-  const myTasks = evs.flatMap((e) => e.tasks.filter((t) => t.status !== 'done' && t.dueDate <= addDays(today, 14) && t.assigneeType !== 'client').map((t) => ({ ...t, ev: e }))).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  const expiringHolds = state.holds.filter((h) => h.status === 'active' && diffDays(today, h.expiresAt) <= state.settings.holdReminderDays);
-  const vendorIssues = state.vendors.map((v) => ({ v, issues: vendorCompliance(v, today) })).filter((x) => x.issues.length);
-  const overdue = evs.flatMap((e) => e.invoices.filter((i) => invoiceStatus(e, i, today) === 'overdue').map((i) => ({ i, e })));
-  const pendingCOs = evs.flatMap((e) => e.changeOrders.filter((c) => ['draft', 'sent'].includes(c.status)).map((c) => ({ c, e })));
-  const headcountAlerts = evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage)).flatMap((e) => guaranteeWarnings(e).map((w) => ({ ...w, e })));
+  const leakUSD = leaks.reduce((a, l) => a + usd(l.amount, l.currency), 0);
+  const tasks = evs.flatMap((e) => e.tasks.filter((t) => t.status !== 'done' && t.dueDate <= addDays(today, 14) && t.assigneeType !== 'client').map((t) => ({ ...t, ev: e }))).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  const invoices = evs.flatMap((e) => e.invoices.map((i) => ({ i, e, st: invoiceStatus(e, i, today), bal: invoiceBalance(e, i) })));
+  const overdue = invoices.filter((x) => x.st === 'overdue');
+  const dueSoon = invoices.filter((x) => ['sent', 'partial'].includes(x.st) && x.i.dueDate <= addDays(today, 14));
+  const loadIns = evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage)).flatMap((e) => e.vendorBookings.filter((b) => b.loadIn && b.loadIn.slice(0, 10) >= today && b.loadIn.slice(0, 10) <= addDays(today, 45)).map((b) => ({ b, e }))).sort((a, b) => a.b.loadIn.localeCompare(b.b.loadIn));
+  const unconfirmedShifts = evs.flatMap((e) => e.shifts.filter((s) => !s.confirmed && s.date >= today).map((s) => ({ s, e })));
+  const converted = evs.filter((e) => e.contract?.immutable).length;
+  const decided = converted + evs.filter((e) => e.stage === 'lost').length;
+
+  const KPIS = {
+    pipeline: <StatTile key="p" label="Weighted pipeline (USD)" value={fmtMoney(pipeValue)} sub={`${pipeline.length} open deals`} />,
+    conversion: <StatTile key="c" label="Win rate" value={`${decided ? round2((converted / decided) * 100) : 0}%`} sub={`${converted} won / ${decided} decided`} />,
+    contracted: <StatTile key="ct" label="Contracted revenue (USD)" value={fmtMoney(contracted)} sub="signed, not cancelled" />,
+    deferred: <StatTile key="d" label="Deferred revenue (USD)" value={fmtMoney(deferred)} sub="deposits for future events" />,
+    overdue: <StatTile key="o" label="Overdue receivables (USD)" value={fmtMoney(overdue.reduce((a, x) => a + usd(x.bal, x.i.currency), 0))} sub={`${overdue.length} invoices`} tone={overdue.length ? 'danger' : undefined} />,
+    leakage: <StatTile key="l" label="Revenue leakage (USD)" value={fmtMoney(leakUSD)} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />,
+    tasks: <StatTile key="t" label="Open tasks ≤ 14 days" value={tasks.length} sub={`${tasks.filter((t) => t.dueDate < today).length} overdue`} tone={tasks.some((t) => t.dueDate < today) ? 'warn' : undefined} />,
+    upcoming: <StatTile key="u" label="Booked events ahead" value={upcoming.length} sub={upcoming[0] ? `next: ${fmtDate(upcoming[0].date)}` : '—'} />,
+    loadins: <StatTile key="li" label="Load-ins next 45 days" value={loadIns.length} />,
+    shifts: <StatTile key="s" label="Unconfirmed shifts" value={unconfirmedShifts.length} tone={unconfirmedShifts.length ? 'warn' : undefined} />,
+  };
+  const KPI_BY_ROLE = {
+    admin: ['pipeline', 'contracted', 'deferred', 'leakage', 'tasks'],
+    sales: ['pipeline', 'conversion', 'contracted', 'upcoming', 'tasks'],
+    planner: ['upcoming', 'tasks', 'shifts', 'leakage', 'pipeline'],
+    production: ['upcoming', 'loadins', 'shifts', 'tasks'],
+    finance: ['overdue', 'deferred', 'contracted', 'leakage'],
+  };
+
+  // attention items, each tagged with the roles that can act on it
+  const attention = [
+    ...state.holds.filter((h) => h.status === 'active' && (h.depositOverdue || diffDays(today, h.expiresAt) <= state.settings.holdReminderDays)).map((h) => {
+      const e = evs.find((x) => x.id === h.eventId);
+      return { roles: ['sales', 'admin', 'finance'], tone: h.depositOverdue ? 'danger' : 'warning', node: <>{h.depositOverdue ? '💸 Deposit overdue — date at risk:' : `⏳ Hold #${h.priority} expires ${fmtDate(h.expiresAt)}:`} <Link to={`/events/${e.id}`}>{e.name}</Link> ({fmtDate(h.date)})</> };
+    }),
+    ...overdue.map(({ i, e, bal }) => ({ roles: ['finance', 'admin', 'planner'], tone: 'danger', node: <>💸 {i.number} overdue since {fmtDate(i.dueDate)} — <Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link> (<Money value={bal} currency={i.currency} />)</> })),
+    ...evs.flatMap((e) => e.changeOrders.filter((c) => ['draft', 'sent'].includes(c.status)).map((c) => ({ roles: ['planner', 'admin', 'sales'], tone: c.isException ? 'danger' : 'info', node: <>✎ {c.number} {c.title} — {c.status}{c.isException ? ' (EXCEPTION: needs special approval)' : ''} · <Link to={`/events/${e.id}?tab=co`}>{e.name}</Link></> }))),
+    ...evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage)).flatMap((e) => guaranteeWarnings(e).map((w) => ({ roles: ['planner', 'admin'], tone: w.level, node: <>👥 <Link to={`/events/${e.id}?tab=guests`}>{e.name}</Link>: {w.text}</> }))),
+    ...state.vendors.map((v) => ({ v, issues: vendorCompliance(v, today) })).filter((x) => x.issues.length).map(({ v, issues }) => ({ roles: ['planner', 'production', 'admin', 'finance'], tone: issues[0].level, node: <>⚑ {v.name}: {issues.map((i) => i.text).join(', ')}</> })),
+    ...unconfirmedShifts.map(({ s, e }) => ({ roles: ['production', 'planner'], tone: 'warning', node: <>☺ {state.staff.find((x) => x.id === s.staffId)?.name} has not confirmed {s.role} on {fmtDate(s.date)} · <Link to={`/events/${e.id}?tab=staff`}>{e.name}</Link></> })),
+  ].filter((a) => a.roles.includes(role) || role === 'admin');
 
   return (
     <div>
-      <div className="page-head">
-        <div className="grow">
-          <h1>Good day, {user.name.split(' ')[0]}</h1>
-          <div className="muted">{fmtDate(today, { weekday: 'long' })} · {upcoming.length} upcoming booked events · {pipeline.length} open deals</div>
-        </div>
-        <Link className="btn primary" to="/pipeline">+ New inquiry</Link>
-      </div>
-
-      <div className="grid g5">
-        <StatTile label="Weighted pipeline (USD)" value={fmtMoney(pipeValue)} sub={`${pipeline.length} deals`} />
-        <StatTile label="Contracted revenue (USD)" value={fmtMoney(contracted)} sub="signed, not cancelled" />
-        <StatTile label="Deferred revenue (USD)" value={fmtMoney(deferred)} sub="deposits for future events" />
-        <StatTile label="Revenue leakage (USD)" value={fmtMoney(leakUSD)} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />
-        <StatTile label="Open tasks ≤14d" value={myTasks.length} sub={`${myTasks.filter((t) => t.dueDate < today).length} overdue`} />
-      </div>
+      <PageHeader title={`Good day, ${user.name.split(' ')[0]}`} subtitle={`${fmtDate(today, { weekday: 'long' })} · ${state.users.find((u) => u.id === user.id)?.role} view · ${upcoming.length} booked events ahead · ${pipeline.length} open deals`}
+        actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">+ New inquiry</Link>} />
+      <div className={`grid g${(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).length}`}>{(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).map((k) => KPIS[k])}</div>
 
       <div className="grid g2 mt">
-        <Card title="Upcoming events" actions={<Link to="/events">All events →</Link>}>
-          <table className="t">
-            <thead><tr><th>Date</th><th>Event</th><th>Stage</th><th>Date status</th><th className="num">T-minus</th></tr></thead>
-            <tbody>
-              {upcoming.slice(0, 8).map((e) => (
-                <tr key={e.id}>
-                  <td>{fmtDate(e.date)}</td>
-                  <td><Link to={`/events/${e.id}`}>{e.name}</Link><div className="faint">{e.segment} · {e.venue?.name}</div></td>
-                  <td><StageBadge stage={e.stage} /></td>
-                  <td><Badge tone={e.dateStatus === 'locked' ? 'ok' : 'warn'}>{e.dateStatus === 'locked' ? '🔒 locked' : '⏳ hold'}</Badge></td>
-                  <td className="num">T-{diffDays(today, e.date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Card title="Needs your attention" actions={<Badge>{attention.length}</Badge>}>
+          {attention.slice(0, 14).map((a, i) => <Alert key={i} tone={a.tone}>{a.node}</Alert>)}
+          {attention.length === 0 && <EmptyState>All clear 🎉</EmptyState>}
         </Card>
-
-        <Card title="Needs attention">
-          {expiringHolds.map((h) => {
-            const e = evs.find((x) => x.id === h.eventId);
-            return <Alert key={h.id} tone="warning">⏳ Hold #{h.priority} for <Link to={`/events/${e.id}`}>{e.name}</Link> on {fmtDate(h.date)} expires {fmtDate(h.expiresAt)}</Alert>;
-          })}
-          {overdue.map(({ i, e }) => <Alert key={i.id} tone="danger">💸 {i.number} overdue — <Link to={`/events/${e.id}`}>{e.name}</Link> (due {fmtDate(i.dueDate)}, <Money value={i.amount} currency={i.currency} />)</Alert>)}
-          {pendingCOs.map(({ c, e }) => <Alert key={c.id} tone={c.isException ? 'danger' : 'info'}>✎ {c.number} {c.title} — {c.status}{c.isException ? ' (EXCEPTION: needs special approval)' : ''} · <Link to={`/events/${e.id}`}>{e.name}</Link></Alert>)}
-          {headcountAlerts.map((w, k) => <Alert key={k} tone={w.level}>👥 <Link to={`/events/${w.e.id}`}>{w.e.name}</Link>: {w.text}</Alert>)}
-          {vendorIssues.slice(0, 5).map(({ v, issues }) => <Alert key={v.id} tone={issues[0].level}>⚑ {v.name}: {issues.map((i) => i.text).join(', ')}</Alert>)}
-          {!expiringHolds.length && !overdue.length && !pendingCOs.length && !vendorIssues.length && <div className="empty">All clear 🎉</div>}
-        </Card>
+        {role === 'finance' ? (
+          <Card title="Receivables due in 14 days" actions={<Link to="/finance">Finance →</Link>}>
+            <table className="t"><thead><tr><th>Due</th><th>Invoice</th><th>Event</th><th className="num">Balance</th></tr></thead>
+              <tbody>{dueSoon.map(({ i, e, bal }) => <tr key={i.id}><td>{fmtDate(i.dueDate)}</td><td>{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody></table>
+            {dueSoon.length === 0 && <EmptyState>Nothing due</EmptyState>}
+          </Card>
+        ) : role === 'production' ? (
+          <Card title="Upcoming load-ins">
+            <table className="t"><thead><tr><th>Load-in</th><th>Vendor</th><th>Event</th><th>Contact</th></tr></thead>
+              <tbody>{loadIns.slice(0, 12).map(({ b, e }) => <tr key={b.id}><td>{fmtDateTime(b.loadIn)}</td><td>{state.vendors.find((v) => v.id === b.vendorId)?.name}</td><td><Link to={`/events/${e.id}?tab=ros`}>{e.name}</Link></td><td className="faint">{b.onsiteContact}</td></tr>)}</tbody></table>
+          </Card>
+        ) : (
+          <Card title="Upcoming events" actions={<Link to="/events">All events →</Link>}>
+            <table className="t">
+              <thead><tr><th>Date</th><th>Event</th><th>Stage</th><th>Date status</th><th className="num">T-minus</th></tr></thead>
+              <tbody>{upcoming.slice(0, 8).map((e) => (
+                <tr key={e.id}><td>{fmtDate(e.date)}</td><td><Link to={`/events/${e.id}`}>{e.name}</Link><div className="faint">{e.segment} · {e.venue?.name}</div></td><td><StageBadge stage={e.stage} /></td>
+                  <td><Badge tone={e.dateStatus === 'locked' ? 'ok' : 'warn'}>{e.dateStatus === 'locked' ? '🔒 locked' : '⏳ hold'}</Badge></td><td className="num">T-{diffDays(today, e.date)}</td></tr>
+              ))}</tbody>
+            </table>
+          </Card>
+        )}
       </div>
 
       <div className="grid g2 mt">
         <Card title="Tasks due in the next 14 days">
           <table className="t">
             <thead><tr><th>Due</th><th>Task</th><th>Event</th><th>Status</th></tr></thead>
-            <tbody>
-              {myTasks.slice(0, 10).map((t) => (
-                <tr key={t.id}>
-                  <td style={{ color: t.dueDate < today ? 'var(--danger)' : undefined }}>{fmtDate(t.dueDate)}</td>
-                  <td>{t.title}</td>
-                  <td><Link to={`/events/${t.ev.id}?tab=planning`}>{t.ev.name}</Link></td>
-                  <td><Badge>{t.status}</Badge></td>
-                </tr>
-              ))}
-            </tbody>
+            <tbody>{tasks.slice(0, 10).map((t) => (
+              <tr key={t.id}><td className={t.dueDate < today ? 'text-danger' : ''}>{fmtDate(t.dueDate)}</td><td>{t.title}</td><td><Link to={`/events/${t.ev.id}?tab=planning`}>{t.ev.name}</Link></td><td><Badge>{t.status}</Badge></td></tr>
+            ))}</tbody>
           </table>
+          {tasks.length === 0 && <EmptyState>No tasks due</EmptyState>}
         </Card>
         <Card title="Revenue leakage" actions={<Link to="/reports">Reports →</Link>}>
-          {leaks.length === 0 ? <div className="empty">No leakage detected</div> : (
+          {leaks.length === 0 ? <EmptyState>No leakage detected</EmptyState> : (
             <table className="t">
               <thead><tr><th>Type</th><th>Event</th><th>Ref</th><th className="num">Amount</th></tr></thead>
-              <tbody>
-                {leaks.map((l, i) => (
-                  <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td></tr>
-                ))}
-              </tbody>
+              <tbody>{leaks.map((l, i) => <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td></tr>)}</tbody>
               <tfoot><tr><td colSpan={3}>Total (USD equiv.)</td><td className="num">{fmtMoney(round2(leakUSD))}</td></tr></tfoot>
             </table>
           )}

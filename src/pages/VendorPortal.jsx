@@ -24,6 +24,8 @@ export default function VendorPortal() {
         <div className="row mt">Certificate of Insurance valid until <b>{fmtDate(v.coiExpiry)}</b></div>
         <div className="row mt"><span>Upload renewed COI — new expiry:</span><input type="date" value={coi} onChange={(e) => setCoi(e.target.value)} /><Button variant="primary" disabled={!coi} onClick={() => act('VENDOR_COI_UPLOAD', { vendorId: v.id, expiry: coi })}>Upload COI</Button></div>
       </Card>
+      <VendorRfqs vendor={v} />
+      <VendorTasks vendor={v} />
       {bookings.length === 0 && <EmptyState>No bookings yet.</EmptyState>}
       {bookings.map(({ b, e }) => {
         const items = sortRos(rosForVendor(e.ros.items, v.id));
@@ -56,5 +58,56 @@ export default function VendorPortal() {
         );
       })}
     </div>
+  );
+}
+
+/** Requests for quote addressed to this vendor — the vendor answers directly in the portal. */
+function VendorRfqs({ vendor }) {
+  const { state, act } = useStore();
+  const dialog = useDialog();
+  const rfqs = state.events.flatMap((e) => e.rfqs.filter((r) => r.vendorIds.includes(vendor.id)).map((r) => ({ r, e })));
+  if (!rfqs.length) return null;
+  return (
+    <Card title="Requests for quote">
+      <table className="t">
+        <thead><tr><th>Event</th><th>Scope</th><th>Respond by</th><th>Your quote</th><th>Status</th><th /></tr></thead>
+        <tbody>
+          {rfqs.map(({ r, e }) => {
+            const mine = r.responses.find((x) => x.vendorId === vendor.id);
+            const status = r.awardedVendorId ? (r.awardedVendorId === vendor.id ? 'awarded' : 'declined') : mine ? 'quoted' : 'pending';
+            return (
+              <tr key={r.id}>
+                <td>{e.name}<div className="faint">{fmtDate(e.date)}</div></td>
+                <td>{r.category}: {r.description}</td>
+                <td>{fmtDate(r.dueDate)}</td>
+                <td>{mine ? <Money value={mine.amount} currency={e.currency} /> : '—'}</td>
+                <td><StatusBadge status={status} /></td>
+                <td>{!r.awardedVendorId && <Button size="sm" variant={mine ? 'secondary' : 'primary'} onClick={async () => {
+                  const q = await dialog.form({ title: `Quote — ${r.category}`, fields: [{ name: 'amount', label: `Amount (${e.currency})`, type: 'number', required: true, defaultValue: mine?.amount }, { name: 'notes', label: 'Inclusions / notes', type: 'textarea', defaultValue: mine?.notes }] });
+                  q && act('RFQ_RESPOND', { eventId: e.id, rfqId: r.id, vendorId: vendor.id, ...q });
+                }}>{mine ? 'Update quote' : 'Submit quote'}</Button>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
+/** Checklist items the planner assigned to this vendor. */
+function VendorTasks({ vendor }) {
+  const { state, act } = useStore();
+  const tasks = state.events.flatMap((e) => e.tasks.filter((t) => t.assigneeType === 'vendor' && t.assigneeId === vendor.id).map((t) => ({ t, e })));
+  if (!tasks.length) return null;
+  return (
+    <Card title="Your tasks">
+      {tasks.map(({ t, e }) => (
+        <label key={t.id} className="row" style={{ padding: '4px 0' }}>
+          <input type="checkbox" checked={t.status === 'done'} onChange={(ev) => act('TASK_UPDATE', { eventId: e.id, taskId: t.id, patch: { status: ev.target.checked ? 'done' : 'todo' } })} />
+          <span style={{ flex: 1 }}>{t.title}</span><span className="faint">{e.name} · due {fmtDate(t.dueDate)}</span>
+        </label>
+      ))}
+    </Card>
   );
 }

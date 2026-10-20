@@ -1,67 +1,67 @@
 # CONTEXT.md — Engineering Action Log
 
-> Wajib: **setiap aksi** (keputusan desain, file dibuat/diubah, perintah dijalankan, bug ditemukan) dicatat di sini
-> secara kronologis. AI/engineer berikutnya WAJIB melanjutkan log ini dengan format yang sama.
-> Untuk ringkasan arsitektur & cara melanjutkan pekerjaan, baca `HANDOFF.md`.
+> **Mandatory:** every engineering action (design decision, file created/changed, command run, bug found/fixed)
+> is appended here in chronological order. The next AI/engineer MUST continue this log in the same format.
+> For the architecture overview and how to continue the work, read `HANDOFF.md`. For the latest feature audit, read `docs/FEATURE_REVIEW.md`.
+>
+> Base language: **English** (entries #001–#012 were originally written in Indonesian and translated in #017).
 
-Format entri: `### [YYYY-MM-DD] #NNN — Judul` lalu bullet: *Aksi*, *Alasan*, *File*, *Hasil*.
+Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *Reason*, *Files*, *Result*.
 
 ---
 
-### [2026-10-20] #001 — Inisialisasi repo
-- Aksi: Repo kosong pada branch `claude/exciting-einstein-b58ibb`. Membuat proyek Vite + React 18 secara manual (`package.json`, `vite.config.js`, `index.html`, `.gitignore`).
-- Alasan: User meminta sistem React JS tanpa backend dengan mock data. Vite dipilih karena build cepat dan zero-config.
-- Dependensi: `react`, `react-dom`, `react-router-dom` (HashRouter agar bisa di-host statis tanpa server rewrite), devDeps `vite`, `@vitejs/plugin-react`. Tidak ada UI library — CSS custom agar ringan & mudah dipahami AI lain.
-- Hasil: `npm install` sukses.
+### [2026-10-20] #001 — Repository bootstrap
+- Action: empty repo on branch `claude/exciting-einstein-b58ibb`. Created a Vite + React 18 project by hand (`package.json`, `vite.config.js`, `index.html`, `.gitignore`).
+- Reason: the user asked for a React JS system with no backend and mock data. Vite chosen for fast, zero-config builds.
+- Dependencies: `react`, `react-dom`, `react-router-dom` (HashRouter so it can be hosted statically without server rewrites); dev deps `vite`, `@vitejs/plugin-react`. No UI library — custom CSS keeps it light and easy for other AIs to read.
+- Result: `npm install` OK.
 
-### [2026-10-20] #002 — Keputusan arsitektur
-- Satu store global (`src/store/AppStore.jsx`) memakai React Context + `useReducer`.
-- **Setiap aksi bisnis** didispatch lewat helper `act(type, payload, meta)`; reducer otomatis menambah entri ke `state.activityLog` (audit trail in-app, bisa diexport ke Markdown dari halaman *Activity Log*). Ini memenuhi syarat "setiap aksi disimpan" juga di sisi runtime aplikasi.
-- State dipersist ke `localStorage` (key `eo-ms-state-v1`); tombol *Reset demo data* di Settings.
-- Entitas "Event" dipakai sebagai *deal* sejak tahap Lead hingga Archived (satu entitas lintas siklus hidup), sehingga CRM pipeline = event dengan stage pra-booking.
-- Logika bisnis murni (pricing, pajak, jadwal bayar, pembatalan, hold, lembur, dsb.) dipisah ke `src/lib/*` (pure functions, bisa dites dengan `node --test`).
-- Decor Inventory System disimulasikan sebagai "API eksternal" (`src/lib/decorApi.js`) dengan latency & storage terpisah (`eo-decor-inventory-v1`).
-- Mock data dibuat relatif terhadap tanggal hari ini agar demo selalu terlihat "hidup".
+### [2026-10-20] #002 — Architecture decisions
+- One global store (`src/store/AppStore.jsx`) using React Context + `useReducer`.
+- **Every business action** is dispatched through `act(type, payload, meta)`; the reducer automatically appends an entry to `state.activityLog` (in-app audit trail, exportable to Markdown from the *Activity Log* page). This satisfies "every action is recorded" at runtime too.
+- State persisted to `localStorage` (key `eo-ms-state-v1`); *Reset demo data* in Settings.
+- The "Event" entity is the *deal* from Lead to Archived (one entity across the lifecycle), so the CRM pipeline = events in pre-booking stages.
+- Pure business logic (pricing, tax, payment schedules, cancellation, holds, overtime, …) lives in `src/lib/*` (pure functions, testable with `node --test`).
+- Decor Inventory System simulated as an "external API" (`src/lib/decorApi.js`) with latency and separate storage (`eo-decor-inventory-v1`).
+- Mock data is generated relative to today so the demo always looks current.
 
-### [2026-10-20] #003 — Logika bisnis murni (`src/lib`)
-- File: `dates.js`, `money.js`, `ids.js`, `pricing.js` (fixed/per_guest/percentage + pajak US/EU/UK/CH + reverse charge), `contracts.js` (jadwal bayar, tabel pembatalan, render template), `lifecycle.js` (12 stage + 3 exit + guard transisi), `availability.js` (kapasitas per weekday, hold berprioritas), `tasks.js` (template T-minus, auto-shift), `staff.js` (lembur CA harian, WTD EU, deteksi bentrok, risiko klasifikasi freelancer), `ros.js` (geser timeline), `decorApi.js` (mock API eksternal), `derived.js` (selector finansial/budget/headcount/leakage/closing), `permissions.js` (RBAC per peran).
-- Alasan: memisahkan aturan bisnis dari UI agar bisa dites & dipindah ke backend kelak.
+### [2026-10-20] #003 — Pure business logic (`src/lib`)
+- Files: `dates.js`, `money.js`, `ids.js`, `pricing.js` (fixed/per_guest/percentage + US/EU/UK/CH tax + reverse charge), `contracts.js` (payment schedules, cancellation table, template rendering), `lifecycle.js` (12 stages + 3 exits + transition guards), `availability.js` (per-weekday capacity, prioritized holds), `tasks.js` (T-minus templates, auto-shift), `staff.js` (CA daily overtime, EU WTD, conflict detection, freelancer classification risk), `ros.js` (timeline shift), `decorApi.js` (mock external API), `derived.js` (financial/budget/headcount/leakage/closing selectors), `permissions.js` (RBAC per role).
+- Reason: keep business rules separate from UI so they are testable and portable to a backend later.
 
 ### [2026-10-20] #004 — Mock data (`src/data`)
-- `config.js`: company, kurs, 10 yurisdiksi pajak, katalog 26 layanan, 2 jadwal bayar, 2 kebijakan pembatalan, template kontrak, 5 Event Type (konfigurasi segmen social vs corporate: fitur aktif, template tugas/proposal/form), sumber lead, template email, 8 automation, pemetaan akun QuickBooks/Xero, peran.
-- `seed.js`: 14 user (8 peran, termasuk client multi-user & vendor), 11 klien, 12 vendor, 10 staf, 14 event yang mencakup semua stage (lead → archived, lost, cancelled), hold bertingkat pada tanggal sama, CO approved/pending/exception, ROS, shift, tamu+meja, incident, reservasi dekor.
-- Semua tanggal relatif terhadap hari ini.
+- `config.js`: company, FX rates, 10 tax jurisdictions, 26-item service catalog, 2 payment schedules, 2 cancellation policies, contract template, 5 Event Types (segment configuration: active features, task/proposal/form templates), lead sources, email templates, 8 automations, QuickBooks/Xero account mapping, roles.
+- `seed.js`: 14 users (8 roles incl. multi-user client accounts & vendors), 11 clients, 12 vendors, 10 staff, 14 events covering every stage (lead → archived, lost, cancelled), stacked holds on one date, approved/pending/exception change orders, run of show, shifts, guests + tables, incident, decor reservations.
 
-### [2026-10-20] #005 — Store & handler aksi (`src/store`)
-- `reducer.js`: dispatcher tunggal; clone draft → handler → **append ke `activityLog`** (termasuk aksi yang DITOLAK dengan status `rejected`). Aksi offline diberi `sync: 'pending'` dan masuk `offlineQueue`.
-- `handlers/*.js`: system (tick automation, reset, online/offline), crm (lead, hold, stage, postpone, cancel), sales (proposal versi, kontrak, e-sign), finance (invoice, pembayaran → lock tanggal saat deposit, late fee, credit note, gratuity, vendor payable, sync akuntansi), planning, vendors, guests, ops (change order, ROS, insiden, shift, dekor, close-out), settings.
-- `AppStore.jsx`: Context, persist localStorage, side-effect async ke Decor API, tick automation tiap 60 detik, listener online/offline.
+### [2026-10-20] #005 — Store & action handlers (`src/store`)
+- `reducer.js`: single dispatcher; clone draft → handler → **append to `activityLog`** (including REJECTED actions with status `rejected`). Offline actions get `sync: 'pending'` and go to `offlineQueue`.
+- `handlers/*.js`: system (automation tick, reset, online/offline), crm (lead, hold, stage, postpone, cancel), sales (proposal versions, contract, e-sign), finance (invoices, payment → date lock on deposit, late fee, credit note, gratuity, vendor payables, accounting sync), planning, vendors, guests, ops (change orders, run of show, incidents, shifts, decor, close-out), settings.
+- `AppStore.jsx`: Context, localStorage persistence, async side effects to the Decor API, automation tick every 60 s, online/offline listeners.
 
-### [2026-10-20] #006 — Unit/integration test
-- `tests/logic.test.js` (+ `tests/setup.js` shim localStorage). Perintah: `npm test`.
-- Hasil: 14/14 lulus (pricing, pajak, reverse charge, jadwal bayar, pembatalan, shift task, lembur, ROS, alur lead→deposit lock, promosi hold, CO, CO exception, kapasitas, idempotensi automation).
+### [2026-10-20] #006 — Unit / integration tests
+- `tests/logic.test.js` (+ `tests/setup.js` localStorage shim). Command: `npm test`.
+- Result: 14/14 passing.
 
-### [2026-10-20] #007 — UI dasar & layout
-- File: `src/styles.css` (design token CSS, layout sidebar, kanban, kalender, seating, phone frame), `src/components/ui.jsx` (Card, Badge, Modal, Tabs, Field, Stat, BarChart, CommitInput, download…), `src/components/Layout.jsx` (sidebar per peran, switch user, notifikasi, toast), `src/components/Availability.jsx`, `src/main.jsx`, `src/App.jsx` (HashRouter + guard per peran).
-- Keputusan: `CommitInput` hanya dispatch saat blur/Enter supaya audit log tidak per keystroke.
+### [2026-10-20] #007 — Base UI & layout
+- `src/styles.css`, `src/components/ui.jsx`, `src/components/Layout.jsx`, `src/components/Availability.jsx`, `src/main.jsx`, `src/App.jsx` (HashRouter + per-role guard). *(Superseded by the design system in #014.)*
+- Decision: `CommitInput` dispatches only on blur/Enter so the audit log is not flooded per keystroke.
 
-### [2026-10-20] #008 — Halaman global
-- `Dashboard`, `Pipeline` (kanban drag-drop + guard, modal inquiry + cek ketersediaan, lost), `Calendar` (kapasitas, hold, release/extend), `Events`, `Vendors`, `Staff` (+ export .ics), `Finance` (AR/AP/deferred/cash forecast/gratuity/komisi/akuntansi), `Reports` (6 laporan), `Automation` (outbox, workflow, template), `Settings` (kapasitas, kurs, event type features, katalog, pajak, kebijakan, user), `ActivityLog` (filter + export .md).
+### [2026-10-20] #008 — Global pages
+- `Dashboard`, `Pipeline` (drag-and-drop kanban with guards, inquiry modal with availability check, lost), `Calendar` (capacity, holds, release/extend), `Events`, `Vendors`, `Staff` (+ .ics export), `Finance` (AR/AP/deferred/cash forecast/gratuities/commissions/accounting), `Reports` (6 reports), `Automation` (outbox, workflows, templates), `Settings`, `ActivityLog` (filter + .md export).
 
-### [2026-10-20] #009 — Event workspace (15 tab)
-- `src/pages/event/*`: Overview (lifecycle bar, guard, edit, hold, approval chain, postpone, cancel + kalkulasi), Proposal (versi, internal/klien, moodboard), Contract (generate, multi-signer e-sign), Planning (tugas, sub-event, form, design, **Decor panel via API**, dokumen, decision log), Vendors (booking, payables, RFQ), Guests (RSVP matrix, headcount, catering report, CSV), Seating (DnD + aturan + export), Budget (kategori, varians, live headcount, multi-payer), Change Orders, Run of Show (+call sheet), Crew, Finance (invoice, pay modal mock Stripe, credit note, gratuity, accounting sync), Messages (+email sync mock), Post-Event (closing, decor return, damage billing, survei, rating), Activity.
+### [2026-10-20] #009 — Event workspace (15 tabs)
+- Overview, Proposal, Contract, Planning (+ Decor panel via API), Vendors, Guests, Seating, Budget, Change Orders, Run of Show (+ call sheet), Crew, Finance, Messages, Post-Event, Activity.
 
-### [2026-10-20] #010 — Portal & mobile
-- `ClientPortal.jsx` (multi-user dengan izin: view_all, approve_costs, sign, pay, manage_guests, forms, message; payer scope), `VendorPortal.jsx` (COI upload, confirm booking, upload invoice, ROS relevan saja), `DayOf.jsx` (phone frame, status live, geser +5/+15, check-in QR/kode, insiden + foto, call sheet, clock in/out, simulasi offline), `RsvpPublic.jsx` (route `/#/rsvp?event=…` tanpa login).
+### [2026-10-20] #010 — Portals & mobile
+- `ClientPortal.jsx` (multi-user permissions + payer scope), `VendorPortal.jsx`, `DayOf.jsx` (live status, +5/+15 shift, check-in, incidents with photo, call sheet, clock in/out, offline simulation), `RsvpPublic.jsx`.
 
-### [2026-10-20] #011 — Verifikasi
-- `npx vite build` sukses. Smoke test Playwright (scratchpad, tidak di-commit) membuka semua route + 15 tab × 8 event + semua tab portal 4 user klien: **0 runtime error**.
-- Alur E2E di browser: new inquiry → hold → qualified → proposal → send → accept → contract → e-sign → bayar deposit → 🔒 locked → Planning: **berhasil**, semua aksi muncul di Activity Log.
-- Perbaikan dari review visual: `.alert` jadi block (teks terpecah kolom), margin `.card + .card` di grid, seed Carter ditambah jadi 68 household (~135 tamu) agar realistis, toast tidak muncul ulang setelah reload (`lastOk/lastError` tidak dipersist + batas 3 detik), `chunkSizeWarningLimit` 900.
-- `npm test`: 14/14 lulus.
+### [2026-10-20] #011 — Verification
+- Build OK; Playwright smoke over all routes, 15 tabs × 8 events and all portal tabs: 0 runtime errors. E2E inquiry → deposit → locked → Planning passes.
+- Visual fixes: `.alert` as block, card margins inside grids, Carter seed enlarged to 68 households, toast no longer replays after reload.
 
-### [2026-10-20] #012 — Dokumentasi
-- Membuat `HANDOFF.md` (panduan AI berikutnya) dan `README.md`; memperbarui log ini.
+### [2026-10-20] #012 — Documentation
+- Created `HANDOFF.md` and `README.md` (Indonesian at the time; rewritten in English in #017).
+- Push attempt failed with HTTP 403 (Claude GitHub App has no access to the repository) — commits kept locally.
 
 ### [2026-10-20] #013 — New request: feature roast + Atomic Design system + English as base language
 - Action: user asked to (1) critically re-review ("roast") all features against the spec, (2) rebuild the UI on an atomic design system (tokens → atoms → molecules → organisms → templates → pages), (3) use English as the base language (UI + all documentation).
@@ -78,3 +78,31 @@ Format entri: `### [YYYY-MM-DD] #NNN — Judul` lalu bullet: *Aksi*, *Alasan*, *
 - Codemod (scratchpad script, not committed): rewired imports, renamed `Stat/Kv/Empty/Progress` → `StatTile/KeyValue/EmptyState/ProgressBar`, converted every `<button className="btn …">` into `<Button variant size>`.
 - Replaced all 26 `window.prompt/confirm/alert` calls with design-system dialogs (typed fields, validation, Esc to cancel). Lead form now shows inline "Required" errors.
 - Verification: build OK; Playwright smoke (all routes/tabs/portals) 0 runtime errors; E2E flow still passes.
+
+### [2026-10-20] #015 — Feature roast: bug fixes (store / lib)
+- R1 `handlers/system.js`: holds of signed contracts are never auto-released; `depositOverdue` flag + one-time danger notification.
+- R2 `lib/permissions.js#visibleNotifications` used by `AppShell` and `NOTIFICATIONS_READ` — clients/vendors/crew only see their own events.
+- R3 `handlers/sales.js#lineFromCatalog` converts base-currency catalog prices into the proposal currency.
+- R4 `handlers/vendors.js#BOOKING_CONFIRM` rejects vendors with expired COI/licenses.
+- R5 `handlers/crm.js#EVENT_POSTPONE`: integer day delta via `diffDays`, load-in/out moved, bookings must re-confirm, vendors/crew/client notified.
+- R7 `handlers/guests.js#RSVP_SET` enforces `settings.rsvpDeadlineDays` for public RSVPs.
+- G1 `lib/availability.js`: planner-based capacity (`capacity.plannerBased`) + `plannersFree`.
+- G5 `lib/staff.js#weeklyCompliance`: FLSA weekly 40h overtime + EU/UK/CH weekly maximum across events.
+- G10 `lib/pricing.js#diffProposals`.
+- New handlers: `USER_CREATE`, `USER_UPDATE`, `CATALOG_ADD`, `EMAIL_SEND`, `DOCUMENT_GENERATED`.
+- State shape changed → seed `version: 2` (older localStorage snapshots are re-seeded automatically).
+- Tests: +6 (weekly OT, signed hold, currency conversion, COI guard, notification isolation, proposal diff) → 20/20 passing.
+
+### [2026-10-20] #016 — Feature roast: UI additions
+- `pages/InquiryPublic.jsx` (route `#/inquiry?source=…`) + "Simulate marketplace lead" in Pipeline.
+- `pages/DesignSystem.jsx` living style guide (route `#/design-system`, admin nav).
+- Vendor portal: RFQ quotes + assigned tasks; seed adds a vendor task for Bloom & Vine.
+- Real QR codes (RSVP page, day-of check-in, Guests tab) and printable badges; `lib/documents.js` (invoice/receipt, proposal, badges) + `printDocument()`.
+- Settings: invite user, change role, client-portal permission pills, add catalog item, task-template editor, RSVP deadline, planner-based capacity toggle.
+- Messages tab: email-from-template composer. Reports: segment + date filters. Events: "Only my events". Dashboard: role-tailored KPIs/attention items/side panel. Proposal: version diff card. Staff: weekly overtime warnings with premium.
+- Contract builder: add signers from client portal users; portal signing matched by e-mail only.
+- Tooling: scratchpad `jsxcheck.py` (undefined JSX component/hook check) run after each batch → 0 problems.
+- Verification: build OK, Playwright smoke 0 runtime errors incl. inquiry submission, table dialog, marketplace simulation; screenshots of style guide, finance dashboard and vendor portal reviewed.
+
+### [2026-10-20] #017 — English as base language
+- Translated `CONTEXT.md` entries #001–#012 to English; rewrote `HANDOFF.md` and `README.md` in English; added `docs/FEATURE_REVIEW.md`. UI copy was already English.
