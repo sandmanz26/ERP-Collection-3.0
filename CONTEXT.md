@@ -171,3 +171,8 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 
 ### [2026-10-20] #027 — Commit & push attempt
 - Committed the login + UI/UX work. `git push` still fails with HTTP 403 (no GitHub App access to `sandmanz26/ERP-Collection-3.0`); commits remain local.
+
+### [2026-10-20] #028 — Deploy to Vercel: push to `main`
+- User explicitly asked to push to `main` for a Vercel deployment.
+- Added `vercel.json` (framework vite, `npm run build`, output `dist`). No rewrites needed: the app uses HashRouter, so every route is served by `index.html`.
+- Pushing `HEAD` → `origin/main` (plus the working branch).
