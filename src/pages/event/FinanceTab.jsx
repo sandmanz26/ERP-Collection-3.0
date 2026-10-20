@@ -1,0 +1,130 @@
+import React, { useState } from 'react';
+import { useStore } from '../../store/AppStore.jsx';
+import { Card, Badge, StatusBadge, Money, Stat, Modal, Field, Alert } from '../../components/ui.jsx';
+import { eventFinancials, invoiceBalance, invoiceStatus } from '../../lib/derived.js';
+import { fmtDate, fmtDateTime } from '../../lib/dates.js';
+
+export function PayModal({ ev, inv, onClose, portal }) {
+  const { act } = useStore();
+  const bal = invoiceBalance(ev, inv);
+  const [amount, setAmount] = useState(bal);
+  const methods = ev.currency === 'USD' ? ['card', 'ach'] : ['card', 'sepa', 'wire'];
+  const [method, setMethod] = useState(methods[0]);
+  const [busy, setBusy] = useState(false);
+  const pay = () => {
+    setBusy(true);
+    setTimeout(() => { act('PAYMENT_RECORD', { eventId: ev.id, invoiceId: inv.id, amount: Number(amount), method }); onClose(); }, 700);
+  };
+  return (
+    <Modal title={`${portal ? 'Pay' : 'Record payment for'} ${inv.number}`} onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={busy || !amount} onClick={pay}>{busy ? 'Processing…' : `Pay ${amount} ${inv.currency}`}</button></>}>
+      <Alert tone="info">Mock Stripe Checkout — the EO system never stores card data (PCI DSS scope stays minimal). A processor reference (pi_…) is stored instead.</Alert>
+      <div className="grid g2 mt">
+        <Field label="Amount"><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} max={bal} /></Field>
+        <Field label="Method"><select value={method} onChange={(e) => setMethod(e.target.value)}>{methods.map((m) => <option key={m} value={m}>{{ card: 'Card', ach: 'ACH bank transfer (US)', sepa: 'SEPA Direct Debit (EU)', wire: 'Wire transfer' }[m]}</option>)}</select></Field>
+      </div>
+      {method === 'card' && <div className="grid g3 mt"><Field label="Card number"><input defaultValue="4242 4242 4242 4242" /></Field><Field label="Expiry"><input defaultValue="12/29" /></Field><Field label="CVC"><input defaultValue="123" /></Field></div>}
+      {method === 'sepa' && <Field label="IBAN" style={{ marginTop: 10 }}><input defaultValue="FR76 3000 6000 0112 3456 7890 189" /></Field>}
+      {method === 'ach' && <div className="grid g2 mt"><Field label="Routing"><input defaultValue="110000000" /></Field><Field label="Account"><input defaultValue="000123456789" /></Field></div>}
+    </Modal>
+  );
+}
+
+export function InvoiceTable({ ev, portal, payerFilter }) {
+  const { state, act, today, user } = useStore();
+  const [pay, setPay] = useState(null);
+  const invs = ev.invoices.filter((i) => !payerFilter || payerFilter.includes(i.payerId));
+  return (
+    <>
+      <div className="table-wrap">
+        <table className="t">
+          <thead><tr><th>Invoice</th><th>Description</th><th>Payer</th><th>Issued</th><th>Due</th><th className="num">Amount</th><th className="num">Late fee</th><th className="num">Balance</th><th>FX</th><th>Status</th><th /></tr></thead>
+          <tbody>
+            {invs.map((i) => {
+              const st = invoiceStatus(ev, i, today);
+              const bal = invoiceBalance(ev, i);
+              return (
+                <tr key={i.id}>
+                  <td><b>{i.number}</b><div className="faint">{i.kind}</div></td>
+                  <td>{i.label}</td>
+                  <td>{portal ? ev.payers.find((p) => p.id === i.payerId)?.name : (
+                    <select value={i.payerId || ''} onChange={(e) => act('INVOICE_SET_PAYER', { eventId: ev.id, invoiceId: i.id, payerId: e.target.value })}>{ev.payers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}{i.billTo === 'venue' && <option value="">Venue</option>}</select>
+                  )}</td>
+                  <td>{fmtDate(i.issuedAt)}</td>
+                  <td style={{ color: st === 'overdue' ? 'var(--danger)' : undefined }}>{fmtDate(i.dueDate)}</td>
+                  <td className="num"><Money value={i.amount} currency={i.currency} /></td>
+                  <td className="num">{i.lateFeeApplied ? <Money value={i.lateFeeApplied} currency={i.currency} /> : '—'}</td>
+                  <td className="num"><Money value={bal} currency={i.currency} /></td>
+                  <td className="faint" style={{ fontSize: 11 }}>{i.currency !== 'USD' ? `1 ${i.currency} = ${i.fxRateToUSD} USD (locked)` : '—'}</td>
+                  <td><StatusBadge status={st} /></td>
+                  <td>
+                    <div className="row">
+                      {bal > 0 && st !== 'void' && <button className="btn sm primary" onClick={() => setPay(i)}>{portal ? 'Pay now' : 'Record payment'}</button>}
+                      {!portal && st === 'overdue' && <button className="btn sm danger" onClick={() => act('LATE_FEE_APPLY', { eventId: ev.id, invoiceId: i.id })}>Apply late fee</button>}
+                      {portal && st === 'paid' && <button className="btn sm" onClick={() => act('INTERACTION_ADD', { eventId: ev.id, type: 'note', summary: `${user.name} downloaded receipt for ${i.number}` })}>Receipt</button>}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {pay && <PayModal ev={ev} inv={pay} portal={portal} onClose={() => setPay(null)} />}
+    </>
+  );
+}
+
+export default function FinanceTab({ ev }) {
+  const { state, act } = useStore();
+  const f = eventFinancials(state, ev);
+  const [provider, setProvider] = useState(state.settings.accountingProvider);
+  const cur = ev.currency;
+  return (
+    <div>
+      <div className="grid g5">
+        <Stat label="Contract value" value={<Money value={f.contractTotal} currency={cur} />} sub={`incl. tax ${f.tax}`} />
+        <Stat label="Received" value={<Money value={f.paid} currency={cur} />} />
+        <Stat label="Deferred revenue" value={<Money value={f.deferred} currency={cur} />} sub="received in advance (liability)" />
+        <Stat label="Recognized revenue" value={<Money value={f.recognizedRevenue} currency={cur} />} sub="after event took place" />
+        <Stat label="Gratuities (not revenue)" value={<Money value={f.gratuities} currency={cur} />} />
+      </div>
+      <Card title="Client invoices" className="mt" actions={<button className="btn" onClick={() => { const label = prompt('Invoice description'); if (!label) return; act('INVOICE_ADHOC', { eventId: ev.id, label, amount: Number(prompt('Amount', '500')) }); }}>+ Ad-hoc invoice</button>}>
+        <InvoiceTable ev={ev} />
+      </Card>
+      <div className="grid g2 mt">
+        <Card title="Payment schedule (from contract & change orders)">
+          <table className="t">
+            <thead><tr><th>Installment</th><th>Source</th><th>Due</th><th className="num">Amount</th><th>Status</th><th /></tr></thead>
+            <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}</td><td><Badge>{p.source}</Badge></td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /></td><td>{p.status === 'scheduled' && <button className="btn sm" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: p.id })}>Invoice now</button>}</td></tr>)}</tbody>
+          </table>
+          <div className="faint mt" style={{ fontSize: 12 }}>The automation engine invoices installments automatically 30 days before they fall due.</div>
+        </Card>
+        <Card title="Payments received">
+          <table className="t">
+            <thead><tr><th>Date</th><th>Invoice</th><th>Method</th><th>Processor ref</th><th className="num">Amount</th></tr></thead>
+            <tbody>{ev.payments.map((p) => <tr key={p.id}><td>{fmtDateTime(p.at)}</td><td>{ev.invoices.find((i) => i.id === p.invoiceId)?.number}</td><td><Badge>{p.method}</Badge></td><td className="faint">{p.ref}</td><td className="num"><Money value={p.amount} currency={cur} /></td></tr>)}</tbody>
+          </table>
+        </Card>
+      </div>
+      <div className="grid g3 mt">
+        <Card title="Credit notes & refunds" actions={<button className="btn sm" onClick={() => { const a = prompt('Amount'); if (!a) return; act('CREDIT_NOTE_CREATE', { eventId: ev.id, amount: Number(a), reason: prompt('Reason', 'Service reduction') || '', refund: window.confirm('Refund cash to client? (Cancel = credit only)') }); }}>+ Credit note</button>}>
+          {ev.creditNotes.length === 0 && <div className="faint">None</div>}
+          {ev.creditNotes.map((c) => <div key={c.id} className="row between"><span>{c.number} · {c.reason} {c.refund && <Badge tone="warn">refund</Badge>}</span><Money value={c.amount} currency={cur} /></div>)}
+        </Card>
+        <Card title="Gratuities (vendors & crew)" actions={<button className="btn sm" onClick={() => { const to = prompt('To (vendor/crew)'); if (!to) return; act('GRATUITY_ADD', { eventId: ev.id, to, amount: Number(prompt('Amount', '200')), paidBy: 'Client' }); }}>+ Gratuity</button>}>
+          <div className="faint mb" style={{ fontSize: 12 }}>Recorded as a pass-through liability — never EO revenue.</div>
+          {ev.gratuities.map((g) => <div key={g.id} className="row between"><span>{g.to} <span className="faint">({g.paidBy})</span></span><Money value={g.amount} currency={cur} /></div>)}
+        </Card>
+        <Card title="Accounting sync">
+          <div className="row"><select value={provider} onChange={(e) => setProvider(e.target.value)}><option value="quickbooks">QuickBooks Online</option><option value="xero">Xero</option></select><button className="btn primary" onClick={() => act('ACCOUNTING_SYNC', { eventId: ev.id, provider })}>Sync (mock)</button></div>
+          {ev.accountingSync[0] && (
+            <div className="mt">
+              <div className="faint" style={{ fontSize: 12 }}>Last sync {fmtDateTime(ev.accountingSync[0].at)} → {ev.accountingSync[0].provider}</div>
+              <table className="t"><tbody>{ev.accountingSync[0].journal.map((j, i) => <tr key={i}><td>{j.account}</td><td className="num">{j.debit ? `Dr ${j.debit}` : ''}</td><td className="num">{j.credit ? `Cr ${j.credit}` : ''}</td></tr>)}</tbody></table>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}

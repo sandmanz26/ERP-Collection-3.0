@@ -28,7 +28,7 @@ export function StoreProvider({ children }) {
   // persist
   useEffect(() => {
     try {
-      const { effects, ...rest } = state;
+      const { effects, lastOk, lastError, ...rest } = state;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
     } catch { /* quota */ }
   }, [state]);

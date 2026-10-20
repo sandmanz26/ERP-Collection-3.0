@@ -375,7 +375,7 @@ export function buildSeed() {
     ];
     const tables = Array.from({ length: 15 }, (_, i) => ({ id: `tb_c${i + 1}`, name: i === 0 ? 'Head Table' : `Table ${i}`, capacity: i === 0 ? 12 : 10, shape: i === 0 ? 'rect' : 'round' }));
     ev.tables = tables;
-    ev.households = buildHouseholds({ count: 26, categories: ['Bride family', 'Groom family', 'Friends', 'VIP'], subEventIds: ['se_c1', 'se_c2', 'se_c3', 'se_c4', 'se_c5'], today, withTables: tables.slice(1, 9).map((t) => t.id), seed: 3 });
+    ev.households = buildHouseholds({ count: 68, categories: ['Bride family', 'Groom family', 'Friends', 'VIP'], subEventIds: ['se_c1', 'se_c2', 'se_c3', 'se_c4', 'se_c5'], today, withTables: tables.slice(1).map((t) => t.id), seed: 3 });
     const g0 = ev.households[0].guests[0];
     const g1 = ev.households[4].guests[0];
     ev.seatingRules = [{ id: id('rule'), guestA: g0.id, guestB: g1.id, type: 'apart', note: 'Divorced — do not seat together' }];

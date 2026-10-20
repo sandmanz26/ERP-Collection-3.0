@@ -40,3 +40,25 @@ Format entri: `### [YYYY-MM-DD] #NNN — Judul` lalu bullet: *Aksi*, *Alasan*, *
 ### [2026-10-20] #006 — Unit/integration test
 - `tests/logic.test.js` (+ `tests/setup.js` shim localStorage). Perintah: `npm test`.
 - Hasil: 14/14 lulus (pricing, pajak, reverse charge, jadwal bayar, pembatalan, shift task, lembur, ROS, alur lead→deposit lock, promosi hold, CO, CO exception, kapasitas, idempotensi automation).
+
+### [2026-10-20] #007 — UI dasar & layout
+- File: `src/styles.css` (design token CSS, layout sidebar, kanban, kalender, seating, phone frame), `src/components/ui.jsx` (Card, Badge, Modal, Tabs, Field, Stat, BarChart, CommitInput, download…), `src/components/Layout.jsx` (sidebar per peran, switch user, notifikasi, toast), `src/components/Availability.jsx`, `src/main.jsx`, `src/App.jsx` (HashRouter + guard per peran).
+- Keputusan: `CommitInput` hanya dispatch saat blur/Enter supaya audit log tidak per keystroke.
+
+### [2026-10-20] #008 — Halaman global
+- `Dashboard`, `Pipeline` (kanban drag-drop + guard, modal inquiry + cek ketersediaan, lost), `Calendar` (kapasitas, hold, release/extend), `Events`, `Vendors`, `Staff` (+ export .ics), `Finance` (AR/AP/deferred/cash forecast/gratuity/komisi/akuntansi), `Reports` (6 laporan), `Automation` (outbox, workflow, template), `Settings` (kapasitas, kurs, event type features, katalog, pajak, kebijakan, user), `ActivityLog` (filter + export .md).
+
+### [2026-10-20] #009 — Event workspace (15 tab)
+- `src/pages/event/*`: Overview (lifecycle bar, guard, edit, hold, approval chain, postpone, cancel + kalkulasi), Proposal (versi, internal/klien, moodboard), Contract (generate, multi-signer e-sign), Planning (tugas, sub-event, form, design, **Decor panel via API**, dokumen, decision log), Vendors (booking, payables, RFQ), Guests (RSVP matrix, headcount, catering report, CSV), Seating (DnD + aturan + export), Budget (kategori, varians, live headcount, multi-payer), Change Orders, Run of Show (+call sheet), Crew, Finance (invoice, pay modal mock Stripe, credit note, gratuity, accounting sync), Messages (+email sync mock), Post-Event (closing, decor return, damage billing, survei, rating), Activity.
+
+### [2026-10-20] #010 — Portal & mobile
+- `ClientPortal.jsx` (multi-user dengan izin: view_all, approve_costs, sign, pay, manage_guests, forms, message; payer scope), `VendorPortal.jsx` (COI upload, confirm booking, upload invoice, ROS relevan saja), `DayOf.jsx` (phone frame, status live, geser +5/+15, check-in QR/kode, insiden + foto, call sheet, clock in/out, simulasi offline), `RsvpPublic.jsx` (route `/#/rsvp?event=…` tanpa login).
+
+### [2026-10-20] #011 — Verifikasi
+- `npx vite build` sukses. Smoke test Playwright (scratchpad, tidak di-commit) membuka semua route + 15 tab × 8 event + semua tab portal 4 user klien: **0 runtime error**.
+- Alur E2E di browser: new inquiry → hold → qualified → proposal → send → accept → contract → e-sign → bayar deposit → 🔒 locked → Planning: **berhasil**, semua aksi muncul di Activity Log.
+- Perbaikan dari review visual: `.alert` jadi block (teks terpecah kolom), margin `.card + .card` di grid, seed Carter ditambah jadi 68 household (~135 tamu) agar realistis, toast tidak muncul ulang setelah reload (`lastOk/lastError` tidak dipersist + batas 3 detik), `chunkSizeWarningLimit` 900.
+- `npm test`: 14/14 lulus.
+
+### [2026-10-20] #012 — Dokumentasi
+- Membuat `HANDOFF.md` (panduan AI berikutnya) dan `README.md`; memperbarui log ini.
