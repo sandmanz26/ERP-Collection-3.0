@@ -104,3 +104,6 @@ Deferred: real identity provider (SSO, MFA, server sessions), per-user saved pre
 - **Payments were a bare table** → summary (total, paid, remaining, next due), payment plan timeline, who-pays-what for multi-payer events, invoices & receipts; payer-scoped users only see their share.
 - **Who are the people?** → planning team with contacts (main contact, day-of coordinator), vendors with arrival time and on-site contact once confirmed, crew by department (counts only — no names or rates), venue facts.
 - Latest-updates feed (stage changes, payments received, vendor confirmations, decisions, forms). Sections respect client permissions (e.g. Nina sees no money; Robert sees only his share).
+
+## Addendum (#034–#035) — Business-analyst / wedding-planner roast: negative cases
+Full write-up: [`docs/BUSINESS_REVIEW.md`](BUSINESS_REVIEW.md). Added: vendor cancellation with replacement RFQ and deposit recovery; payment reversal (date back on hold, fee re-billed); final-balance cutoff blocking Pre-Event (admin override with written reason); weather plan & dated weather call; on-site overtime priced first and approved by an authorized client representative; personal-item custody chain; vendor meals; first-response SLA for inquiries; vendor late-arrival check-in. Ranked backlog of what is still open is in the review.

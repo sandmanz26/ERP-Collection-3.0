@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
 import { Card, Badge, KeyValue, Modal, Field, Alert, Money, StatusBadge, ConfirmButton, Button, useDialog, Icon, Stepper, Callout, ProgressBar, Avatar, EmptyState } from '../../design-system/index.js';
 import { AvailabilityCheck } from '../../components/Availability.jsx';
+import { RiskPanel } from './RiskPanel.jsx';
 import { stageLabel, transitionBlockers, nextStage, isExit, stageIndex } from '../../lib/lifecycle.js';
 import { eventContext, clientOf, eventFinancials, headcount, closingChecklist } from '../../lib/derived.js';
 import { calcCancellation } from '../../lib/contracts.js';
@@ -43,7 +44,7 @@ export default function Overview({ ev, et, open }) {
     if (a.tab !== 'overview') return open?.(a.tab);
     if (a.cta === 'Edit details') return setModal('edit');
     if (a.cta === 'Advance' && next) return act('STAGE_CHANGE', { eventId: ev.id, to: next });
-    document.getElementById('holds-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById(a.anchor ?? 'holds-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   return (
@@ -54,7 +55,7 @@ export default function Overview({ ev, et, open }) {
           {blockers.length === 0
             ? <Button variant="primary" onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: next })}>Move to {stageLabel(next)}</Button>
             : <span className="faint text-sm"><Icon name="lock" size={13} /> {blockers.length} requirement{blockers.length > 1 ? 's' : ''} before {stageLabel(next)}</span>}
-          {blockers.length > 0 && user.role === 'admin' && <ConfirmButton size="sm" variant="ghost" message="Admin override: move the stage anyway? This is logged." onConfirm={() => act('STAGE_CHANGE', { eventId: ev.id, to: next, force: true })}>Override</ConfirmButton>}
+          {blockers.length > 0 && user.role === 'admin' && <Button size="sm" variant="ghost" onClick={async () => { const r = await dialog.form({ title: `Override: move to ${stageLabel(next)}`, fields: [{ name: 'reason', label: `Why is it OK to skip: ${blockers.join('; ')}?`, type: 'textarea', required: true }] }); r && act('STAGE_CHANGE', { eventId: ev.id, to: next, force: true, reason: r.reason }); }}>Override</Button>}
         </div>
       )}>
         <Stepper steps={steps} selectedId={sel.id} onSelect={setStep} formatDate={shortDate} />
@@ -189,8 +190,11 @@ export default function Overview({ ev, et, open }) {
       {/* 6. Holds & approvals (only while they matter) */}
       {!closed && (stageIndex(ev.stage) < stageIndex('planning') || et.features.clientApprovalLayers) && <HoldsAndApprovals ev={ev} et={et} />}
 
-      {/* 7. Interactions */}
-      <Interactions ev={ev} />
+      {/* 7. Risks & contingencies: weather, final balance, vendor fallout, custody, vendor meals */}
+      <RiskPanel ev={ev} open={open} closed={closed} />
+
+      {/* 8. Interactions */}
+      <div id="interactions-card"><Interactions ev={ev} /></div>
 
       {!closed && ev.contract?.immutable && (
         <div className="row" style={{ justifyContent: 'flex-end' }}>

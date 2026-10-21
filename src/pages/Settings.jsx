@@ -36,6 +36,8 @@ export default function Settings() {
             <div className="row">RSVP deadline (T-days) <CommitInput className="inline" type="number" value={s.rsvpDeadlineDays} onCommit={(n) => set('rsvpDeadlineDays', n)} /></div>
             <label className="row"><input type="checkbox" checked={!!s.capacity.plannerBased} onChange={(e) => set('capacity', { ...s.capacity, plannerBased: e.target.checked }, 'planner-based capacity')} />Cap daily capacity by number of lead planners</label>
             <div className="row">Late fee % / month <CommitInput className="inline" type="number" value={s.lateFeePct} onCommit={(n) => set('lateFeePct', n)} /></div>
+            <h4 className="mt">Risk rules</h4>
+            {[['finalPaymentCutoffDays', 'Final balance cutoff (T-days)'], ['leadResponseHours', 'Lead first-response SLA (hours)'], ['returnedPaymentFee', 'Returned-payment fee'], ['overtimeCrewMultiplier', 'Crew overtime multiplier'], ['overtimeMarkupPct', 'Overtime markup %'], ['weatherCallHours', 'Default weather call (hours before)'], ['vendorLateMinutes', 'Vendor late after (minutes)']].map(([k, l]) => <div key={k} className="row">{l} <CommitInput className="inline" type="number" value={s[k]} onCommit={(n) => set(k, n)} /></div>)}
             <div className="row">Accounting provider <select value={s.accountingProvider} onChange={(e) => set('accountingProvider', e.target.value)}><option value="quickbooks">QuickBooks</option><option value="xero">Xero</option></select></div>
           </Card>
         </div>

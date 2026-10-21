@@ -5,6 +5,7 @@ import { closingChecklist, eventFinancials, eventContext } from '../../lib/deriv
 import { transitionBlockers, stageIndex } from '../../lib/lifecycle.js';
 import * as decorApi from '../../lib/decorApi.js';
 import { fmtDateTime } from '../../lib/dates.js';
+import { CustodyPanel } from './RiskPanel.jsx';
 
 export default function PostEventTab({ ev }) {
   const { state, act, today } = useStore();
@@ -35,6 +36,7 @@ export default function PostEventTab({ ev }) {
           </div>
           {ev.stage === 'financial_close' && <Button className="mt" onClick={() => act('STAGE_CHANGE', { eventId: ev.id, to: 'archived' })}>Archive event</Button>}
         </Card>
+        {(ev.custody || []).length > 0 && <Card title="Personal items"><CustodyPanel ev={ev} /></Card>}
         <Card title="Final profitability">
           <KeyValue rows={[
             ['Revenue (excl. tax)', <Money value={f.revenueNet} currency={cur} />],

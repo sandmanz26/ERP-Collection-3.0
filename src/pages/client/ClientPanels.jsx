@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
 import { Card, Badge, Money, Alert, EmptyState, ProgressBar, ProgressRing, StatusBadge, Button, Icon, Callout, Avatar, Stepper, Timeline, Gantt, dayTicks, KeyValue } from '../../design-system/index.js';
+import { weatherCall } from '../../lib/risk.js';
 import { clientJourney, clientProgress, clientTimeline, clientRoadmap, clientAgenda, clientPrep, clientPayments, clientTeam, clientUpdates } from '../../lib/clientView.js';
 import { invoiceStatus, invoiceBalance, payerSummary } from '../../lib/derived.js';
 import { fmtMoney } from '../../lib/money.js';
@@ -34,6 +35,7 @@ export function ClientHome({ ev, setTab }) {
     <div className="stack">
       <ClientCallouts ev={ev} setTab={setTab} />
       <JourneyCard ev={ev} journey={p.journey} daysToGo={p.daysToGo} />
+      <WeatherNote ev={ev} />
 
       <div className="ready-grid">
         {p.areas.map((a) => (
@@ -54,7 +56,7 @@ export function ClientHome({ ev, setTab }) {
           {updates.length ? (
             <ul className="cp-feed">
               {updates.map((u, i) => (
-                <li key={i}><span className="cp-feed-icon"><Icon name={u.icon} size={13} /></span><span>{u.text}{u.money ? <> · <Money value={u.money} currency={ev.currency} /></> : null}</span><time>{fmtDateTime(u.at)}</time></li>
+                <li key={i} className={u.tone ? `cp-feed-${u.tone}` : ''}><span className="cp-feed-icon"><Icon name={u.icon} size={13} /></span><span>{u.text}{u.money ? <> · <Money value={u.money} currency={ev.currency} /></> : null}</span><time>{fmtDateTime(u.at)}</time></li>
               ))}
             </ul>
           ) : <EmptyState>No updates yet.</EmptyState>}
@@ -80,6 +82,16 @@ export function ClientHome({ ev, setTab }) {
       )}
     </div>
   );
+}
+
+/** Outdoor function? Tell the client the plan and when the call is made — before they ask. */
+function WeatherNote({ ev }) {
+  const { state } = useStore();
+  const w = weatherCall(state, ev);
+  if (!w || ['post_event', 'financial_close', 'archived'].includes(ev.stage)) return null;
+  return w.decided
+    ? <Callout tone={w.decision === 'B' ? 'warning' : 'success'} icon="sun" title={`${w.function}: we go with Plan ${w.decision} — ${w.decision === 'A' ? w.planA : w.planB}`}>{w.note || 'Decided with the latest forecast.'}</Callout>
+    : <Callout tone="info" icon="sun" title={`Weather plan for ${w.function}`}>Plan A: {w.planA}. If rain or wind is forecast we switch to Plan B: {w.planB}. Your planner makes the call by {fmtDateTime(w.due)} and lets you know here.</Callout>;
 }
 
 function JourneyCard({ ev, journey, daysToGo }) {
@@ -295,7 +307,7 @@ export function ClientTeamPanel({ ev }) {
             <table className="t">
               <thead><tr><th>Service</th><th>Vendor</th><th>What they deliver</th><th>Arrives</th><th>On-site contact</th><th>Status</th></tr></thead>
               <tbody>{t.vendors.map((v) => (
-                <tr key={v.id}><td><b>{v.category}</b></td><td>{v.name}</td><td className="faint">{v.service}</td><td className="nowrap">{v.arrival ? `${short(v.arrival.slice(0, 10))} ${v.arrival.slice(11, 16)}` : '—'}</td><td className="faint">{v.contact ?? 'shared once confirmed'}</td><td>{v.confirmed ? <Badge tone="ok">confirmed</Badge> : <Badge tone="warn">being confirmed</Badge>}</td></tr>
+                <tr key={v.id}><td><b>{v.category}</b></td><td>{v.name}</td><td className="faint">{v.service}</td><td className="nowrap">{v.arrival ? `${short(v.arrival.slice(0, 10))} ${v.arrival.slice(11, 16)}` : '—'}</td><td className="faint">{v.contact ?? 'shared once confirmed'}</td><td>{v.confirmed ? <Badge tone="ok">confirmed</Badge> : v.replacing ? <Badge tone="danger">being replaced</Badge> : <Badge tone="warn">being confirmed</Badge>}</td></tr>
               ))}</tbody>
             </table>
           </div>

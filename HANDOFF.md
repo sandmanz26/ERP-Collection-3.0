@@ -10,14 +10,14 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 **corporate** (conferences, product launches, offsites) events in the US and Western Europe.
 - **Stack:** React 18 + Vite 6 + react-router-dom 6 (HashRouter) + `qrcode`. No backend, no UI library.
 - **UI:** in-house **Atomic Design system** in `src/design-system/` (tokens → atoms → molecules → organisms → templates). Pages import only from `src/design-system/index.js`. Living style guide: `#/design-system` (admin).
-- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 5`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
+- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 6`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
 - **Audit:** every action goes through `act()` → reducer → `state.activityLog` (incl. rejected attempts, automation runs, offline-pending actions, generated documents). Export to Markdown from *Activity Log* or the event *Activity* tab.
 
 ## 2. Running
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 31 unit/integration tests (node --test)
+npm test         # 39 unit/integration tests (logic.test.js + risk.test.js) (node --test)
 npm run build    # static output in dist/
 ```
 **Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
@@ -94,6 +94,9 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
+| `src/lib/risk.js` | **negative-case rules** (see `docs/BUSINESS_REVIEW.md`): `vendorGaps`, `vendorRefundsDue`, `finalPaymentRisk`, `weatherCall`, `leadSla`, `custodyOpen`, `vendorMeals`, `lateVendors`, `overtimeQuote`, `overtimeApprovers`, `RISK_DEFAULTS` |
+| `src/store/handlers/risk.js` | BOOKING_CANCEL (+ replacement RFQ), VENDOR_REFUND_RECOVERED, VENDOR_ARRIVED, PAYMENT_REVERSE, WEATHER_PLAN_SET, WEATHER_CALL, OVERTIME_APPROVE, CUSTODY_ADD, CUSTODY_UPDATE; client notices (`ev.clientNotices`) |
+| `src/pages/event/RiskPanel.jsx`, `src/pages/dayof/DayOfRisk.jsx` | cockpit *Risks & contingencies* card; Day-of Vendors / Overtime / Items tabs |
 | `src/lib/clientView.js` | **client panel selectors (client-safe — no costs, margins, rates, internal notes)**: `clientJourney` (8 plain-language steps), `clientProgress`, `clientTimeline`, `clientRoadmap` (Gantt lanes), `clientAgenda` (guest-track ROS only), `clientPrep` (tasks, forms, signatures, approvals, payments, guest deadlines → overdue / 30 days / anytime / later / done), `clientPayments` (payer-scoped), `clientTeam`, `clientUpdates` |
 | `src/pages/client/ClientPanels.jsx` | client portal panels: Overview, Timeline (road map + month list), Event day agenda, To prepare, Payments, Team, callouts. `ClientPortal.jsx` groups them into sections honoring `clientCan` permissions |
 | `src/lib/eventGuide.js` | **event cockpit logic**: `STAGE_INFO`, `stageDates`, `stepperSteps`, `stageRequirements`, `nextActions` (stage-aware, each with target tab + CTA), `readiness` by area, `keyDates`, role-filtered `priorities` for the dashboard |
@@ -141,6 +144,8 @@ An event is a **one-day (or few-day) production assembled from many companies an
 10. **Carter → Timeline**: planning Gantt (today/event markers, vendor lanes) → *Event days* → *By venue resource* shows the loading-dock clash; drag *Rental delivery* to 08:15 and watch the Production check clear. **People**: 13 open slots, assign Tom as stagehand, print QR credentials. **Site plan**: drag a table, assign a vendor.
 11. **StaffPro Events (agency)**: *Crew requested from you* → add names → credentials appear. **Day-of** (as admin): *Crew* tab check-in by code, live production board beside the phone. **Calendar**: planner workload.
 12. **Settings**: invite a user, edit client permissions, add a catalog item and a task-template row. **Activity Log** → *Export .md*.
+
+13. **Negative cases** (see `docs/BUSINESS_REVIEW.md`): Carter → Vendors → *Cancel…* Groove ("band withdrew") → replacement RFQ to Brooklyn Brass & SpinCity, red gap on the cockpit, client sees "being replaced". Finance (as Hannah/Olivia) → *Reverse…* the deposit → date back on HOLD + $35 fee. Cockpit → *Risks & contingencies*: weather call, final-balance cutoff, vendor meals, card box custody. Day-of → *Overtime* +60 min approved by Emily → invoice. Harper → Post-event: gift table not handed back blocks close. Dashboard as Marcus: unanswered inquiry SLA.
 
 ## 8. Deliberate decisions & limits
 - No backend: email, Stripe, QuickBooks/Xero, e-signature, GPS and calendar sync are simulated; data shapes are ready for real integrations.

@@ -7,6 +7,7 @@ import { contractFullySigned } from './contracts.js';
 import { stageIndex } from './lifecycle.js';
 import { decorSnapshot } from './decorApi.js';
 import { workforceCost } from './workforce.js';
+import { custodyOpen, finalPaymentRisk, vendorGaps, vendorRefundsDue } from './risk.js';
 
 export function eventType(state, ev) {
   return state.settings.eventTypes.find((t) => t.id === ev.eventTypeId);
@@ -121,15 +122,16 @@ export function eventFinancials(state, ev) {
   const actualCost = round2(vCost + dCost + cCost + coCost);
   const commissions = sum(ev.vendorBookings.filter((b) => b.commissionAmount), (b) => b.commissionAmount);
   const damageCharges = sum(ev.invoices.filter((i) => i.kind === 'damage'), (i) => i.amount);
+  const extraCharges = sum(ev.invoices.filter((i) => ['overtime', 'fee'].includes(i.kind)), (i) => i.amount);
   const lateFees = sum(ev.invoices, (i) => i.lateFeeApplied || 0);
   const paid = paidAmount(ev);
   const refunds = refundedAmount(ev);
   const recognized = stageIndex(ev.stage) >= stageIndex('post_event') || ev.stage === 'cancelled_client';
   const deferred = recognized ? 0 : round2(paid - refunds);
-  const profit = round2(revenueNet + commissions + damageCharges + lateFees - actualCost);
+  const profit = round2(revenueNet + commissions + damageCharges + extraCharges + lateFees - actualCost);
   return {
     contractTotal, revenueNet, tax, vendorCost: vCost, decorCost: dCost, crewCost: cCost, coCost, estCost: estCostFromProposal,
-    actualCost, commissions, damageCharges, lateFees, paid, refunds, balance: round2(contractTotal + damageCharges + lateFees - paid + refunds),
+    actualCost, commissions, damageCharges, lateFees, paid, refunds, balance: round2(contractTotal + damageCharges + extraCharges + lateFees - paid + refunds), extraCharges,
     deferred, recognizedRevenue: recognized ? round2(paid - refunds) : 0, profit, marginPct: revenueNet ? round2((profit / revenueNet) * 100) : 0,
     gratuities: sum(ev.gratuities, (g) => g.amount),
   };
@@ -169,6 +171,8 @@ export function closingChecklist(state, ev, today) {
     { key: 'decorReturned', label: 'Decor returned & checked in Decor Inventory', done: !ev.decorRequests.length || !!ev.decorReturn },
     { key: 'damageBilled', label: 'Damage/loss charges billed (or none)', done: !ev.decorReturn || ev.decorReturn.totalCharge === 0 || !!ev.closing.damageBilled },
     { key: 'survey', label: 'Client satisfaction survey sent', done: !!ev.closing.surveySent },
+    { key: 'custody', label: 'Personal items handed back to the client (card box, gifts, heirlooms)', done: custodyOpen(ev).length === 0 },
+    { key: 'vendorRefunds', label: 'Deposits recovered from cancelled vendors', done: vendorRefundsDue(ev).length === 0 },
     { key: 'vendorRatings', label: 'Internal vendor ratings submitted', done: !!ev.closing.vendorRatingsDone || !ev.vendorBookings.length },
   ];
   return items;
@@ -179,6 +183,8 @@ export function eventContext(state, ev, today) {
     today,
     contractSigned: contractFullySigned(ev.contract),
     closingOpen: closingChecklist(state, ev, today).filter((c) => !c.done).map((c) => c.label),
+    finalPayment: finalPaymentRisk(state, ev, today),
+    vendorGaps: vendorGaps(ev),
   };
 }
 

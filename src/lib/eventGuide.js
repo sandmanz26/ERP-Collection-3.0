@@ -8,6 +8,7 @@ import { proposalExpired } from './pricing.js';
 import { invoiceStatus, invoiceBalance, vendorCompliance, headcount, closingChecklist, eventContext, eventFinancials } from './derived.js';
 import { staffingSummary } from './workforce.js';
 import { productionIssues } from './timeline.js';
+import { vendorGaps, vendorRefundsDue, finalPaymentRisk, weatherCall, leadSla, lateVendors } from './risk.js';
 
 export const STAGE_INFO = {
   lead: 'A new inquiry. Qualify it: date, guest count, budget and event type.',
@@ -60,7 +61,7 @@ export function stageRequirements(state, ev, stageId, today) {
   return transitionBlockers(ev, stageId, eventContext(state, ev, today));
 }
 
-const A = (severity, icon, title, detail, tab, cta) => ({ severity, icon, title, detail, tab, cta: cta ?? 'Open' });
+const A = (severity, icon, title, detail, tab, cta, anchor) => ({ severity, icon, title, detail, tab, cta: cta ?? 'Open', anchor });
 const SEV = { danger: 0, warning: 1, info: 2 };
 
 /** Ordered next actions for an event, each pointing at the tab where it gets done. */
@@ -102,7 +103,7 @@ export function nextActions(state, ev, today) {
   if (!sales && stageIndex(ev.stage) <= stageIndex('event_day')) {
     const unconfirmed = ev.vendorBookings.filter((b) => b.status === 'requested');
     if (unconfirmed.length) out.push(A(days !== null && days <= 30 ? 'danger' : 'warning', 'store', `${unconfirmed.length} vendor booking(s) not confirmed`, unconfirmed.map((b) => state.vendors.find((v) => v.id === b.vendorId)?.name).join(', '), 'vendors', 'Open vendors'));
-    ev.vendorBookings.forEach((b) => {
+    ev.vendorBookings.filter((b) => b.status !== 'cancelled').forEach((b) => {
       const v = state.vendors.find((x) => x.id === b.vendorId);
       const bad = vendorCompliance(v, today).filter((i) => i.level === 'danger');
       if (bad.length) out.push(A('danger', 'shield', `${v.name}: ${bad.map((i) => i.text).join(', ')}`, 'The booking cannot be confirmed until compliance is fixed.', 'vendors', 'Open vendors'));
@@ -122,6 +123,7 @@ export function nextActions(state, ev, today) {
     }
     if (ev.ros.status === 'draft' && days !== null && days <= 21) out.push(A('warning', 'list', 'Share the run of show with vendors', 'It is still a draft.', 'ros', 'Open run of show'));
   }
+  out.push(...riskActions(state, ev, today, cur));
   if (ev.stage === 'post_event' || ev.stage === 'financial_close') {
     closingChecklist(state, ev, today).filter((c) => !c.done).forEach((c) => out.push(A('warning', 'checkSquare', c.label, 'Needed for financial close.', 'post', 'Open close-out')));
     if (ev.stage === 'financial_close' && !out.length) out.push(A('info', 'check', 'Everything is settled', 'Archive the event to make it read-only.', 'post', 'Archive'));
@@ -133,6 +135,26 @@ export function nextActions(state, ev, today) {
       : A('info', 'check', `Ready to move to ${stageLabel(nextStage(ev.stage))}`, 'All requirements are met.', 'overview', 'Advance'));
   }
   return out.sort((a, b) => SEV[a.severity] - SEV[b.severity]);
+}
+
+/** What goes wrong in real life: vendor fallout, unpaid balances, weather, unanswered inquiries, items in custody. */
+function riskActions(state, ev, today, cur) {
+  const out = [];
+  const now = new Date();
+  const sla = leadSla(state, ev, now);
+  if (sla) out.push(A(sla.breached ? 'danger' : 'warning', 'clock', sla.breached ? `Inquiry unanswered for ${sla.hours}h` : `Reply to this inquiry within ${sla.limit}h`, sla.breached ? `First-response target was ${sla.limit}h — couples book the first planner who answers.` : `Due ${fmtDate(sla.dueAt.slice(0, 10))}. Log the call or email when done.`, 'overview', 'Log reply', 'interactions-card'));
+  vendorGaps(ev).forEach((g) => out.push(A('danger', 'alert', `No ${g.category} vendor — ${state.vendors.find((v) => v.id === g.booking.vendorId)?.name} cancelled`, g.rfq ? `Replacement RFQ: ${g.quotes}/${g.rfq.vendorIds.length} quotes in, due ${fmtDate(g.rfq.dueDate)}. Award one and confirm it.` : 'No replacement RFQ yet — source a vendor now.', 'vendors', 'Replace vendor')));
+  vendorRefundsDue(ev).forEach((b) => out.push(A('warning', 'money', `Recover ${cur(b.refundDue)} deposit from ${state.vendors.find((v) => v.id === b.vendorId)?.name}`, 'The vendor cancelled after being paid.', 'vendors', 'Open vendors')));
+  if (stageIndex(ev.stage) >= stageIndex('booked') && stageIndex(ev.stage) < stageIndex('event_day')) {
+    const fp = finalPaymentRisk(state, ev, today);
+    if (fp && fp.status !== 'ok') out.push(A('danger', 'wallet', fp.status === 'breach' ? `Final balance unpaid past the cutoff — event at risk` : `Final balance due by ${fmtDate(fp.cutoff)}`, `${cur(fp.balance)} outstanding. ${fp.status === 'breach' ? 'Vendors are not released until it is paid; the event cannot move to Pre-Event without an override.' : `${fp.days} day(s) to the cutoff.`}`, 'finance', 'Chase payment'));
+  }
+  const w = weatherCall(state, ev, now);
+  if (w && !w.decided && stageIndex(ev.stage) <= stageIndex('event_day') && (w.overdue || w.soon)) out.push(A(w.overdue ? 'danger' : 'warning', 'sun', w.overdue ? `Weather call overdue — ${w.function}` : `Weather call due ${fmtDate(w.due.slice(0, 10))} — ${w.function}`, `Plan A: ${w.planA} · Plan B: ${w.planB}. Vendors and rentals need the decision.`, 'overview', 'Make the call', 'risk-card'));
+  if (ev.stage === 'event_day' || (ev.date === today && stageIndex(ev.stage) >= stageIndex('pre_event'))) {
+    lateVendors(state, ev, now).forEach((x) => out.push(A('danger', 'truck', `${state.vendors.find((v) => v.id === x.booking.vendorId)?.name} is ${x.minutesLate} min late`, `Load-in was ${x.booking.loadIn.slice(11, 16)}. Call ${x.booking.onsiteContact || 'the vendor'}.`, 'vendors', 'Open vendors')));
+  }
+  return out;
 }
 
 /** Readiness per area: status = done | ok | attention | blocked | na. */

@@ -53,6 +53,7 @@ export const vendorHandlers = {
   BOOKING_UPDATE(ctx, { eventId, bookingId, patch }) {
     const ev = ctx.ev(eventId);
     const b = ev.vendorBookings.find((x) => x.id === bookingId);
+    assert(!('status' in patch), 'Use Confirm / Cancel to change a booking status');
     Object.assign(b, patch);
     if ('cost' in patch && b.commissionPct) b.commissionAmount = round2((b.cost * b.commissionPct) / 100);
     return { summary: `Booking ${ctx.state.vendors.find((v) => v.id === b.vendorId)?.name} updated (${Object.keys(patch).join(', ')})`, eventId };
@@ -60,6 +61,7 @@ export const vendorHandlers = {
   BOOKING_CONFIRM(ctx, { eventId, bookingId }) {
     const ev = ctx.ev(eventId);
     const b = ev.vendorBookings.find((x) => x.id === bookingId);
+    assert(b.status !== 'cancelled', 'A cancelled booking cannot be confirmed — book the vendor again');
     const blocking = vendorCompliance(ctx.state.vendors.find((x) => x.id === b.vendorId), ctx.today).filter((i) => i.level === 'danger');
     assert(!blocking.length, `Cannot confirm: ${blocking.map((i) => i.text).join(', ')}. Upload a valid certificate first.`);
     b.status = 'confirmed';

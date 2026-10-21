@@ -6,6 +6,7 @@ import { invoiceStatus, invoiceBalance, headcount, paidAmount } from './derived.
 import { staffingSummary } from './workforce.js';
 import { clientCan } from './permissions.js';
 import { stageDates } from './eventGuide.js';
+import { weatherCall, vendorGaps } from './risk.js';
 
 const at = (s) => stageIndex(s);
 const sum = (a, f) => Math.round(a.reduce((x, y) => x + f(y), 0) * 100) / 100;
@@ -14,7 +15,7 @@ const sum = (a, f) => Math.round(a.reduce((x, y) => x + f(y), 0) * 100) / 100;
 export const JOURNEY = [
   { id: 'proposal', label: 'Proposal', about: 'We shape the plan and the price with you.', you: 'Review the proposal, pick optional extras and accept it.', done: (ev) => at(ev.stage) >= at('booked') },
   { id: 'contract', label: 'Contract', about: 'The agreement is signed by everyone.', you: 'Sign the contract online.', done: (ev) => at(ev.stage) >= at('booked') },
-  { id: 'secured', label: 'Date secured', about: 'Your deposit locks the date — no one else can book it.', you: 'Pay the deposit invoice.', done: (ev) => at(ev.stage) >= at('planning') },
+  { id: 'secured', label: 'Date secured', about: 'Your deposit locks the date — no one else can book it.', you: 'Pay the deposit invoice.', done: (ev) => at(ev.stage) >= at('planning') && (ev.dateStatus === 'locked' || at(ev.stage) >= at('event_day')) },
   { id: 'planning', label: 'Planning', about: 'Design, vendors, guests and the event-day schedule come together.', you: 'Tick off your checklist, complete planning forms, manage your guest list.', done: (ev) => at(ev.stage) >= at('details_locked') },
   { id: 'final', label: 'Final details', about: 'Final headcount is confirmed; later changes need a change order.', you: 'Confirm the final guest count and seating.', done: (ev) => at(ev.stage) >= at('pre_event') },
   { id: 'ready', label: 'Final prep', about: 'Run of show, crew and deliveries are confirmed with every vendor.', you: 'Settle the final balance and relax — we take it from here.', done: (ev) => at(ev.stage) >= at('event_day') },
@@ -127,6 +128,8 @@ export function clientTimeline(state, ev, user, today) {
   add({ id: 'locked', date: d.planning, kind: 'milestone', title: 'Deposit paid — date secured', tab: 'payments' });
   clientPrep(state, ev, user, today).items.filter((i) => i.due && i.kind !== 'payment').forEach((i) => add({ id: `prep-${i.id}`, date: i.due, kind: i.kind === 'guests' ? 'deadline' : 'todo', title: i.title, done: i.done, tab: i.tab }));
   clientPayments(ev, user, today)?.rows.forEach((r) => add({ id: `pay-${r.id}`, date: r.dueDate, kind: 'payment', title: r.label, amount: r.amount, done: r.status === 'paid', overdue: r.status === 'overdue', tab: 'payments' }));
+  const w = weatherCall(state, ev);
+  if (w) add({ id: 'weather', date: w.due.slice(0, 10), kind: 'deadline', title: w.decided ? `Weather call made: Plan ${w.decision}` : `Weather call for ${w.function} (we decide)`, done: w.decided, detail: `A: ${w.planA} · B: ${w.planB}` });
   (ev.subEvents.length ? ev.subEvents : ev.date ? [{ id: 'main', name: ev.name, date: ev.date }] : []).forEach((s) => add({ id: `se-${s.id}`, date: s.date ?? ev.date, kind: 'event', title: s.name, detail: [s.start && `${s.start}${s.end ? `–${s.end}` : ''}`, s.room ?? s.venue].filter(Boolean).join(' · '), tab: 'timeline' }));
   return rows.map((r) => ({ ...r, past: r.date < today, overdue: r.overdue ?? (!r.done && r.date < today && ['todo', 'deadline', 'payment'].includes(r.kind)), isToday: r.date === today }))
     .sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'event') - (b.kind === 'event'));
@@ -182,7 +185,10 @@ export function clientTeam(state, ev) {
   const vendors = ev.vendorBookings.filter((b) => b.status !== 'cancelled').map((b) => {
     const v = state.vendors.find((x) => x.id === b.vendorId);
     return { id: b.id, name: v?.name ?? 'Vendor', category: b.category, service: b.service, confirmed: b.status === 'confirmed', arrival: b.loadIn ?? null, contact: b.status === 'confirmed' ? b.onsiteContact : null };
-  }).sort((a, b) => a.category.localeCompare(b.category));
+  });
+  // A cancelled vendor not yet replaced is shown honestly as "being replaced", never silently dropped.
+  vendorGaps(ev).forEach((g) => vendors.push({ id: g.booking.id, name: 'Replacement being booked', category: g.category, service: g.booking.service, confirmed: false, replacing: true, arrival: null, contact: null }));
+  vendors.sort((a, b) => a.category.localeCompare(b.category));
   const st = staffingSummary(ev);
   const depts = {};
   st.rows.forEach((r) => {
@@ -202,11 +208,12 @@ export function clientUpdates(state, ev, user, limit = 8) {
   (ev.stageHistory || []).forEach((h) => {
     if (STAGES.some((x) => x.id === h.stage) && at(h.stage) > at('lead')) out.push({ at: h.at, icon: 'flag', text: `Moved to ${stageLabel(h.stage).replace(' (Booked)', '')}` });
   });
-  if (showMoney) ev.payments.forEach((p) => out.push({ at: p.at, icon: 'money', text: 'Payment received — thank you', money: p.amount }));
+  if (showMoney) ev.payments.filter((p) => p.amount > 0).forEach((p) => out.push({ at: p.at, icon: 'money', text: 'Payment received — thank you', money: p.amount }));
   ev.vendorBookings.filter((b) => b.confirmedAt && b.status === 'confirmed').forEach((b) => out.push({ at: b.confirmedAt, icon: 'truck', text: `${state.vendors.find((v) => v.id === b.vendorId)?.name ?? 'Vendor'} confirmed (${b.category})` }));
   ev.decisions.forEach((dc) => out.push({ at: dc.approvedAt, icon: 'check', text: `Decision recorded: ${dc.decision}` }));
   ev.forms.filter((f) => f.submittedAt).forEach((f) => out.push({ at: f.submittedAt, icon: 'file', text: `Form submitted: ${f.name}` }));
   ev.changeOrders.filter((c) => c.status === 'sent').forEach((c) => out.push({ at: c.sentAt ?? c.createdAt, icon: 'edit', text: `Change order ${c.number} sent for approval` }));
+  (ev.clientNotices || []).filter((n) => n.audience !== 'money' || showMoney).forEach((n) => out.push({ at: n.at, icon: n.tone === 'danger' ? 'alert' : n.tone === 'warning' ? 'info' : 'check', text: n.text, tone: n.tone }));
   return out.filter((u) => u.at).sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
 }
 

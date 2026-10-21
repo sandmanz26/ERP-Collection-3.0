@@ -51,13 +51,19 @@ export const crmHandlers = {
   },
   INTERACTION_ADD(ctx, { eventId, type, summary }) {
     const ev = ctx.ev(eventId);
-    ev.interactions.unshift({ id: ctx.id('int'), type, at: new Date().toISOString(), by: ctx.user.id, summary });
+    ev.interactions.unshift({ id: ctx.id('int'), type, direction: type === 'note' ? 'internal' : 'outbound', at: new Date().toISOString(), by: ctx.user.id, summary });
     return { summary: `Logged ${type} on ${ev.name}: ${summary}`, eventId };
   },
-  STAGE_CHANGE(ctx, { eventId, to, force }) {
+  STAGE_CHANGE(ctx, { eventId, to, force, reason }) {
     const ev = ctx.ev(eventId);
     const blockers = transitionBlockers(ev, to, eventContext(ctx.state, ev, ctx.today));
     assert(force || blockers.length === 0, `Cannot move to ${stageLabel(to)}: ${blockers.join('; ')}`);
+    if (force && blockers.length) {
+      // An override is a business decision: admin only, with a written reason, kept on the event.
+      assert(ctx.user?.role === 'admin', 'Only an admin can override stage requirements');
+      assert(reason && reason.trim().length >= 5, 'Write a reason for the override (min. 5 characters)');
+      (ev.overrides ??= []).push({ to, blockers, reason: reason.trim(), by: ctx.user.id, at: new Date().toISOString() });
+    }
     const from = ev.stage;
     ev.prevStage = from;
     ev.stage = to;
@@ -66,7 +72,7 @@ export const crmHandlers = {
     if (to === 'negotiation') ev.probability = Math.max(ev.probability, 60);
     if (to === 'booked') ev.probability = 100;
     runStageAutomations(ctx, ev, to);
-    return { summary: `Stage ${stageLabel(from)} → ${stageLabel(to)} for ${ev.name}${force && blockers.length ? ' (FORCED by admin)' : ''}`, eventId };
+    return { summary: `Stage ${stageLabel(from)} → ${stageLabel(to)} for ${ev.name}${force && blockers.length ? ` (OVERRIDE by admin: ${reason.trim()})` : ''}`, eventId };
   },
   MARK_LOST(ctx, { eventId, reason }) {
     const ev = ctx.ev(eventId);

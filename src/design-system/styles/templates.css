@@ -174,3 +174,6 @@
   .agenda li { grid-template-columns: 1fr; gap: 2px; }
 }
 .cp-pay-tiles b .num-tabular { font: inherit; }
+.cp-feed-danger .cp-feed-icon { background: var(--color-danger-soft); color: var(--color-danger-ink); }
+.cp-feed-warning .cp-feed-icon { background: var(--color-warning-soft); color: var(--color-warning-ink); }
+.cp-feed-success .cp-feed-icon { background: var(--color-success-soft); color: var(--color-success-ink); }

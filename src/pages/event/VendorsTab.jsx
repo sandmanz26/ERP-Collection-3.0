@@ -3,7 +3,7 @@ import { useStore } from '../../store/AppStore.jsx';
 import { Card, Badge, StatusBadge, Money, Modal, Field, useForm, Alert, PillSelect, Button, useDialog, Icon } from '../../design-system/index.js';
 import { vendorCompliance } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
-import { round2 } from '../../lib/money.js';
+import { round2, fmtMoney } from '../../lib/money.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
 
 export default function VendorsTab({ ev }) {
@@ -26,7 +26,7 @@ export default function VendorsTab({ ev }) {
                 const issues = vendorCompliance(v, today);
                 return (
                   <React.Fragment key={b.id}>
-                    <tr>
+                    <tr className={b.status === 'cancelled' ? 'row-cancelled' : ''}>
                       <td><b>{v.name}</b><div className="faint">{b.category} · {b.onsiteContact}</div></td>
                       <td>{b.service}{b.minGuarantee ? <div className="faint">min guarantee {b.minGuarantee} · contracted {b.contractedGuests}</div> : null}</td>
                       <td><select value={b.model} onChange={(e) => act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { model: e.target.value } })}><option value="pass_through">pass-through</option><option value="direct">direct</option></select></td>
@@ -36,7 +36,12 @@ export default function VendorsTab({ ev }) {
                       <td>{b.commissionAmount ? <><Money value={b.commissionAmount} currency={cur} /> <StatusBadge status={b.commissionStatus} /><select value={b.commissionStatus} onChange={(e) => act('COMMISSION_STATUS', { eventId: ev.id, bookingId: b.id, status: e.target.value })}><option>pending</option><option>invoiced</option><option>paid</option></select></> : '—'}</td>
                       <td className="faint" style={{ fontSize: 12 }}>{b.loadIn ? fmtDateTime(b.loadIn) : '—'}<br />{b.loadOut ? fmtDateTime(b.loadOut) : ''}</td>
                       <td>{issues.length ? issues.map((i) => <div key={i.text}><Badge tone={i.level}>{i.text}</Badge></div>) : <Badge tone="ok">OK</Badge>}</td>
-                      <td><StatusBadge status={b.status} />{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Mark confirmed</Button>}</td>
+                      <td>
+                        <StatusBadge status={b.status} />{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Mark confirmed</Button>}
+                        {b.status === 'cancelled' && <div className="faint text-xs">{b.cancelledBy === 'eo' ? 'by us' : 'by vendor'}: {b.cancelReason}</div>}
+                        {b.refundDue > 0 && (b.refundRecovered ? <Badge tone="ok">deposit recovered</Badge> : <Button size="sm" onClick={() => act('VENDOR_REFUND_RECOVERED', { eventId: ev.id, bookingId: b.id })}>Recovered {fmtMoney(b.refundDue, cur)}</Button>)}
+                        {b.status !== 'cancelled' && <Button size="sm" variant="ghost" onClick={async () => { const r = await dialog.form({ title: `Cancel ${v.name}?`, fields: [{ name: 'initiatedBy', label: 'Who cancelled', type: 'select', options: [{ value: 'vendor', label: 'The vendor cancelled / no-show' }, { value: 'eo', label: 'We cancelled the vendor' }], defaultValue: 'vendor' }, { name: 'reason', label: 'Reason (shared internally; client gets a neutral notice)', type: 'textarea', required: true }] }); r && act('BOOKING_CANCEL', { eventId: ev.id, bookingId: b.id, ...r }); }}>Cancel…</Button>}
+                      </td>
                       <td><Button size="sm" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide' : 'Payments'}</Button></td>
                     </tr>
                     {open === b.id && (
@@ -58,6 +63,8 @@ export default function VendorsTab({ ev }) {
                             <div className="grid g2 mt">
                               <Field label="Load-in"><input type="datetime-local" defaultValue={b.loadIn} onBlur={(e) => e.target.value !== b.loadIn && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { loadIn: e.target.value } })} /></Field>
                               <Field label="Load-out"><input type="datetime-local" defaultValue={b.loadOut} onBlur={(e) => e.target.value !== b.loadOut && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { loadOut: e.target.value } })} /></Field>
+                              <Field label="Vendor meals" hint="Crew to feed — added to the caterer count"><input type="number" min="0" defaultValue={b.meals ?? 0} onBlur={(e) => Number(e.target.value) !== (b.meals ?? 0) && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { meals: Number(e.target.value) } })} /></Field>
+                              <Field label={`Overtime rate / hour (${cur}, client price)`} hint="Billed if the party runs late"><input type="number" min="0" defaultValue={b.overtimeRatePerHour ?? ''} onBlur={(e) => Number(e.target.value) !== (b.overtimeRatePerHour ?? 0) && act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { overtimeRatePerHour: Number(e.target.value) || null } })} /></Field>
                             </div>
                           </div>
                         </div>

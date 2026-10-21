@@ -238,3 +238,12 @@ button.vtl-body:hover { background: var(--color-row-hover); }
 }
 .phase .icon, .phase svg { vertical-align: -2px; }
 .phase-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: var(--radius-pill); background: var(--color-danger); color: var(--color-ink-inverse); font-size: 11px; font-weight: var(--weight-semibold); }
+
+/* ---------- risks & contingencies ---------- */
+.risk-block { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); min-width: 0; }
+.risk-block h4 { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.risk-block h4 .btn { margin-left: auto; }
+.custody { list-style: none; margin: 0; padding: 0; }
+.custody li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--color-border-subtle); }
+.custody li:first-child { border-top: none; }
+tr.row-cancelled td { opacity: .6; } tr.row-cancelled td:first-child b { text-decoration: line-through; }

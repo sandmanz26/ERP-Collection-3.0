@@ -70,6 +70,11 @@ export function transitionBlockers(ev, to, ctx) {
     case 'details_locked':
       if (!ev.finalHeadcount) blockers.push('Final headcount must be confirmed');
       break;
+    case 'pre_event':
+    case 'event_day':
+      if (ctx.finalPayment?.status === 'breach') blockers.push(`Final balance ${ctx.finalPayment.balance} unpaid after the cutoff (${ctx.finalPayment.cutoff}) — collect it or override with a reason`);
+      if (ctx.vendorGaps?.length) blockers.push(...ctx.vendorGaps.map((g) => `No ${g.category} vendor — the booking was cancelled and not yet replaced`));
+      break;
     case 'post_event':
       if (ev.date > ctx.today) blockers.push('Event date has not passed yet');
       break;

@@ -11,6 +11,7 @@ import { DayView, IssuesPanel } from './event/TimelineTab.jsx';
 import { productionIssues } from '../lib/timeline.js';
 import { positionFill } from '../lib/workforce.js';
 import { diffDays } from '../lib/dates.js';
+import { VendorArrivals, Overtime, CustodyItems } from './dayof/DayOfRisk.jsx';
 
 export default function DayOf() {
   const { id } = useParams();
@@ -47,7 +48,7 @@ export default function DayOf() {
                 </div>
               </div>
             )}
-            <PillSelect options={[{ id: 'timeline', label: 'Timeline' }, { id: 'mine', label: 'My cues' }, { id: 'checkin', label: 'Guests' }, { id: 'crew', label: 'Crew' }, { id: 'incident', label: 'Incident' }, { id: 'sheet', label: 'Call sheet' }]} value={tab} onChange={setTab} />
+            <PillSelect options={[{ id: 'timeline', label: 'Timeline' }, { id: 'mine', label: 'My cues' }, { id: 'checkin', label: 'Guests' }, { id: 'crew', label: 'Crew' }, { id: 'vendors', label: 'Vendors' }, { id: 'overtime', label: 'Overtime' }, { id: 'items', label: 'Items' }, { id: 'incident', label: 'Incident' }, { id: 'sheet', label: 'Call sheet' }]} value={tab} onChange={setTab} />
             {(tab === 'timeline' || tab === 'mine') && (
               <>
                 <div className="mt"><select value={se} onChange={(e) => setSe(e.target.value)} style={{ width: '100%' }}><option value="all">All functions</option>{ev.subEvents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
@@ -73,6 +74,9 @@ export default function DayOf() {
             )}
             {tab === 'checkin' && <CheckIn ev={ev} />}
             {tab === 'crew' && <CrewCheckIn ev={ev} />}
+            {tab === 'vendors' && <VendorArrivals ev={ev} />}
+            {tab === 'overtime' && <Overtime ev={ev} />}
+            {tab === 'items' && <CustodyItems ev={ev} />}
             {tab === 'incident' && <Incident ev={ev} />}
             {tab === 'sheet' && <div className="mt" style={{ fontSize: 12 }}><CallSheet ev={ev} /></div>}
           </div>

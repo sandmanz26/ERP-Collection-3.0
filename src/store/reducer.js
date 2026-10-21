@@ -11,6 +11,7 @@ import { guestHandlers } from './handlers/guests.js';
 import { opsHandlers } from './handlers/ops.js';
 import { settingsHandlers } from './handlers/settings.js';
 import { workforceHandlers } from './handlers/workforce.js';
+import { riskHandlers } from './handlers/risk.js';
 
 export const HANDLERS = {
   ...systemHandlers,
@@ -23,6 +24,7 @@ export const HANDLERS = {
   ...opsHandlers,
   ...settingsHandlers,
   ...workforceHandlers,
+  ...riskHandlers,
 };
 
 const MAX_LOG = 2000;

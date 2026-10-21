@@ -258,6 +258,8 @@ export function buildSeed() {
     { id: 'vd_gourmet', name: 'Gourmet Table Catering', category: 'Catering', regions: ['New York'], priceRange: '$$$', rating: 4.6, country: 'US', contact: 'Paolo Ricci', phone: '+1 212 555 0311', email: 'events@gourmettable.com', coiExpiry: addDays(today, 200), licenses: [{ name: 'NY Liquor License (caterer)', expiry: addDays(today, 150) }], w9: true, commissionPct: 0, notes: 'Min guarantee 120 guests on Saturdays.', performance: [] },
     { id: 'vd_lens', name: 'Lens & Light Studio', category: 'Photographer', regions: ['New York', 'Boston'], priceRange: '$$$', rating: 4.9, country: 'US', contact: 'Mia Torres', phone: '+1 917 555 0322', email: 'book@lenslight.com', coiExpiry: addDays(today, 90), licenses: [], w9: true, commissionPct: 10, notes: 'Pays 10% referral fee.', performance: [] },
     { id: 'vd_groove', name: 'Groove Collective (DJ/Band)', category: 'Band/DJ', regions: ['New York', 'Florida'], priceRange: '$$', rating: 4.5, country: 'US', contact: 'Andre Hill', phone: '+1 646 555 0333', email: 'andre@groove.live', coiExpiry: addDays(today, -5), licenses: [], w9: false, commissionPct: 5, notes: 'COI expired — chase renewal. W-9 missing.', performance: [] },
+    { id: 'vd_brass', name: 'Brooklyn Brass & Beats', category: 'Band/DJ', regions: ['New York'], priceRange: '$$$', rating: 4.7, country: 'US', contact: 'Nia Lopez', phone: '+1 718 555 0344', email: 'book@brassbeats.nyc', coiExpiry: addDays(today, 300), licenses: [], w9: true, commissionPct: 0, notes: 'Back-up band: 7-piece, can step in at 3 weeks notice.', performance: [] },
+    { id: 'vd_spin', name: 'SpinCity DJs', category: 'Band/DJ', regions: ['New York', 'New Jersey'], priceRange: '$', rating: 4.2, country: 'US', contact: 'Kev Park', phone: '+1 201 555 0355', email: 'kev@spincity.dj', coiExpiry: addDays(today, 120), licenses: [], w9: true, commissionPct: 10, notes: 'DJ only; good last-minute option.', performance: [] },
     { id: 'vd_soundwave', name: 'SoundWave AV', category: 'AV', regions: ['California', 'Nevada'], priceRange: '$$$', rating: 4.7, country: 'US', contact: 'Ken Ito', phone: '+1 310 555 0344', email: 'ops@soundwave.av', coiExpiry: addDays(today, 120), licenses: [], w9: true, commissionPct: 0, notes: 'Full LED walls; union labor in LA.', performance: [] },
     { id: 'vd_pacific', name: 'Pacific Hall Convention Center', category: 'Venue', regions: ['California'], priceRange: '$$$$', rating: 4.4, country: 'US', contact: 'Rachel Stone', phone: '+1 310 555 0355', email: 'sales@pacifichall.com', coiExpiry: addDays(today, 300), licenses: [], w9: true, commissionPct: 8, notes: 'Curfew 23:00. F&B minimum applies.', performance: [] },
     { id: 'vd_harbor', name: 'Harbor Shuttles', category: 'Transportation', regions: ['New York', 'California'], priceRange: '$$', rating: 4.2, country: 'US', contact: 'Sam Patel', phone: '+1 718 555 0366', email: 'dispatch@harborshuttles.com', coiExpiry: addDays(today, 25), licenses: [{ name: 'DOT Operating Authority', expiry: addDays(today, 400) }], w9: true, commissionPct: 0, notes: '', performance: [] },
@@ -304,6 +306,13 @@ export function buildSeed() {
     lateFeePct: 1.5,
     finalHeadcountDays: 14,
     rsvpDeadlineDays: 30,
+    finalPaymentCutoffDays: 14,
+    leadResponseHours: 24,
+    returnedPaymentFee: 35,
+    overtimeCrewMultiplier: 1.5,
+    overtimeMarkupPct: 20,
+    weatherCallHours: 48,
+    vendorLateMinutes: 15,
     accountingProvider: 'quickbooks',
     counters: { invoice: 2000, changeOrder: 100, creditNote: 500 },
   };
@@ -624,7 +633,9 @@ export function buildSeed() {
   ];
   for (const d of leadDefs) {
     const ev = { ...emptyEventParts(), id: d.id, name: d.name, eventTypeId: d.eventTypeId, segment: EVENT_TYPES.find((t) => t.id === d.eventTypeId).segment, clientId: d.clientId, date: d.date, dateStatus: d.hold ? 'hold' : 'none', stage: d.stage, source: d.source, plannerId: d.plannerId, salesId: d.salesId, guestCount: d.guestCount, budget: d.budget, currency: d.currency, jurisdictionId: d.jurisdictionId, probability: d.probability, createdAt: d.createdAt, lostReason: d.lostReason, venue: { name: 'TBD', address: '', parking: '', accessCode: '', emergencyContact: '', nearestHospital: '', curfew: '' } };
-    ev.interactions = [{ id: id('int'), type: 'email', at: d.createdAt, by: d.salesId, summary: `Inquiry received via ${d.source}` }];
+    ev.interactions = [{ id: id('int'), type: 'email', direction: 'inbound', at: d.createdAt, by: d.salesId, summary: `Inquiry received via ${d.source}` }];
+    // Qualified+ leads got a reply; brand-new leads are still waiting (first-response SLA demo).
+    if (d.stage !== 'lead') ev.interactions.unshift({ id: id('int'), type: 'call', direction: 'outbound', at: new Date(new Date(d.createdAt).getTime() + 3 * 3600e3).toISOString(), by: d.salesId, summary: 'Discovery call — date, guest count and budget confirmed' });
     if (d.proposal) {
       const et = EVENT_TYPES.find((t) => t.id === d.eventTypeId);
       ev.proposals = [makeProposal({ version: 1, status: 'active', lines: [...et.proposalTemplate.map((c) => line(c)), ...et.optionalTemplate.map((c) => line(c, { optional: true, selected: false }))], guestCount: d.guestCount, jurisdictionId: d.jurisdictionId, currency: d.currency, createdAt: ts(today, -8), validUntil: addDays(today, 13), changeSummary: 'Initial proposal' })];
@@ -646,6 +657,7 @@ export function buildSeed() {
   // ===== Workforce, production coordination & site plans (multi-vendor, outsourced crews) =====
   enrichCarter(events.find((e) => e.id === 'ev_carter'), today);
   enrichAcme(events.find((e) => e.id === 'ev_acme'), today);
+  enrichRisk(events, today);
 
   const notifications = [
     { id: id('ntf'), ts: ts(today, 0, '08:00'), toRoles: ['planner', 'admin'], eventId: 'ev_carter', text: 'Vendor Groove Collective COI has EXPIRED — booking at risk for Carter–Walker Wedding.', read: false, level: 'danger' },
@@ -665,7 +677,7 @@ export function buildSeed() {
   events.forEach((e) => { if (decorReservations.find((r) => r.eventId === e.id)) e.decorReservationId = `res_${e.id}`; });
 
   return {
-    version: 5,
+    version: 6,
     seededAt: new Date().toISOString(),
     currentUserId: null,
     loginAttempts: {},
@@ -696,6 +708,26 @@ function W(ev, pos, names, status = 'confirmed') {
   });
 }
 const byAct = (ev, txt) => ev.ros.items.find((i) => i.activity.startsWith(txt));
+
+/** Real-world risk data: vendor meals, overtime rates, weather plans, personal items in custody. */
+function enrichRisk(events, today) {
+  const carter = events.find((e) => e.id === 'ev_carter');
+  carter.venue.overtimeRatePerHour = 1500; // Glasshouse: per hour past 23:30, sound curfew 00:00
+  const meals = { Catering: 0, Florals: 2, 'Photo/Video': 2, Entertainment: 9 };
+  const otRates = { 'Photo/Video': 350, Entertainment: 900 };
+  carter.vendorBookings.forEach((b) => { b.meals = meals[b.category] ?? 0; if (otRates[b.category]) b.overtimeRatePerHour = otRates[b.category]; });
+  carter.contingency = { outdoor: true, subEventId: 'se_c1', planA: 'Rooftop Terrace (open air)', planB: 'Hotel Hugo — Bistro private room', callHoursBefore: 48, decision: null };
+  carter.custody = [
+    { id: id('cus'), item: 'Card box (envelopes & gifts)', owner: 'Emily & James', notes: 'Locked box; only the day-of coordinator carries the key', status: 'expected', log: [] },
+    { id: id('cus'), item: "Grandmother's cake knife (heirloom)", owner: 'Linda Carter', notes: 'Back to Linda at the end of the night', status: 'expected', log: [] },
+    { id: id('cus'), item: 'Signed marriage license', owner: 'Officiant', notes: 'Officiant files it within 10 days', status: 'expected', log: [] },
+  ];
+  const laurent = events.find((e) => e.id === 'ev_laurent');
+  laurent.contingency = { outdoor: true, subEventId: 'se_l2', planA: 'Lavender field ceremony', planB: 'Orangerie (covered, 120 seats)', callHoursBefore: 72, decision: null };
+  const harper = events.find((e) => e.id === 'ev_harper');
+  harper.contingency = { outdoor: true, subEventId: 'se_h2', planA: 'Garden', planB: 'Tent on the lawn', callHoursBefore: 48, decision: 'A', decidedAt: ts(today, -6), decidedBy: 'u_planner', note: '0% rain forecast' };
+  harper.custody = [{ id: id('cus'), item: 'Gift table — 23 gifts & cards', owner: 'Diane Harper', notes: '', status: 'received', log: [{ status: 'received', person: 'Jamal Brooks', at: ts(today, -4, '23:40'), by: 'u_crew' }] }];
+}
 
 function enrichCarter(ev, today) {
   const d = ev.date;

@@ -77,7 +77,7 @@ export function InvoiceTable({ ev, portal, payerFilter }) {
 
 export default function FinanceTab({ ev }) {
   const dialog = useDialog();
-  const { state, act } = useStore();
+  const { state, act, user } = useStore();
   const f = eventFinancials(state, ev);
   const [provider, setProvider] = useState(state.settings.accountingProvider);
   const cur = ev.currency;
@@ -103,8 +103,15 @@ export default function FinanceTab({ ev }) {
         </Card>
         <Card title="Payments received">
           <table className="t">
-            <thead><tr><th>Date</th><th>Invoice</th><th>Method</th><th>Processor ref</th><th className="num">Amount</th></tr></thead>
-            <tbody>{ev.payments.map((p) => <tr key={p.id}><td>{fmtDateTime(p.at)}</td><td>{ev.invoices.find((i) => i.id === p.invoiceId)?.number}</td><td><Badge>{p.method}</Badge></td><td className="faint">{p.ref}</td><td className="num"><Money value={p.amount} currency={cur} /></td></tr>)}</tbody>
+            <thead><tr><th>Date</th><th>Invoice</th><th>Method</th><th>Processor ref</th><th className="num">Amount</th><th /></tr></thead>
+            <tbody>{ev.payments.map((p) => (
+              <tr key={p.id} className={p.reversed ? 'row-cancelled' : ''}>
+                <td>{fmtDateTime(p.at)}</td><td>{ev.invoices.find((i) => i.id === p.invoiceId)?.number}</td><td><Badge>{p.method}</Badge></td>
+                <td className="faint">{p.ref}{p.reversalOf && <div><Badge tone="danger">reversal · {p.reason}</Badge></div>}{p.reversed && <div><Badge tone="danger">reversed</Badge></div>}</td>
+                <td className="num"><Money value={p.amount} currency={cur} /></td>
+                <td>{p.amount > 0 && !p.reversed && ['admin', 'finance'].includes(user.role) && <Button size="sm" variant="ghost" onClick={async () => { const r = await dialog.form({ title: `Reverse payment ${p.ref}?`, fields: [{ name: 'reason', label: 'Reason', type: 'select', options: ['ACH return — insufficient funds', 'Card chargeback', 'Bounced cheque', 'Duplicate payment', 'Wire recalled by bank'], defaultValue: 'ACH return — insufficient funds' }, { name: 'chargeFee', label: `Re-bill the returned-payment fee (${state.settings.returnedPaymentFee ?? 35} ${cur})`, type: 'checkbox', defaultValue: true }] }); r && act('PAYMENT_REVERSE', { eventId: ev.id, paymentId: p.id, ...r }); }}>Reverse…</Button>}</td>
+              </tr>
+            ))}</tbody>
           </table>
         </Card>
       </div>
