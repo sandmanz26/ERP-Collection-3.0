@@ -16,3 +16,14 @@ npm run build
 - 🎨 Living style guide at `#/design-system` (admin).
 
 **Sign in** with a demo account (password `demo1234`), e.g. `olivia@lumiere.events` (admin), `ava@lumiere.events` (planner), `hannah@lumiere.events` (finance). The login page lists every team and portal account. Light/dark theme and a demo account switcher are in the user menu. Public pages: `#/inquiry`, `#/rsvp`.
+
+---
+
+## 🚢 FreightPilot (branch `claude/peaceful-goodall-7o79lh`)
+
+This branch also contains **`freight-erp/`** — a separate front-end ERP prototype (React + Ant Design, mock data) for
+an AI platform for freight forwarders (RFQ → invoice, CargoWise eAdaptor). See [`freight-erp/README.md`](freight-erp/README.md).
+
+```bash
+cd freight-erp && npm install && npm run dev
+```
