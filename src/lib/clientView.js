@@ -232,3 +232,44 @@ export function clientProgress(state, ev, user, today) {
   ].filter(Boolean);
   return { areas, journey: clientJourney(state, ev), daysToGo: ev.date ? diffDays(today, ev.date) : null };
 }
+
+const STOP_ICON = { proposal: 'file', contract: 'edit', secured: 'lock', planning: 'list', final: 'users', ready: 'checkSquare', day: 'heart', wrap: 'star' };
+
+/**
+ * Where the client is, for the journey map: the pin sits between the last finished step and the current one,
+ * moved along by how much time has passed toward the next known date. Plus a plain-language status.
+ */
+export function clientPosition(state, ev, user, today) {
+  const j = clientJourney(state, ev);
+  const stops = j.steps.map((s) => ({ ...s, icon: STOP_ICON[s.id], emphasis: s.id === 'day' }));
+  const lastDone = stops.reduce((a, s, i) => (s.status === 'done' ? i : a), -1);
+  const exitIdx = stops.findIndex((s) => s.status === 'exit');
+  let position;
+  if (exitIdx >= 0) position = exitIdx;
+  else if (lastDone === stops.length - 1) position = lastDone;
+  else {
+    // The current stop is reached; the pin travels from it toward the next stop that has a date.
+    const cur = lastDone + 1;
+    const start = stops[lastDone]?.date ?? ev.createdAt?.slice(0, 10);
+    const end = stops.slice(cur + 1).find((s) => s.date)?.date;
+    const span = start && end ? diffDays(start, end) : 0;
+    const frac = span > 0 ? Math.min(0.85, Math.max(0.15, diffDays(start, today) / span)) : 0.3;
+    position = cur === stops.length - 1 ? cur : cur + frac;
+  }
+  const next = stops.find((s, i) => i > lastDone + 1 && s.date && s.date >= today && s.status !== 'exit') ?? null;
+  // Status in the client's words: what needs them, what we are handling, or all good.
+  const reasons = [];
+  const money = clientPayments(ev, user, today);
+  if (money?.overdue.length) reasons.push({ tone: 'danger', text: `${money.overdue.length} payment${money.overdue.length > 1 ? 's' : ''} overdue`, tab: 'payments' });
+  if (ev.contract?.immutable && ev.dateStatus !== 'locked' && at(ev.stage) < at('event_day') && !isExit(ev.stage)) reasons.push({ tone: 'danger', text: 'Date not secured until the deposit is paid', tab: 'payments' });
+  const prep = clientPrep(state, ev, user, today);
+  const overdueTodos = prep.items.filter((i) => i.bucket === 'overdue' && i.kind !== 'payment').length;
+  if (overdueTodos) reasons.push({ tone: 'warning', text: `${overdueTodos} to-do${overdueTodos > 1 ? 's' : ''} overdue`, tab: 'prep' });
+  vendorGaps(ev).forEach((g) => reasons.push({ tone: 'info', text: `We are replacing your ${g.category.toLowerCase()} vendor`, tab: 'team' }));
+  const status = exitIdx >= 0 ? { tone: 'neutral', label: 'Event stopped' }
+    : reasons.some((r) => r.tone === 'danger') ? { tone: 'danger', label: 'Needs your attention' }
+      : reasons.some((r) => r.tone === 'warning') ? { tone: 'warning', label: 'A few things are late' }
+        : reasons.length ? { tone: 'info', label: 'On track — we are handling something' }
+          : { tone: 'success', label: 'On track' };
+  return { stops, position, current: j.current, done: Math.max(0, lastDone + 1), total: stops.length, next, nextInDays: next ? diffDays(today, next.date) : null, status, reasons, daysToGo: ev.date ? diffDays(today, ev.date) : null };
+}

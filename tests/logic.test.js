@@ -399,3 +399,23 @@ test('client panel: journey, scoped payments, prep and team are client-safe', as
   const tl = clientTimeline(s, ev, emily, today);
   assert.ok(tl.some((r) => r.kind === 'event') && tl.every((r, i) => i === 0 || tl[i - 1].date <= r.date));
 });
+
+test('client journey map: pin sits past the current step, status speaks plainly', async () => {
+  const { clientPosition } = await import('../src/lib/clientView.js');
+  const s = buildSeed();
+  const today = todayISO();
+  const emily = s.users.find((u) => u.id === 'u_client1');
+  const carter = s.events.find((e) => e.id === 'ev_carter');
+  const p = clientPosition(s, carter, emily, today);
+  const cur = p.stops.findIndex((x) => x.status === 'current');
+  assert.equal(p.stops[cur].id, 'planning');
+  assert.ok(p.position > cur && p.position < cur + 1, 'between the current step and the next');
+  assert.ok(p.next && p.next.date >= today);
+  assert.equal(p.status.tone, 'danger', 'an overdue payment needs the client');
+  assert.ok(p.reasons.some((r) => r.tab === 'payments'));
+  const archived = s.events.find((e) => e.stage === 'archived');
+  assert.equal(clientPosition(s, archived, emily, today).position, 7, 'a finished event ends at the last stop');
+  const cancelled = s.events.find((e) => e.stage === 'cancelled_client');
+  const pc = clientPosition(s, cancelled, emily, today);
+  assert.equal(pc.stops[pc.position].status, 'exit');
+});

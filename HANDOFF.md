@@ -17,7 +17,7 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 39 unit/integration tests (logic.test.js + risk.test.js) (node --test)
+npm test         # 40 unit/integration tests (logic.test.js + risk.test.js) (node --test)
 npm run build    # static output in dist/
 ```
 **Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
@@ -62,7 +62,7 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 | `styles/` | `base.css`, `atoms.css`, `molecules.css`, `organisms.css`, `templates.css` (+ print rules), entry `index.css` |
 | `atoms/` | `Button` (variant: primary/secondary/success/danger/danger-solid/ghost, size, loading), **`Icon`** (47 stroke icons — never emoji), `Badge`, `Input/Select/Textarea/Checkbox`, `Money`, `Swatch`, `ProgressBar`, **`ProgressRing`**, `Spinner`, `Avatar`, `QrCode` |
 | `molecules/` | **`Callout`** (tone, icon, title, CTA action, meta), **`AttentionList`**, `Field` (hint/error), `CommitInput`, `StageBadge`, `StatusBadge`, `StatTile`, `Alert`, `Tabs`, `PillSelect`, `KeyValue`, `EmptyState`, `SearchInput`, `ConfirmButton`, `Toast` |
-| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit), **`Timeline`** (vertical dated list grouped by period, with a Today divider) |
+| `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit), **`Timeline`** (vertical dated list grouped by period, with a Today divider), **`JourneyMap`** (road from first to last stop with a pulsing "You are here" pin; stops are buttons; scrolls sideways on phones and centers the pin) |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
 Fonts: self-hosted via `@fontsource` (Fraunces display, Hanken Grotesk UI, JetBrains Mono data), imported in `main.jsx`. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
@@ -97,7 +97,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/risk.js` | **negative-case rules** (see `docs/BUSINESS_REVIEW.md`): `vendorGaps`, `vendorRefundsDue`, `finalPaymentRisk`, `weatherCall`, `leadSla`, `custodyOpen`, `vendorMeals`, `lateVendors`, `overtimeQuote`, `overtimeApprovers`, `RISK_DEFAULTS` |
 | `src/store/handlers/risk.js` | BOOKING_CANCEL (+ replacement RFQ), VENDOR_REFUND_RECOVERED, VENDOR_ARRIVED, PAYMENT_REVERSE, WEATHER_PLAN_SET, WEATHER_CALL, OVERTIME_APPROVE, CUSTODY_ADD, CUSTODY_UPDATE; client notices (`ev.clientNotices`) |
 | `src/pages/event/RiskPanel.jsx`, `src/pages/dayof/DayOfRisk.jsx` | cockpit *Risks & contingencies* card; Day-of Vendors / Overtime / Items tabs |
-| `src/lib/clientView.js` | **client panel selectors (client-safe — no costs, margins, rates, internal notes)**: `clientJourney` (8 plain-language steps), `clientProgress`, `clientTimeline`, `clientRoadmap` (Gantt lanes), `clientAgenda` (guest-track ROS only), `clientPrep` (tasks, forms, signatures, approvals, payments, guest deadlines → overdue / 30 days / anytime / later / done), `clientPayments` (payer-scoped), `clientTeam`, `clientUpdates` |
+| `src/lib/clientView.js` | **client panel selectors (client-safe — no costs, margins, rates, internal notes)**: `clientJourney` (8 plain-language steps), `clientPosition` (pin position between the current step and the next dated one, next milestone, status: On track / A few things are late / Needs your attention, with clickable reasons), `clientProgress`, `clientTimeline`, `clientRoadmap` (Gantt lanes), `clientAgenda` (guest-track ROS only), `clientPrep` (tasks, forms, signatures, approvals, payments, guest deadlines → overdue / 30 days / anytime / later / done), `clientPayments` (payer-scoped), `clientTeam`, `clientUpdates` |
 | `src/pages/client/ClientPanels.jsx` | client portal panels: Overview, Timeline (road map + month list), Event day agenda, To prepare, Payments, Team, callouts. `ClientPortal.jsx` groups them into sections honoring `clientCan` permissions |
 | `src/lib/eventGuide.js` | **event cockpit logic**: `STAGE_INFO`, `stageDates`, `stepperSteps`, `stageRequirements`, `nextActions` (stage-aware, each with target tab + CTA), `readiness` by area, `keyDates`, role-filtered `priorities` for the dashboard |
 | `src/store/*` | reducer + handlers (`system`, `crm`, `sales`, `finance`, `planning`, `vendors`, `guests`, `ops`, `settings`, `workforce`) |

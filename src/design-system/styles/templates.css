@@ -177,3 +177,12 @@
 .cp-feed-danger .cp-feed-icon { background: var(--color-danger-soft); color: var(--color-danger-ink); }
 .cp-feed-warning .cp-feed-icon { background: var(--color-warning-soft); color: var(--color-warning-ink); }
 .cp-feed-success .cp-feed-icon { background: var(--color-success-soft); color: var(--color-success-ink); }
+.cp-where { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-2); }
+.cp-where-text { min-width: 0; flex: 1; }
+.cp-where .cp-journey-title em { font-style: italic; color: var(--color-brand-strong); }
+.cp-reasons { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--space-2) 0; }
+.cp-reason { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-pill); padding: 5px 10px; font: inherit; font-size: 12.5px; font-weight: var(--weight-medium); cursor: pointer; border: 1px solid; }
+.cp-reason-danger { background: var(--color-danger-soft); border-color: var(--color-danger-border); color: var(--color-danger-ink); }
+.cp-reason-warning { background: var(--color-warning-soft); border-color: var(--color-warning-border); color: var(--color-warning-ink); }
+.cp-reason-info { background: var(--color-info-soft); border-color: var(--color-info-border); color: var(--color-info-ink); }
+@media (max-width: 560px) { .cp-where { flex-wrap: wrap; } }

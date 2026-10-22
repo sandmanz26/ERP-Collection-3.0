@@ -2,9 +2,9 @@
 // All data comes from lib/clientView.js (client-safe selectors); permissions via clientCan.
 import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
-import { Card, Badge, Money, Alert, EmptyState, ProgressBar, ProgressRing, StatusBadge, Button, Icon, Callout, Avatar, Stepper, Timeline, Gantt, dayTicks, KeyValue } from '../../design-system/index.js';
+import { Card, Badge, Money, Alert, EmptyState, ProgressBar, ProgressRing, StatusBadge, Button, Icon, Callout, Avatar, Stepper, Timeline, JourneyMap, Gantt, dayTicks, KeyValue } from '../../design-system/index.js';
 import { weatherCall } from '../../lib/risk.js';
-import { clientJourney, clientProgress, clientTimeline, clientRoadmap, clientAgenda, clientPrep, clientPayments, clientTeam, clientUpdates } from '../../lib/clientView.js';
+import { clientJourney, clientPosition, clientProgress, clientTimeline, clientRoadmap, clientAgenda, clientPrep, clientPayments, clientTeam, clientUpdates } from '../../lib/clientView.js';
 import { invoiceStatus, invoiceBalance, payerSummary } from '../../lib/derived.js';
 import { fmtMoney } from '../../lib/money.js';
 import { clientCan } from '../../lib/permissions.js';
@@ -34,7 +34,7 @@ export function ClientHome({ ev, setTab }) {
   return (
     <div className="stack">
       <ClientCallouts ev={ev} setTab={setTab} />
-      <JourneyCard ev={ev} journey={p.journey} daysToGo={p.daysToGo} />
+      <JourneyCard ev={ev} setTab={setTab} />
       <WeatherNote ev={ev} />
 
       <div className="ready-grid">
@@ -94,28 +94,36 @@ function WeatherNote({ ev }) {
     : <Callout tone="info" icon="sun" title={`Weather plan for ${w.function}`}>Plan A: {w.planA}. If rain or wind is forecast we switch to Plan B: {w.planB}. Your planner makes the call by {fmtDateTime(w.due)} and lets you know here.</Callout>;
 }
 
-function JourneyCard({ ev, journey, daysToGo }) {
+/** "Where we are": a road from proposal to wrap-up with a "You are here" pin, the status in plain words, and what is next. */
+function JourneyCard({ ev, setTab }) {
+  const { state, user, today } = useStore();
   const [sel, setSel] = useState(null);
-  const step = journey.steps.find((s) => s.id === sel) ?? journey.current;
-  const n = journey.steps.indexOf(step) + 1;
+  const p = clientPosition(state, ev, user, today);
+  const step = p.stops.find((s) => s.id === sel) ?? p.current;
+  const tone = { success: 'ok', warning: 'warn', danger: 'danger', info: 'info' }[p.status.tone];
   return (
-    <Card title="Where we are">
-      <div className="cp-journey-head">
-        <ProgressRing value={journey.pct} label="Journey progress" tone={journey.pct >= 100 ? 'ok' : 'brand'} />
-        <div style={{ minWidth: 0 }}>
-          <div className="faint text-xs">Step {Math.min(n, journey.steps.length)} of {journey.steps.length}</div>
-          <div className="cp-journey-title">{step.label} <StatusBadge status={step.status === 'current' ? 'in_progress' : step.status === 'done' ? 'done' : step.status === 'exit' ? 'cancelled' : 'pending'} /></div>
-          <div className="muted">{step.about}</div>
+    <Card title="Where we are" actions={<Badge tone={tone}>{p.status.label}</Badge>}>
+      <div className="cp-where">
+        <div className="cp-where-text">
+          <div className="cp-journey-title">{p.current.status === 'exit' ? p.current.label : <>You are in <em>{p.current.label}</em></>}</div>
+          <div className="muted">{p.done} of {p.total} steps done{p.next ? <> · next: <b>{p.next.label}</b> {fmtDate(p.next.date)} ({relDays(today, p.next.date)})</> : null}</div>
         </div>
-        {daysToGo !== null && daysToGo >= 0 && <div className="countdown"><b>{daysToGo}</b><span>{daysToGo === 1 ? 'day' : 'days'} to go</span></div>}
+        {p.daysToGo !== null && p.daysToGo >= 0 && <div className="countdown"><b>{p.daysToGo}</b><span>{p.daysToGo === 1 ? 'day' : 'days'} to go</span></div>}
       </div>
-      <Stepper steps={journey.steps} selectedId={step.id} onSelect={setSel} formatDate={short} />
-      <div className="stage-detail">
-        {step.status === 'done' && <div><Icon name="check" size={14} /> Completed{step.date ? ` on ${fmtDate(step.date)}` : ''}.</div>}
-        {step.status !== 'done' && step.status !== 'exit' && <div><b>What we need from you:</b> {step.you}</div>}
+      <JourneyMap stops={p.stops} position={p.position} pinLabel="You are here" pinSub={short(today)} selectedId={step.id} onSelect={setSel} formatDate={short} />
+      {p.reasons.length > 0 && (
+        <div className="cp-reasons">
+          {p.reasons.map((r) => <button key={r.text} type="button" className={`cp-reason cp-reason-${r.tone}`} onClick={() => setTab(r.tab)}><Icon name={r.tone === 'info' ? 'info' : 'alert'} size={13} /> {r.text} <Icon name="chevron" size={12} /></button>)}
+        </div>
+      )}
+      <div className="stage-detail"><div>
+        <div className="row" style={{ gap: 8 }}><b>{step.label}</b><StatusBadge status={step.status === 'current' ? 'in_progress' : step.status === 'done' ? 'done' : step.status === 'exit' ? 'cancelled' : 'pending'} /></div>
+        <div className="muted">{step.about}</div>
+        {step.status === 'done' && <div className="mt"><Icon name="check" size={14} /> Completed{step.date ? ` on ${fmtDate(step.date)}` : ''}.</div>}
+        {step.status !== 'done' && step.status !== 'exit' && <div className="mt"><b>What we need from you:</b> {step.you}</div>}
         {step.target && <div className="faint text-xs">Target date: {fmtDate(step.date)}</div>}
-        {step.status === 'exit' && <div>{step.you}</div>}
-      </div>
+        {step.status === 'exit' && <div className="mt">{step.you}</div>}
+      </div></div>
     </Card>
   );
 }

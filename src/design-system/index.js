@@ -19,6 +19,7 @@ export { CoverageChart } from './organisms/CoverageChart.jsx';
 export { SitePlan } from './organisms/SitePlan.jsx';
 export { Stepper } from './organisms/Stepper.jsx';
 export { Timeline } from './organisms/Timeline.jsx';
+export { JourneyMap } from './organisms/JourneyMap.jsx';
 // templates
 export { PortalTemplate, MobileTemplate, PublicTemplate } from './templates/Templates.jsx';
 // hooks & utils

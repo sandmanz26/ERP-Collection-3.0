@@ -107,3 +107,6 @@ Deferred: real identity provider (SSO, MFA, server sessions), per-user saved pre
 
 ## Addendum (#034–#035) — Business-analyst / wedding-planner roast: negative cases
 Full write-up: [`docs/BUSINESS_REVIEW.md`](BUSINESS_REVIEW.md). Added: vendor cancellation with replacement RFQ and deposit recovery; payment reversal (date back on hold, fee re-billed); final-balance cutoff blocking Pre-Event (admin override with written reason); weather plan & dated weather call; on-site overtime priced first and approved by an authorized client representative; personal-item custody chain; vendor meals; first-response SLA for inquiries; vendor late-arrival check-in. Ranked backlog of what is still open is in the review.
+
+## Addendum (#036) — Client journey map
+The client Overview opens with a visual road map of their event ("You are here" pin, finished vs remaining road, event day highlighted, next milestone, plain-language status with reasons that link to the right tab).

@@ -247,3 +247,31 @@ button.vtl-body:hover { background: var(--color-row-hover); }
 .custody li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--color-border-subtle); }
 .custody li:first-child { border-top: none; }
 tr.row-cancelled td { opacity: .6; } tr.row-cancelled td:first-child b { text-decoration: line-through; }
+
+/* ---------- journey map (road + "you are here" pin) ---------- */
+.jmap-scroll { overflow-x: auto; overflow-y: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
+.jmap { position: relative; min-width: 720px; }
+.jmap-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.jmap-bed { fill: none; stroke: var(--color-surface-sunken); stroke-width: 18px; stroke-linecap: round; }
+.jmap-ahead { fill: none; stroke: var(--color-ink-3); stroke-width: 2px; stroke-dasharray: 6 7; opacity: .55; }
+.jmap-done { fill: none; stroke: var(--color-brand); stroke-width: 6px; stroke-linecap: round; }
+.jmap-stop { position: absolute; transform: translate(-50%, -15px); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 112px; background: none; border: none; padding: 0; font: inherit; color: var(--color-ink); cursor: pointer; z-index: 2; }
+.jmap-dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--color-surface); border: 2px solid var(--color-ink-3); color: var(--color-ink-2); box-shadow: 0 2px 6px rgba(0, 0, 0, .08); transition: transform var(--duration-fast) ease; }
+.jmap-stop.big { transform: translate(-50%, -20px); }
+.jmap-stop.big .jmap-dot { width: 40px; height: 40px; border-color: var(--color-danger); color: var(--color-danger); }
+.jmap-stop.done .jmap-dot { background: var(--color-brand); border-color: var(--color-brand); color: var(--color-ink-inverse); }
+.jmap-stop.current .jmap-dot { border-color: var(--color-brand); color: var(--color-brand); }
+.jmap-stop.exit .jmap-dot { background: var(--color-danger); border-color: var(--color-danger); color: var(--color-ink-inverse); }
+.jmap-stop:hover .jmap-dot { transform: scale(1.08); }
+.jmap-stop.selected .jmap-dot { box-shadow: 0 0 0 4px var(--color-brand-tint); }
+.jmap-label { margin-top: 4px; font-size: 12.5px; font-weight: var(--weight-semibold); line-height: 1.2; text-align: center; }
+.jmap-stop.todo .jmap-label { color: var(--color-ink-2); font-weight: var(--weight-medium); }
+.jmap-date { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-3); min-height: 14px; }
+.jmap-stop.big .jmap-label { font-size: 13.5px; color: var(--color-danger-ink); }
+.jmap-pin { position: absolute; z-index: 3; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.jmap-bubble { background: var(--color-ink); color: var(--color-surface); border-radius: 10px; padding: 6px 11px; font-size: 12px; line-height: 1.25; text-align: center; white-space: nowrap; box-shadow: 0 8px 18px rgba(0, 0, 0, .18); margin-bottom: 6px; position: relative; }
+.jmap-bubble::after { content: ''; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--color-ink); border-bottom: 0; }
+.jmap-bubble small { display: block; font-size: 11px; color: inherit; opacity: .8; }
+.jmap-marker { width: 18px; height: 18px; border-radius: 50%; background: var(--color-brand); border: 3px solid var(--color-surface); box-shadow: 0 0 0 0 rgba(106, 69, 245, .5); animation: jmap-pulse 2s ease-out infinite; margin-bottom: -9px; }
+@keyframes jmap-pulse { 0% { box-shadow: 0 0 0 0 rgba(106, 69, 245, .45); } 70% { box-shadow: 0 0 0 14px rgba(106, 69, 245, 0); } 100% { box-shadow: 0 0 0 0 rgba(106, 69, 245, 0); } }
+@media (prefers-reduced-motion: reduce) { .jmap-marker { animation: none; } }
