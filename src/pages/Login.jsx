@@ -3,6 +3,8 @@ import { useStore } from '../store/AppStore.jsx';
 import { Button, Field, Alert, Avatar, Badge, Icon, PillSelect, Modal } from '../design-system/index.js';
 import { DEMO_PASSWORD } from '../data/accounts.js';
 import { ROLES } from '../data/config.js';
+import { useWorkspace } from '../platform/PlatformStore.jsx';
+import { PLATFORM } from '../platform/plans.js';
 
 const roleLabel = (r) => ROLES.find((x) => x.id === r)?.label ?? r;
 const STATUS_TONE = { active: 'ok', invited: 'info', suspended: 'danger' };
@@ -21,7 +23,9 @@ const QUICK = [
 /** Mock sign-in. Every attempt (including failures and lockouts) is written to the activity log by the LOGIN action. */
 export default function Login() {
   const { state, act } = useStore();
-  const [email, setEmail] = useState('');
+  const ws = useWorkspace();
+  const isDemo = !ws || ws.isDemo; // demo tiles & "all accounts" only in the demo workspace
+  const [email, setEmail] = useState(() => { try { const e = sessionStorage.getItem('eo-login-email') || ''; sessionStorage.removeItem('eo-login-email'); return e; } catch { return ''; } });
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -44,7 +48,7 @@ export default function Login() {
   return (
     <div className="auth">
       <section className="auth-brand" aria-label={state.settings.company.name}>
-        <div className="logo-row"><span className="logo">L</span>{state.settings.company.name}</div>
+        <div className="logo-row"><span className="logo">{state.settings.company.name.trim()[0]?.toUpperCase()}</span>{state.settings.company.name}</div>
         <h1>Every wedding, launch and offsite in one run of show.</h1>
         <p>Leads, proposals, contracts, vendors, crews and the minute-by-minute timeline, shared by the office team and the coordinator on the venue floor.</p>
         <div className="ros-preview" aria-label="Sample run of show">
@@ -58,12 +62,13 @@ export default function Login() {
       <main className="auth-main">
         <div>
           <h2>Sign in</h2>
-          <div className="muted">Use your work email and password.</div>
+          <div className="muted">{ws ? <>to <b>{ws.tenant.slug}.{PLATFORM.domain}</b> · <button type="button" className="link-btn" onClick={() => ws.leave('/login')}>Not your workspace?</button></> : 'Use your work email and password.'}</div>
         </div>
+        {ws && !ws.ent.writable && <Alert tone="warning">This workspace is read-only ({ws.ent.status.replace('_', ' ')}). You can sign in and export, but not make changes.</Alert>}
         {err && <Alert tone="danger">{err}</Alert>}
         <form className="stack" onSubmit={submit} noValidate>
           <Field label="Work email" error={touched && !email ? 'Enter your email address' : null}>
-            <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@lumiere.events" autoFocus />
+            <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={`name@${(ws?.tenant.ownerEmail ?? 'olivia@lumiere.events').split('@')[1]}`} autoFocus />
           </Field>
           <Field label="Password" error={touched && !password ? 'Enter your password' : null}>
             <span className="pw-field">
@@ -77,7 +82,12 @@ export default function Login() {
           <Button type="submit" variant="primary" loading={busy} className="auth-submit">Sign in</Button>
         </form>
 
-        <div className="quick-roles">
+        {ws && !isDemo && ws.tenant.seedOwner && (
+          <div className="quick-roles"><span className="faint text-sm">Demo customer workspace</span>
+            <button type="button" className="quick-role" onClick={() => { setEmail(ws.tenant.ownerEmail); setPassword(DEMO_PASSWORD); }}><Icon name="key" size={16} /><span><b>Owner</b><span>{ws.tenant.ownerName} · {ws.tenant.ownerEmail}</span></span></button>
+          </div>
+        )}
+        {isDemo && <div className="quick-roles">
           <div className="row between"><span className="faint text-sm">Or explore as a demo role</span><button type="button" className="link-btn text-sm" onClick={() => setAll(true)}>All {team.length + portals.length} accounts</button></div>
           <div className="quick-grid">
             {QUICK.map((q) => {
@@ -89,7 +99,7 @@ export default function Login() {
               );
             })}
           </div>
-        </div>
+        </div>}
         {all && (
           <Modal title="Demo accounts" onClose={() => setAll(false)} footer={<span className="faint text-sm">Password for every account: <code>{DEMO_PASSWORD}</code></span>}>
             <div className="row mb"><PillSelect options={[{ id: 'team', label: `Team (${team.length})` }, { id: 'portal', label: `Client & vendor portals (${portals.length})` }]} value={group} onChange={setGroup} /></div>

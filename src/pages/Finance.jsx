@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Badge, StatusBadge, Money, StatTile, PillSelect, Tabs, Button } from '../design-system/index.js';
-import { invoiceStatus, invoiceBalance, eventFinancials, toUSD } from '../lib/derived.js';
+import { invoiceStatus, invoiceBalance, eventFinancials, toBase, baseCurrency } from '../lib/derived.js';
 import { fmtDate, diffDays, monthKey } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { PayModal } from './event/FinanceTab.jsx';
@@ -16,7 +16,8 @@ export default function Finance() {
   const ar = invs.filter((x) => filter === 'all' || (filter === 'open' ? !['paid', 'void'].includes(x.st) : x.st === filter)).sort((a, b) => a.i.dueDate.localeCompare(b.i.dueDate));
   const ap = state.events.flatMap((e) => e.vendorBookings.flatMap((b) => b.payments.map((p) => ({ p, b, e, v: state.vendors.find((v) => v.id === b.vendorId) })))).sort((a, b) => a.p.dueDate.localeCompare(b.p.dueDate));
   const fin = state.events.map((e) => ({ e, f: eventFinancials(state, e) }));
-  const usd = (n, c) => toUSD(state, n, c);
+  const BASE = baseCurrency(state);
+  const usd = (n, c) => toBase(state, n, c);
   const arOpen = invs.filter((x) => !['paid', 'void'].includes(x.st)).reduce((a, x) => a + usd(x.bal, x.i.currency), 0);
   const overdue = invs.filter((x) => x.st === 'overdue').reduce((a, x) => a + usd(x.bal, x.i.currency), 0);
   const apOpen = ap.filter((x) => x.p.status !== 'paid').reduce((a, x) => a + usd(x.p.amount, x.e.currency), 0);
@@ -32,13 +33,13 @@ export default function Finance() {
   });
   return (
     <div>
-      <div className="page-head"><div className="grow"><h1>Finance</h1><div className="muted">Receivables, payables, deferred vs recognized revenue, gratuities, commissions and accounting sync. Amounts in USD equivalent unless stated.</div></div></div>
+      <div className="page-head"><div className="grow"><h1>Finance</h1><div className="muted">Receivables, payables, deferred vs recognized revenue, gratuities, commissions and accounting sync. Amounts in {BASE} equivalent unless stated.</div></div></div>
       <div className="grid g5">
-        <StatTile label="Open receivables" value={fmtMoney(arOpen)} />
-        <StatTile label="Overdue" value={fmtMoney(overdue)} tone={overdue ? 'danger' : undefined} />
-        <StatTile label="Open vendor payables" value={fmtMoney(apOpen)} />
-        <StatTile label="Deferred revenue (liability)" value={fmtMoney(deferred)} />
-        <StatTile label="Recognized revenue" value={fmtMoney(recognized)} />
+        <StatTile label="Open receivables" value={fmtMoney(arOpen, BASE)} />
+        <StatTile label="Overdue" value={fmtMoney(overdue, BASE)} tone={overdue ? 'danger' : undefined} />
+        <StatTile label="Open vendor payables" value={fmtMoney(apOpen, BASE)} />
+        <StatTile label="Deferred revenue (liability)" value={fmtMoney(deferred, BASE)} />
+        <StatTile label="Recognized revenue" value={fmtMoney(recognized, BASE)} />
       </div>
       <div className="mt">
         <Tabs tabs={[{ id: 'ar', label: 'Receivables' }, { id: 'ap', label: 'Vendor payables' }, { id: 'rev', label: 'Revenue recognition' }, { id: 'cash', label: 'Cash forecast' }, { id: 'other', label: 'Gratuities & commissions' }, { id: 'acct', label: 'Accounting' }]} value={tab} onChange={setTab} />
@@ -75,10 +76,10 @@ export default function Finance() {
         </Card>
       )}
       {tab === 'cash' && (
-        <Card title="Cash forecast by month (USD)">
+        <Card title={`Cash forecast by month (${BASE})`}>
           <table className="t">
             <thead><tr><th>Month</th><th className="num">Expected in (clients)</th><th className="num">Expected out (vendors)</th><th className="num">Net</th></tr></thead>
-            <tbody>{Object.keys(months).sort().map((m) => <tr key={m}><td>{m}</td><td className="num">{fmtMoney(months[m].in)}</td><td className="num">{fmtMoney(months[m].out)}</td><td className="num" style={{ color: months[m].in - months[m].out < 0 ? 'var(--danger)' : 'var(--ok)' }}>{fmtMoney(round2(months[m].in - months[m].out))}</td></tr>)}</tbody>
+            <tbody>{Object.keys(months).sort().map((m) => <tr key={m}><td>{m}</td><td className="num">{fmtMoney(months[m].in, BASE)}</td><td className="num">{fmtMoney(months[m].out, BASE)}</td><td className="num" style={{ color: months[m].in - months[m].out < 0 ? 'var(--danger)' : 'var(--ok)' }}>{fmtMoney(round2(months[m].in - months[m].out), BASE)}</td></tr>)}</tbody>
           </table>
         </Card>
       )}

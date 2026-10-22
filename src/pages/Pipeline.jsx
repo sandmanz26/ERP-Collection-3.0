@@ -6,7 +6,7 @@ import { AvailabilityCheck } from '../components/Availability.jsx';
 import { stageLabel, transitionBlockers } from '../lib/lifecycle.js';
 import { fmtDate, diffDays } from '../lib/dates.js';
 import { fmtMoney } from '../lib/money.js';
-import { proposalTotals, eventContext, toUSD, clientOf } from '../lib/derived.js';
+import { proposalTotals, eventContext, toBase, baseCurrency, clientOf } from '../lib/derived.js';
 import { CURRENCIES } from '../lib/money.js';
 import { LOST_REASONS } from '../data/config.js';
 
@@ -51,15 +51,15 @@ export default function Pipeline() {
       <div className="kanban">
         {COLS.map((col) => {
           const items = evs.filter((e) => e.stage === col && (col !== 'booked' || diffDays(e.contract?.signedAt?.slice(0, 10) ?? today, today) <= 60));
-          const total = items.reduce((a, e) => a + toUSD(state, value(e), e.currency), 0);
-          const weighted = items.reduce((a, e) => a + toUSD(state, value(e), e.currency) * (e.probability / 100), 0);
+          const total = items.reduce((a, e) => a + toBase(state, value(e), e.currency), 0);
+          const weighted = items.reduce((a, e) => a + toBase(state, value(e), e.currency) * (e.probability / 100), 0);
           return (
             <div key={col} className={`kcol ${over === col ? 'dragover' : ''}`}
               onDragOver={(e) => { e.preventDefault(); setOver(col); }}
               onDragLeave={() => setOver(null)}
               onDrop={() => { setOver(null); if (drag && drag.stage !== col) act('STAGE_CHANGE', { eventId: drag.id, to: col }); setDrag(null); }}>
               <h4><span>{stageLabel(col)}</span><span>{items.length}</span></h4>
-              <div className="faint" style={{ fontSize: 11 }}>{fmtMoney(total)} · weighted {fmtMoney(weighted)}</div>
+              <div className="faint" style={{ fontSize: 11 }}>{fmtMoney(total, baseCurrency(state))} · weighted {fmtMoney(weighted, baseCurrency(state))}</div>
               {items.map((e) => {
                 const hold = state.holds.find((h) => h.eventId === e.id && h.status === 'active');
                 const next = COLS[COLS.indexOf(col) + 1];
@@ -127,7 +127,7 @@ function LostModal({ ev, onClose }) {
 export function NewLeadModal({ onClose }) {
   const { state, act } = useStore();
   const [touched, setTouched] = useState(false);
-  const [v, , bind] = useForm({ name: '', eventTypeId: 'wedding', clientName: '', clientType: 'individual', email: '', phone: '', country: 'US', vatId: '', source: 'Website form', date: '', guestCount: '', budget: '', currency: 'USD', jurisdictionId: 'US-NY-NYC', venue: '', message: '', hold: true });
+  const [v, , bind] = useForm({ name: '', eventTypeId: state.settings.eventTypes[0]?.id, clientName: '', clientType: 'individual', email: '', phone: '', country: state.settings.defaults?.country ?? state.settings.company.country, vatId: '', source: 'Website form', date: '', guestCount: '', budget: '', currency: state.settings.defaults?.currency ?? baseCurrency(state), jurisdictionId: state.settings.defaults?.jurisdictionId ?? state.settings.jurisdictions[0]?.id, venue: '', message: '', hold: true });
   const submit = () => {
     if (!v.name || !v.clientName || !v.email) return setTouched(true);
     act('LEAD_CREATE', v);

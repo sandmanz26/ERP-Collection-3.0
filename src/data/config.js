@@ -10,7 +10,7 @@ export const COMPANY = {
   address: '250 Hudson St, New York, NY 10013',
 };
 
-export const FX_RATES_TO_USD = { USD: 1, EUR: 1.08, GBP: 1.27, CHF: 1.12 };
+export const FX_RATES_TO_USD = { USD: 1, EUR: 1.08, GBP: 1.27, CHF: 1.12, IDR: 0.000062, SGD: 0.75, AUD: 0.66 };
 
 export const JURISDICTIONS = [
   { id: 'US-NY-NYC', name: 'New York City, NY', region: 'US', country: 'US', rate: 8.875, taxServiceFees: true },
@@ -23,6 +23,10 @@ export const JURISDICTIONS = [
   { id: 'EU-NL', name: 'Netherlands (VAT)', region: 'EU', country: 'NL', rate: 21 },
   { id: 'UK', name: 'United Kingdom (VAT)', region: 'UK', country: 'GB', rate: 20 },
   { id: 'CH', name: 'Switzerland (VAT)', region: 'CH', country: 'CH', rate: 8.1 },
+  { id: 'ID-JKT', name: 'Indonesia (PPN)', region: 'ID', country: 'ID', rate: 11, taxLabel: 'PPN' },
+  { id: 'ID-BALI', name: 'Bali, Indonesia (PPN + PB1)', region: 'ID', country: 'ID', rate: 11, taxLabel: 'PPN' },
+  { id: 'SG', name: 'Singapore (GST)', region: 'SG', country: 'SG', rate: 9, taxLabel: 'GST' },
+  { id: 'AU', name: 'Australia (GST)', region: 'AU', country: 'AU', rate: 10, taxLabel: 'GST' },
 ];
 
 export const BUDGET_CATEGORIES = ['Planning', 'Venue', 'Catering', 'Decor', 'Florals', 'Entertainment', 'Photo/Video', 'AV', 'Transportation', 'Registration', 'Staffing', 'Fees', 'Other'];
@@ -72,6 +76,14 @@ export const PAYMENT_SCHEDULES = [
     installments: [
       { label: 'Deposit (50%) — due at signing / PO', pct: 50, due: 'signing' },
       { label: 'Balance (50%) — T-30', pct: 50, due: { daysBefore: 30 } },
+    ],
+  },
+  {
+    id: 'ps_half',
+    name: 'Half & half (50/50, T-14)',
+    installments: [
+      { label: 'Down payment (50%) — due at signing', pct: 50, due: 'signing' },
+      { label: 'Balance (50%) — T-14', pct: 50, due: { daysBefore: 14 } },
     ],
   },
 ];

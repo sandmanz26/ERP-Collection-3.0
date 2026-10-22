@@ -10,14 +10,14 @@ End-to-end Event Organizer management system (Lead → Archived) for **social** 
 **corporate** (conferences, product launches, offsites) events in the US and Western Europe.
 - **Stack:** React 18 + Vite 6 + react-router-dom 6 (HashRouter) + `qrcode`. No backend, no UI library.
 - **UI:** in-house **Atomic Design system** in `src/design-system/` (tokens → atoms → molecules → organisms → templates). Pages import only from `src/design-system/index.js`. Living style guide: `#/design-system` (admin).
-- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 6`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
+- **Data:** mock (`src/data/`), persisted to `localStorage` (`eo-ms-state-v1`, state `version: 6`, platform state `version: 1`). The external Decor Inventory is simulated under its own key (`eo-decor-inventory-v1`).
 - **Audit:** every action goes through `act()` → reducer → `state.activityLog` (incl. rejected attempts, automation runs, offline-pending actions, generated documents). Export to Markdown from *Activity Log* or the event *Activity* tab.
 
 ## 2. Running
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 40 unit/integration tests (logic.test.js + risk.test.js) (node --test)
+npm test         # 51 unit/integration tests (logic, risk, platform) (node --test)
 npm run build    # static output in dist/
 ```
 **Sign in** with any demo account (password `demo1234`; the login page lists them all and fills them in with one click):
@@ -38,6 +38,20 @@ npm run build    # static output in dist/
 
 5 wrong passwords lock an e-mail for 15 minutes (admins can *Reset password* in Settings → Users). The user menu (top right) switches theme and offers a demo-only account switch.
 *Settings → Reset demo data* restores the seed. Public pages (no login): `#/inquiry`, `#/rsvp?event=<id>`.
+
+## 2b. SaaS layer (read docs/SAAS.md)
+The app is one **workspace** inside a multi-tenant SaaS (**EventOS**). `src/Root.jsx` renders the **platform layer**
+(landing, sign-up, onboarding, find-workspace, operator console) until a workspace is entered, then mounts the app via
+`src/platform/WorkspaceRoot.jsx` with an isolated store (`eo-ws-<tenantId>`) and an **entitlement guard** on every
+action (`src/platform/entitlements.js#checkAction`). Plans/limits/features: `src/platform/plans.js`. New workspaces are
+built by `src/platform/workspace.js#buildWorkspace` from the onboarding answers. Subscriptions & mock billing:
+`src/platform/platformReducer.js`. In-app: subscription banner, Settings → *Plan & billing*, Getting-started checklist,
+upgrade walls, workspace switcher. Rules of thumb:
+- Never read `localStorage` keys directly — use `PlatformStore` helpers (`readTenantState`, `loadTenantState`).
+- A new gated capability = add a feature in `plans.js`, map the action in `ACTION_FEATURE` (or route/tab in
+  `ROUTE_FEATURE`/`TAB_FEATURE`), and the UI shows lock + `UpgradeWall` automatically.
+- Anything that must not touch a customer workspace (like `RESET_DEMO`) is refused in `checkAction` for non-demo tenants.
+- Tenant code must use workspace settings (`settings.defaults`, `baseCurrency`, `toBase`) — never hard-coded USD/regions/user ids.
 
 ## 3. Architecture & data flow
 ```
@@ -94,6 +108,9 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | `src/lib/documents.js` | printable HTML: invoice/receipt, proposal, QR badges |
 | `src/lib/permissions.js` | nav per role, capabilities, `clientCan`, `visibleNotifications` |
 | `src/lib/exportMd.js` | activity log → Markdown |
+| `src/platform/*` | SaaS layer — see docs/SAAS.md (plans, entitlements, workspace builder, platform reducer/store, WorkspaceRoot, SaasChrome, public pages, Billing) |
+| `src/Root.jsx` | platform vs workspace routing, guest pages `#/rsvp?w=` `#/inquiry?w=` |
+| `tests/platform.test.js` | sign-up, onboarding, tenant defaults, PPN/GST, entitlements, limits, denial logging, demo-reset guard, checkout, billing run, operator |
 | `src/lib/risk.js` | **negative-case rules** (see `docs/BUSINESS_REVIEW.md`): `vendorGaps`, `vendorRefundsDue`, `finalPaymentRisk`, `weatherCall`, `leadSla`, `custodyOpen`, `vendorMeals`, `lateVendors`, `overtimeQuote`, `overtimeApprovers`, `RISK_DEFAULTS` |
 | `src/store/handlers/risk.js` | BOOKING_CANCEL (+ replacement RFQ), VENDOR_REFUND_RECOVERED, VENDOR_ARRIVED, PAYMENT_REVERSE, WEATHER_PLAN_SET, WEATHER_CALL, OVERTIME_APPROVE, CUSTODY_ADD, CUSTODY_UPDATE; client notices (`ev.clientNotices`) |
 | `src/pages/event/RiskPanel.jsx`, `src/pages/dayof/DayOfRisk.jsx` | cockpit *Risks & contingencies* card; Day-of Vendors / Overtime / Items tabs |
@@ -130,6 +147,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 | §8 Decor Inventory integration | `decorApi.js`, `DecorPanel.jsx`, effects in `AppStore.jsx` |
 
 ## 7. Demo script
+00. **SaaS funnel**: `#/` landing → *Start free trial* → sign-up → 6-step onboarding (pick Indonesia to see IDR + PPN) → your workspace with the trial banner and Getting-started checklist → Settings → *Plan & billing* (test card 4000 0000 0000 0002 declines, 4242… succeeds). User menu → *Switch workspace* → *Log in* → `sunsetcoast` (expired trial, read-only) / `petalandpine` (past due). `#/operator` → MRR, trials, churn, suspend / extend trial.
 0. **Sign in**: one click on a role tile (Owner, Sales, Planner, Production, Finance, Day-of crew, Client, Vendor) or *All accounts* for the full list. Try a wrong password a few times on Marcus (lockout warning), Tyler (suspended).
 0b. **Drive an event**: Dashboard → *Today's priorities* → click a CTA (lands on the right event tab). Event → *Overview* cockpit: click any lifecycle step (entered date/by, or what is still required), *Next steps* callouts, *Readiness* tiles jump to the area. Archived events (Brightwave) are read-only summaries.
 1. **Admin** dashboard → attention list (expiring holds, overdue invoices, exception CO, guarantee warning, vendor compliance). Switch to **Hannah (finance)** / **Diego (production)** to see role-tailored dashboards.

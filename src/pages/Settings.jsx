@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useWorkspace } from '../platform/PlatformStore.jsx';
+import BillingPanel from '../platform/pages/Billing.jsx';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue, PillSelect, Button, useDialog, Icon, Avatar } from '../design-system/index.js';
 import { fmtDateTime } from '../lib/dates.js';
@@ -10,19 +13,26 @@ const FEATURES = { guestHouseholds: 'Household-based guest list', seating: 'Seat
 export default function Settings() {
   const { state, act } = useStore();
   const dialog = useDialog();
-  const [tab, setTab] = useState('general');
+  const ws = useWorkspace();
+  const [sp, setSp] = useSearchParams();
+  const tab = sp.get('tab') || 'general';
+  const setTab = (t) => setSp({ tab: t });
   const s = state.settings;
   const set = (key, value, label) => act('SETTINGS_SET', { key, value, label });
   return (
     <div>
       <div className="page-head"><div className="grow"><h1>Settings</h1><div className="muted">Segment differences (social vs corporate) are configuration on Event Types — not separate code.</div></div>
-        <ConfirmButton variant="danger" message="Reset ALL demo data to the original seed? (The reset itself is logged.)" onConfirm={() => act('RESET_DEMO')}>Reset demo data</ConfirmButton>
+        {(!ws || ws.isDemo) && <ConfirmButton variant="danger" message="Reset ALL demo data to the original seed? (The reset itself is logged.)" onConfirm={() => act('RESET_DEMO')}>Reset demo data</ConfirmButton>}
       </div>
-      <Tabs tabs={[{ id: 'general', label: 'General & capacity' }, { id: 'types', label: 'Event types' }, { id: 'catalog', label: 'Service catalog' }, { id: 'tax', label: 'Tax jurisdictions' }, { id: 'policies', label: 'Payment & cancellation' }, { id: 'users', label: 'Users & roles' }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: 'general', label: 'General & capacity' }, { id: 'types', label: 'Event types' }, { id: 'catalog', label: 'Service catalog' }, { id: 'tax', label: 'Tax jurisdictions' }, { id: 'policies', label: 'Payment & cancellation' }, { id: 'users', label: 'Users & roles' }].concat(ws && state.users.find((u) => u.id === state.currentUserId)?.role === 'admin' ? [{ id: 'billing', label: 'Plan & billing' }] : [])} value={tab} onChange={setTab} />
+      {tab === 'billing' && ws && <BillingPanel />}
       {tab === 'general' && (
         <div className="grid g2">
           <Card title="Company">
-            <KeyValue rows={[['Name', s.company.name], ['Country', s.company.country], ['EU VAT registration', s.company.euVatCountry], ['Base currency', s.company.baseCurrency], ['Address', s.company.address]]} />
+            {[['name', 'Name'], ['address', 'Address'], ['phone', 'Phone'], ['email', 'Billing email'], ['website', 'Website'], ['taxId', 'Tax ID (VAT / NPWP / EIN)']].map(([k, l]) => (
+              <div key={k} className="row">{l} <CommitInput className="inline" value={s.company[k] ?? ''} onCommit={(v) => act('COMPANY_UPDATE', { patch: { [k]: v } })} /></div>
+            ))}
+            <KeyValue rows={[['Country', s.company.country], ['Base currency', s.company.baseCurrency], s.company.euVatCountry && ['EU VAT registration', s.company.euVatCountry], s.company.timezone && ['Time zone', s.company.timezone]]} />
             <h4 className="mt2">Exchange rates (1 unit → USD)</h4>
             {Object.entries(s.fxRates).map(([c, r]) => <div key={c} className="row">{c} <CommitInput className="inline" type="number" value={r} onCommit={(n) => set('fxRates', { ...s.fxRates, [c]: n }, `FX ${c}`)} /></div>)}
           </Card>

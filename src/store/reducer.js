@@ -61,6 +61,8 @@ export function reducer(state, action) {
     },
   };
   try {
+    // Entitlement denials (plan, seats, read-only workspace) are rejected like business rule violations: logged + toast.
+    if (action.denied) throw new BusinessError(action.denied);
     const res = handler(ctx, action.payload || {});
     const r = typeof res === 'string' ? { summary: res } : res || {};
     if (r.skipLog) return { ...draft, lastError: null };

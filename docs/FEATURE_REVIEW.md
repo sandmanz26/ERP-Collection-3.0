@@ -110,3 +110,6 @@ Full write-up: [`docs/BUSINESS_REVIEW.md`](BUSINESS_REVIEW.md). Added: vendor ca
 
 ## Addendum (#036) — Client journey map
 The client Overview opens with a visual road map of their event ("You are here" pin, finished vs remaining road, event day highlighted, next milestone, plain-language status with reasons that link to the right tab).
+
+## Addendum (#037–#038) — SaaS layer
+Multi-tenant platform on top of the app: landing + pricing, sign-up with workspace URL, 6-step onboarding that configures currency/taxes/templates/catalog/team/branding (optional sample event created through the real reducer), isolated per-workspace storage, Starter/Studio/Agency plans with a 14-day Studio trial, entitlement guard on every action (read-only when a trial ends or a renewal fails past grace, seat & active-event limits, feature gates with upgrade walls), mock checkout/proration/renewals/dunning, workspace rename/delete, operator console (MRR/ARR, trials, conversion, churn, suspend, extend trial, comp plan). Tenant leaks fixed: lead defaults, USD-only KPIs, US/EU-only tax, Lumière-specific logo/demo tiles, password-less account switch outside the demo, demo reset able to wipe a customer workspace. Details: `docs/SAAS.md`.

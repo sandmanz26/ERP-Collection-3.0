@@ -7,7 +7,7 @@ import { stageLabel, transitionBlockers, nextStage, isExit, stageIndex } from '.
 import { eventContext, clientOf, eventFinancials, headcount, closingChecklist } from '../../lib/derived.js';
 import { calcCancellation } from '../../lib/contracts.js';
 import { fmtDate, fmtDateTime, diffDays } from '../../lib/dates.js';
-import { fmtMoney } from '../../lib/money.js';
+import { fmtMoney, CURRENCIES } from '../../lib/money.js';
 import { LOST_REASONS } from '../../data/config.js';
 import { STAGE_INFO, stepperSteps, stageRequirements, nextActions, readiness, keyDates, stageDates } from '../../lib/eventGuide.js';
 import { staffingSummary } from '../../lib/workforce.js';
@@ -335,7 +335,7 @@ function EditModal({ ev, onClose }) {
         <Field label="PO number"><input value={v.poNumber} onChange={set('poNumber')} /></Field>
         <Field label="Planner"><select value={v.plannerId} onChange={set('plannerId')}><option value="">—</option>{state.users.filter((u) => u.role === 'planner').map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></Field>
         <Field label="Sales"><select value={v.salesId} onChange={set('salesId')}>{state.users.filter((u) => u.role === 'sales').map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></Field>
-        <Field label="Currency"><select value={v.currency} onChange={set('currency')} disabled={ev.contract?.immutable}>{['USD', 'EUR', 'GBP', 'CHF'].map((c) => <option key={c}>{c}</option>)}</select></Field>
+        <Field label="Currency"><select value={v.currency} onChange={set('currency')} disabled={ev.contract?.immutable}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select></Field>
         <Field label="Tax jurisdiction"><select value={v.jurisdictionId} onChange={set('jurisdictionId')} disabled={ev.contract?.immutable}>{state.settings.jurisdictions.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}</select></Field>
       </div>
       <h4 className="mt2">Venue & call-sheet info</h4>

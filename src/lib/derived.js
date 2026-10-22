@@ -206,8 +206,14 @@ export function leakage(state, today) {
   return out;
 }
 
-export function toUSD(state, amount, currency) {
-  return convert(amount, currency, 'USD', state.settings.fxRates);
+/** The workspace's reporting currency (KPIs, pipeline, forecasts). */
+export function baseCurrency(state) {
+  return state.settings.company.baseCurrency || 'USD';
+}
+
+/** Convert to the workspace reporting currency (FX rates are stored relative to USD). */
+export function toBase(state, amount, currency) {
+  return convert(amount, currency, baseCurrency(state), state.settings.fxRates);
 }
 
 /** Vendor compliance status. */

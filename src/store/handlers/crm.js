@@ -24,17 +24,19 @@ export const crmHandlers = {
     let clientId = p.clientId;
     if (!clientId) {
       clientId = ctx.id('cl');
-      state.clients.push({ id: clientId, name: p.clientName, type: p.clientType || 'individual', email: p.email, phone: p.phone || '', country: p.country || 'US', vatId: p.vatId || '', decisionMakers: [] });
+      const dft = state.settings.defaults ?? {};
+      state.clients.push({ id: clientId, name: p.clientName, type: p.clientType || 'individual', email: p.email, phone: p.phone || '', country: p.country || dft.country || state.settings.company.country, vatId: p.vatId || '', decisionMakers: [] });
     }
     const et = state.settings.eventTypes.find((t) => t.id === p.eventTypeId);
     const ev = {
       ...emptyParts(),
       id: ctx.id('ev'), name: p.name, eventTypeId: p.eventTypeId, segment: et.segment, clientId, date: p.date || null, dateStatus: 'none', stage: 'lead',
-      source: p.source, plannerId: null, salesId: ctx.user.role === 'sales' ? ctx.user.id : p.salesId || 'u_sales', guestCount: Number(p.guestCount) || null,
-      budget: Number(p.budget) || null, currency: p.currency || 'USD', jurisdictionId: p.jurisdictionId || 'US-NY-NYC', probability: 10, createdAt: new Date().toISOString(),
+      // Owner of the lead: the sales user creating it, else the one picked, else the workspace's first salesperson / the creator.
+      source: p.source, plannerId: null, salesId: ctx.user?.role === 'sales' ? ctx.user.id : p.salesId || state.users.find((u) => u.role === 'sales' && u.status !== 'suspended')?.id || ctx.user?.id || null, guestCount: Number(p.guestCount) || null,
+      budget: Number(p.budget) || null, currency: p.currency || state.settings.defaults?.currency || state.settings.company.baseCurrency, jurisdictionId: p.jurisdictionId || state.settings.defaults?.jurisdictionId || state.settings.jurisdictions[0]?.id, probability: 10, createdAt: new Date().toISOString(),
       venue: { name: p.venue || 'TBD', address: '', parking: '', accessCode: '', emergencyContact: '', nearestHospital: '', curfew: '' },
     };
-    ev.interactions.push({ id: ctx.id('int'), type: 'note', at: new Date().toISOString(), by: ctx.user.id, summary: `Inquiry captured from ${p.source}${p.message ? `: "${p.message}"` : ''}` });
+    ev.interactions.push({ id: ctx.id('int'), type: 'note', at: new Date().toISOString(), by: ctx.user?.id ?? 'system', summary: `Inquiry captured from ${p.source}${p.message ? `: "${p.message}"` : ''}` });
     state.events.unshift(ev);
     return { summary: `New lead "${ev.name}" from ${p.source}`, eventId: ev.id };
   },

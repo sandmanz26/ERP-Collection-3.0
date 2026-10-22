@@ -50,14 +50,15 @@ export function calcTax({ lines, jurisdiction, client, companyCountry }) {
   });
   const taxableBase = sum(taxable, (l) => l.amount);
   if (jurisdiction.region !== 'US') {
-    const reverseCharge =
-      client?.type === 'company' && !!client?.vatId && client?.country && client.country !== companyCountry;
+    // B2B reverse charge only exists in the EU/UK/CH VAT systems; PPN (ID) and GST (SG/AU) are always charged.
+    const reverseCharge = ['EU', 'UK', 'CH'].includes(jurisdiction.region)
+      && client?.type === 'company' && !!client?.vatId && client?.country && client.country !== companyCountry;
     if (reverseCharge) {
       return {
         taxAmount: 0,
         taxableBase,
         reverseCharge: true,
-        label: `VAT 0% (reverse charge)`,
+        label: `${jurisdiction.taxLabel ?? 'VAT'} 0% (reverse charge)`,
         note: 'Reverse charge — VAT to be accounted for by the recipient (Art. 196 Directive 2006/112/EC).',
       };
     }
@@ -65,7 +66,7 @@ export function calcTax({ lines, jurisdiction, client, companyCountry }) {
       taxAmount: round2((taxableBase * jurisdiction.rate) / 100),
       taxableBase,
       reverseCharge: false,
-      label: `VAT ${jurisdiction.rate}% (${jurisdiction.name})`,
+      label: `${jurisdiction.taxLabel ?? 'VAT'} ${jurisdiction.rate}% (${jurisdiction.name})`,
       note: '',
     };
   }

@@ -2,6 +2,31 @@ import { assert } from './common.js';
 
 // Admin configuration handlers.
 export const settingsHandlers = {
+  /** Company profile shown on proposals, invoices and the client portal. */
+  COMPANY_UPDATE(ctx, { patch }) {
+    const allowed = ['name', 'address', 'phone', 'email', 'website', 'taxId'];
+    const keys = Object.keys(patch).filter((k) => allowed.includes(k));
+    assert(keys.length, 'Nothing to update');
+    if ('name' in patch) assert(String(patch.name).trim().length >= 2, 'Company name is too short');
+    keys.forEach((k) => { ctx.state.settings.company[k] = String(patch[k]).trim(); });
+    return `Company profile updated (${keys.join(', ')})`;
+  },
+  BRANDING_SET(ctx, { brandColor, portalWelcome }) {
+    const c = ctx.state.settings.company;
+    if (brandColor) c.brandColor = brandColor;
+    if (portalWelcome !== undefined) c.portalWelcome = String(portalWelcome).slice(0, 280);
+    return `Branding updated${brandColor ? ` (${brandColor})` : ''}`;
+  },
+  /** Mock Stripe Connect onboarding so clients can pay invoices online. */
+  PAYMENTS_CONNECT(ctx, { provider = 'stripe' }) {
+    assert(!ctx.state.settings.paymentsConnected, 'Online payments are already connected');
+    ctx.state.settings.paymentsConnected = { provider, at: new Date().toISOString(), account: `acct_mock_${Math.random().toString(36).slice(2, 10)}` };
+    return `Online payments connected (${provider === 'stripe' ? 'Stripe' : provider}, test mode)`;
+  },
+  GETTING_STARTED_DISMISS(ctx) {
+    ctx.state.settings.gettingStarted = { ...(ctx.state.settings.gettingStarted ?? {}), dismissed: true };
+    return 'Getting-started checklist hidden';
+  },
   USER_CREATE(ctx, { data }) {
     const u = { id: ctx.id('u'), permissions: data.role === 'client' ? ['view_all', 'message'] : undefined, status: 'invited', password: 'welcome123', lastLoginAt: null, ...data };
     ctx.state.users.push(u);

@@ -8,7 +8,7 @@ import * as decorApi from '../lib/decorApi.js';
 const STORAGE_KEY = 'eo-ms-state-v1';
 const StoreCtx = createContext(null);
 
-function init() {
+function legacyInit() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -21,21 +21,37 @@ function init() {
   return { ...seed, effects: [] };
 }
 
-export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, undefined, init);
+/**
+ * One workspace's store. In the SaaS build the platform passes:
+ *   load()  → the workspace state (isolated storage per tenant), save(state) → persist it,
+ *   guard(type, payload, state) → null, or the reason the plan/subscription does not allow this action.
+ * Without props it behaves like the original single-tenant demo (tests, legacy).
+ */
+export function StoreProvider({ children, load, save, guard }) {
+  const [state, dispatch] = useReducer(reducer, undefined, () => {
+    const s = load ? load() : legacyInit();
+    return { ...s, effects: [] };
+  });
   const stateRef = useRef(state);
   stateRef.current = state;
+  const guardRef = useRef(guard);
+  guardRef.current = guard;
 
   // persist
   useEffect(() => {
+    if (save) { save(state); return; }
     try {
       const { effects, lastOk, lastError, ...rest } = state;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
     } catch { /* quota */ }
-  }, [state]);
+  }, [state, save]);
 
   /** act(type, payload) — THE way to change state. Every call is logged into the activity log. */
-  const act = useCallback((type, payload = {}, opts = {}) => dispatch({ type, payload, system: !!opts.system }), []);
+  const act = useCallback((type, payload = {}, opts = {}) => {
+    const denied = guardRef.current?.(type, payload, stateRef.current);
+    if (denied && opts.system) return; // automation in a read-only / downgraded workspace: skip quietly
+    dispatch({ type, payload, system: !!opts.system, denied: denied || undefined });
+  }, []);
 
   // Side effects -> external Decor Inventory API (async), results reported back as actions.
   useEffect(() => {

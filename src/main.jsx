@@ -1,9 +1,9 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
-import { StoreProvider } from './store/AppStore.jsx';
+import { PlatformProvider } from './platform/PlatformStore.jsx';
 import { DialogProvider } from './design-system/index.js';
-import App from './App.jsx';
+import Root from './Root.jsx';
 import '@fontsource/hanken-grotesk/400.css';
 import '@fontsource/hanken-grotesk/500.css';
 import '@fontsource/hanken-grotesk/600.css';
@@ -17,11 +17,11 @@ import './design-system/styles/index.css';
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HashRouter>
-      <StoreProvider>
+      <PlatformProvider>
         <DialogProvider>
-          <App />
+          <Root />
         </DialogProvider>
-      </StoreProvider>
+      </PlatformProvider>
     </HashRouter>
   </React.StrictMode>,
 );

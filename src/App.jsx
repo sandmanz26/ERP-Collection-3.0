@@ -22,11 +22,17 @@ import RsvpPublic from './pages/RsvpPublic.jsx';
 import InquiryPublic from './pages/InquiryPublic.jsx';
 import DesignSystem from './pages/DesignSystem.jsx';
 import Login from './pages/Login.jsx';
+import { useWorkspace } from './platform/PlatformStore.jsx';
+import { ROUTE_FEATURE } from './platform/entitlements.js';
+import { UpgradeWall } from './platform/SaasChrome.jsx';
 
 function Guard({ path, children }) {
   const { user } = useStore();
   const allowed = navFor(user).some((n) => n.path === path) || (path === '/events' && navFor(user).some((n) => n.path === '/events'));
+  const ws = useWorkspace();
   if (!allowed) return <Navigate to={homeFor(user)} replace />;
+  const f = ROUTE_FEATURE[path];
+  if (ws && f && !ws.ent.features.has(f)) return <UpgradeWall feature={f} />;
   return children;
 }
 

@@ -1,4 +1,7 @@
 import React from 'react';
+import { useWorkspace } from '../../platform/PlatformStore.jsx';
+import { TAB_FEATURE } from '../../platform/entitlements.js';
+import { UpgradeWall } from '../../platform/SaasChrome.jsx';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useStore, useEvent } from '../../store/AppStore.jsx';
 import { Tabs, StageBadge, Badge, EmptyState, Icon } from '../../design-system/index.js';
@@ -29,6 +32,7 @@ export default function EventWorkspace() {
   const { id } = useParams();
   const [sp, setSp] = useSearchParams();
   const { state, today, user } = useStore();
+  const ws = useWorkspace();
   const ev = useEvent(id);
   if (!ev) return <EmptyState>Event not found. <Link to="/events">Back</Link></EmptyState>;
   const et = eventType(state, ev);
@@ -99,7 +103,7 @@ export default function EventWorkspace() {
         </div>
         {phase.tabs.length > 1 && <Tabs tabs={phase.tabs.map((t) => ({ ...t, label: t.alert ? <>{t.label} <span className="phase-dot inline" aria-hidden /></> : t.label }))} value={tab} onChange={(t) => setSp({ tab: t })} />}
       </nav>
-      <Comp key={ev.id} ev={ev} et={et} open={(t) => { setSp({ tab: t }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+      {ws && TAB_FEATURE[tab] && !ws.ent.features.has(TAB_FEATURE[tab]) ? <UpgradeWall feature={TAB_FEATURE[tab]} /> : <Comp key={ev.id} ev={ev} et={et} open={(t) => { setSp({ tab: t }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />}
     </div>
   );
 }

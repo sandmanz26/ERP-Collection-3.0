@@ -1,4 +1,4 @@
-export const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF'];
+export const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF', 'IDR', 'SGD', 'AUD'];
 
 /** opts.whole drops cents (KPI tiles, summaries); line items and invoices keep cents. */
 export function fmtMoney(amount, currency = 'USD', opts = {}) {

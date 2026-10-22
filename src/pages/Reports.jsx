@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Tabs, BarChart, Money, Badge, download, Button, PillSelect, Icon } from '../design-system/index.js';
-import { eventFinancials, leakage, toUSD, proposalTotals, vendorScore, vendorCompliance } from '../lib/derived.js';
+import { eventFinancials, leakage, toBase, baseCurrency, proposalTotals, vendorScore, vendorCompliance } from '../lib/derived.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { stageIndex, isBookedOrLater } from '../lib/lifecycle.js';
 import { monthKey, fmtDate, addDays } from '../lib/dates.js';
@@ -13,7 +13,8 @@ const isWon = (e) => isBookedOrLater(e.stage) || e.stage === 'cancelled_client' 
 export default function Reports() {
   const { state, today, act } = useStore();
   const [tab, setTab] = useState('pipeline');
-  const usd = (n, c) => toUSD(state, n, c);
+  const BASE = baseCurrency(state);
+  const usd = (n, c) => toBase(state, n, c);
   const [segment, setSegment] = useState('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -74,7 +75,7 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="page-head"><div className="grow"><h1>Reporting & analytics</h1><div className="muted">All money in USD equivalent (rates in Settings).</div></div></div>
+      <div className="page-head"><div className="grow"><h1>Reporting & analytics</h1><div className="muted">All money in {BASE} equivalent (rates in Settings).</div></div></div>
       <div className="row mb no-print">
         <PillSelect options={[{ id: 'all', label: 'All segments' }, { id: 'social', label: 'Social' }, { id: 'corporate', label: 'Corporate' }]} value={segment} onChange={setSegment} />
         <span className="muted">Event date</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" /><span className="muted">→</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
@@ -86,17 +87,17 @@ export default function Reports() {
           <Card title="Conversion rate by lead source (won ÷ decided)">
             <BarChart rows={bySource.map((r) => ({ label: r.s, value: r.conv, display: `${r.conv}%` }))} max={100} />
           </Card>
-          <Card title="Lead sources" actions={<Button size="sm" onClick={() => exportCsv('conversion-by-source', [['Source', 'Leads', 'Open', 'Won', 'Lost', 'Conversion %', 'Won value USD'], ...bySource.map((r) => [r.s, r.n, r.open, r.won, r.lost, r.conv, r.wonValue])])}>CSV</Button>}>
+          <Card title="Lead sources" actions={<Button size="sm" onClick={() => exportCsv('conversion-by-source', [['Source', 'Leads', 'Open', 'Won', 'Lost', 'Conversion %', `Won value ${BASE}`], ...bySource.map((r) => [r.s, r.n, r.open, r.won, r.lost, r.conv, r.wonValue])])}>CSV</Button>}>
             <table className="t">
               <thead><tr><th>Source</th><th className="num">Leads</th><th className="num">Open</th><th className="num">Won</th><th className="num">Lost</th><th className="num">Conv.</th><th className="num">Won value</th></tr></thead>
-              <tbody>{bySource.map((r) => <tr key={r.s}><td>{r.s}</td><td className="num">{r.n}</td><td className="num">{r.open}</td><td className="num">{r.won}</td><td className="num">{r.lost}</td><td className="num">{r.conv}%</td><td className="num">{fmtMoney(r.wonValue)}</td></tr>)}</tbody>
+              <tbody>{bySource.map((r) => <tr key={r.s}><td>{r.s}</td><td className="num">{r.n}</td><td className="num">{r.open}</td><td className="num">{r.won}</td><td className="num">{r.lost}</td><td className="num">{r.conv}%</td><td className="num">{fmtMoney(r.wonValue, BASE)}</td></tr>)}</tbody>
             </table>
           </Card>
           <Card title="Open pipeline by stage">
             <BarChart rows={['lead', 'qualified', 'proposal_sent', 'negotiation'].map((s) => {
               const list = evs.filter((e) => e.stage === s);
               const v = list.reduce((a, e) => a + usd(proposalTotals(state, e)?.total ?? e.budget ?? 0, e.currency), 0);
-              return { label: `${s.replace('_', ' ')} (${list.length})`, value: v, display: fmtMoney(v) };
+              return { label: `${s.replace('_', ' ')} (${list.length})`, value: v, display: fmtMoney(v, BASE) };
             })} />
           </Card>
         </div>
@@ -104,12 +105,12 @@ export default function Reports() {
       {tab === 'revenue' && (
         <div className="grid g2">
           <Card title="Contracted revenue by event month (forward-looking)">
-            <BarChart rows={months.map((m) => ({ label: m, value: byMonth[m].contracted, display: fmtMoney(byMonth[m].contracted) }))} />
+            <BarChart rows={months.map((m) => ({ label: m, value: byMonth[m].contracted, display: fmtMoney(byMonth[m].contracted, BASE) }))} />
           </Card>
           <Card title="Cash still to come in per event month">
             <table className="t">
               <thead><tr><th>Event month</th><th className="num">Events</th><th className="num">Contracted</th><th className="num">Received</th><th className="num">Still to collect</th></tr></thead>
-              <tbody>{months.map((m) => <tr key={m}><td>{m}</td><td className="num">{byMonth[m].events}</td><td className="num">{fmtMoney(byMonth[m].contracted)}</td><td className="num">{fmtMoney(byMonth[m].paid)}</td><td className="num">{fmtMoney(byMonth[m].contracted - byMonth[m].paid)}</td></tr>)}</tbody>
+              <tbody>{months.map((m) => <tr key={m}><td>{m}</td><td className="num">{byMonth[m].events}</td><td className="num">{fmtMoney(byMonth[m].contracted, BASE)}</td><td className="num">{fmtMoney(byMonth[m].paid, BASE)}</td><td className="num">{fmtMoney(byMonth[m].contracted - byMonth[m].paid, BASE)}</td></tr>)}</tbody>
             </table>
           </Card>
         </div>
@@ -123,8 +124,8 @@ export default function Reports() {
             </table>
           </Card>
           <div className="grid g2 mt">
-            <Card title="Margin % by event type"><BarChart rows={byType.map((r) => ({ label: `${r.k} (${r.n})`, value: r.margin, display: `${r.margin}% · ${fmtMoney(r.profit)}` }))} max={100} /></Card>
-            <Card title="Margin % by planner"><BarChart rows={byPlanner.map((r) => ({ label: `${r.k} (${r.n})`, value: r.margin, display: `${r.margin}% · ${fmtMoney(r.profit)}` }))} max={100} /></Card>
+            <Card title="Margin % by event type"><BarChart rows={byType.map((r) => ({ label: `${r.k} (${r.n})`, value: r.margin, display: `${r.margin}% · ${fmtMoney(r.profit, BASE)}` }))} max={100} /></Card>
+            <Card title="Margin % by planner"><BarChart rows={byPlanner.map((r) => ({ label: `${r.k} (${r.n})`, value: r.margin, display: `${r.margin}% · ${fmtMoney(r.profit, BASE)}` }))} max={100} /></Card>
           </div>
         </div>
       )}
@@ -150,9 +151,9 @@ export default function Reports() {
         <Card title="Revenue leakage report" actions={<Button size="sm" onClick={() => exportCsv('leakage', [['Type', 'Event', 'Ref', 'Amount', 'Currency'], ...leaks.map((l) => [l.type, l.eventName, l.ref, l.amount, l.currency])])}>CSV</Button>}>
           <div className="faint mb" style={{ fontSize: 12 }}>Unbilled change orders, overdue payments, unbilled decor damage, unbilled cancellation fees and uncollected vendor commissions.</div>
           <table className="t">
-            <thead><tr><th>Type</th><th>Event</th><th>Reference</th><th className="num">Amount</th><th className="num">USD</th></tr></thead>
-            <tbody>{leaks.map((l, i) => <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}{l.days ? ` (${l.days}d late)` : ''}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td><td className="num">{fmtMoney(usd(l.amount, l.currency))}</td></tr>)}</tbody>
-            <tfoot><tr><td colSpan={4}>Total</td><td className="num">{fmtMoney(leaks.reduce((a, l) => a + usd(l.amount, l.currency), 0))}</td></tr></tfoot>
+            <thead><tr><th>Type</th><th>Event</th><th>Reference</th><th className="num">Amount</th><th className="num">{BASE}</th></tr></thead>
+            <tbody>{leaks.map((l, i) => <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}{l.days ? ` (${l.days}d late)` : ''}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td><td className="num">{fmtMoney(usd(l.amount, l.currency), BASE)}</td></tr>)}</tbody>
+            <tfoot><tr><td colSpan={4}>Total</td><td className="num">{fmtMoney(leaks.reduce((a, l) => a + usd(l.amount, l.currency), 0), BASE)}</td></tr></tfoot>
           </table>
         </Card>
       )}

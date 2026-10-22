@@ -5,11 +5,12 @@ import { Card, StatTile, StageBadge, Badge, Money, PageHeader, EmptyState, Icon,
 import { useNavigate } from 'react-router-dom';
 import { fmtDate, diffDays, addDays, fmtDateTime } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
+import { GettingStarted } from '../platform/SaasChrome.jsx';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
 import { productionIssues } from '../lib/timeline.js';
 import { priorities } from '../lib/eventGuide.js';
 import { staffingSummary } from '../lib/workforce.js';
-import { eventFinancials, leakage, toUSD, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
+import { eventFinancials, leakage, toBase, baseCurrency, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
 
 /**
  * Role-tailored home: every internal role sees the KPIs and attention items relevant to their job first.
@@ -21,14 +22,15 @@ export default function Dashboard() {
   const nav = useNavigate();
   const top = priorities(state, user, today, 4);
   const evs = state.events;
-  const usd = (n, c) => toUSD(state, n, c);
+  const BASE = baseCurrency(state);
+  const usd = (n, c) => toBase(state, n, c);
   const pipeline = evs.filter((e) => SALES_STAGES.includes(e.stage));
   const pipeValue = pipeline.reduce((a, e) => a + usd(proposalTotals(state, e)?.total ?? e.budget ?? 0, e.currency) * (e.probability / 100), 0);
   const upcoming = evs.filter((e) => ACTIVE_BOOKED_STAGES.includes(e.stage) && e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const contracted = evs.filter((e) => e.contract?.immutable && !['cancelled_client', 'cancelled_eo'].includes(e.stage)).reduce((a, e) => a + usd(e.contract.total, e.currency), 0);
   const deferred = evs.reduce((a, e) => a + usd(eventFinancials(state, e).deferred, e.currency), 0);
   const leaks = leakage(state, today);
-  const leakUSD = leaks.reduce((a, l) => a + usd(l.amount, l.currency), 0);
+  const leakBase = leaks.reduce((a, l) => a + usd(l.amount, l.currency), 0);
   const tasks = evs.flatMap((e) => e.tasks.filter((t) => t.status !== 'done' && t.dueDate <= addDays(today, 14) && t.assigneeType !== 'client').map((t) => ({ ...t, ev: e }))).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const invoices = evs.flatMap((e) => e.invoices.map((i) => ({ i, e, st: invoiceStatus(e, i, today), bal: invoiceBalance(e, i) })));
   const overdue = invoices.filter((x) => x.st === 'overdue');
@@ -42,12 +44,12 @@ export default function Dashboard() {
   const decided = converted + evs.filter((e) => e.stage === 'lost').length;
 
   const KPIS = {
-    pipeline: <StatTile key="p" label="Weighted pipeline (USD)" value={fmtMoney(pipeValue, 'USD', { whole: true })} sub={`${pipeline.length} open deals`} />,
+    pipeline: <StatTile key="p" label={`Weighted pipeline (${BASE})`} value={fmtMoney(pipeValue, BASE, { whole: true })} sub={`${pipeline.length} open deals`} />,
     conversion: <StatTile key="c" label="Win rate" value={`${decided ? round2((converted / decided) * 100) : 0}%`} sub={`${converted} won / ${decided} decided`} />,
-    contracted: <StatTile key="ct" label="Contracted revenue (USD)" value={fmtMoney(contracted, 'USD', { whole: true })} sub="signed, not cancelled" />,
-    deferred: <StatTile key="d" label="Deferred revenue (USD)" value={fmtMoney(deferred, 'USD', { whole: true })} sub="deposits for future events" />,
-    overdue: <StatTile key="o" label="Overdue receivables (USD)" value={fmtMoney(overdue.reduce((a, x) => a + usd(x.bal, x.i.currency), 0), 'USD', { whole: true })} sub={`${overdue.length} invoices`} tone={overdue.length ? 'danger' : undefined} />,
-    leakage: <StatTile key="l" label="Revenue leakage (USD)" value={fmtMoney(leakUSD, 'USD', { whole: true })} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />,
+    contracted: <StatTile key="ct" label={`Contracted revenue (${BASE})`} value={fmtMoney(contracted, BASE, { whole: true })} sub="signed, not cancelled" />,
+    deferred: <StatTile key="d" label={`Deferred revenue (${BASE})`} value={fmtMoney(deferred, BASE, { whole: true })} sub="deposits for future events" />,
+    overdue: <StatTile key="o" label={`Overdue receivables (${BASE})`} value={fmtMoney(overdue.reduce((a, x) => a + usd(x.bal, x.i.currency), 0), BASE, { whole: true })} sub={`${overdue.length} invoices`} tone={overdue.length ? 'danger' : undefined} />,
+    leakage: <StatTile key="l" label={`Revenue leakage (${BASE})`} value={fmtMoney(leakBase, BASE, { whole: true })} sub={`${leaks.length} items`} tone={leaks.length ? 'danger' : undefined} />,
     tasks: <StatTile key="t" label="Open tasks ≤ 14 days" value={tasks.length} sub={`${tasks.filter((t) => t.dueDate < today).length} overdue`} tone={tasks.some((t) => t.dueDate < today) ? 'warn' : undefined} />,
     upcoming: <StatTile key="u" label="Booked events ahead" value={upcoming.length} sub={upcoming[0] ? `next: ${fmtDate(upcoming[0].date)}` : '—'} />,
     loadins: <StatTile key="li" label="Load-ins next 45 days" value={loadIns.length} />,
@@ -82,6 +84,7 @@ export default function Dashboard() {
     <div>
       <PageHeader title={`Good day, ${user.name.split(' ')[0]}`} subtitle={`${fmtDate(today, { weekday: 'long' })} · ${state.users.find((u) => u.id === user.id)?.role} view · ${upcoming.length} booked events ahead · ${pipeline.length} open deals`}
         actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">+ New inquiry</Link>} />
+      <GettingStarted />
       {top.length > 0 && (
         <section className="priorities" aria-label="Today's priorities">
           <div className="row between mb"><h2 style={{ margin: 0 }}>Today's priorities</h2><span className="faint text-sm">Most urgent first · {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
@@ -135,7 +138,7 @@ export default function Dashboard() {
             <table className="t">
               <thead><tr><th>Type</th><th>Event</th><th>Ref</th><th className="num">Amount</th></tr></thead>
               <tbody>{leaks.map((l, i) => <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td></tr>)}</tbody>
-              <tfoot><tr><td colSpan={3}>Total (USD equiv.)</td><td className="num">{fmtMoney(round2(leakUSD))}</td></tr></tfoot>
+              <tfoot><tr><td colSpan={3}>Total ({BASE} equiv.)</td><td className="num">{fmtMoney(round2(leakBase), BASE)}</td></tr></tfoot>
             </table>
           )}
         </Card>

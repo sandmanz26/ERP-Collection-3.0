@@ -72,6 +72,7 @@ export default function ClientPortal() {
           </div>
           {mine.length > 1 && <select value={ev.id} onChange={(e) => { setTabState('home'); nav(`/portal/${e.target.value}`); }} aria-label="Switch event">{mine.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select>}
         </div>
+        {state.settings.company.portalWelcome && <div style={{ marginTop: 8, fontSize: 14 }}>{state.settings.company.portalWelcome}</div>}
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>Signed in as {user.name}{user.payerScope ? ` · paying for ${user.payerScope.join(', ')}` : ''}</div>
       </div>
       <nav className="phase-nav" aria-label="Client portal">

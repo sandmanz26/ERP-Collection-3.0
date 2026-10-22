@@ -9,7 +9,8 @@ export function PayModal({ ev, inv, onClose, portal }) {
   const { act } = useStore();
   const bal = invoiceBalance(ev, inv);
   const [amount, setAmount] = useState(bal);
-  const methods = ev.currency === 'USD' ? ['card', 'ach'] : ['card', 'sepa', 'wire'];
+  // Local rails per currency: ACH in the US, SEPA in the euro area, QRIS / virtual account in Indonesia.
+  const methods = { USD: ['card', 'ach'], EUR: ['card', 'sepa', 'wire'], IDR: ['card', 'qris', 'virtual_account', 'bank_transfer'], SGD: ['card', 'paynow', 'bank_transfer'], AUD: ['card', 'payid', 'bank_transfer'] }[ev.currency] ?? ['card', 'wire'];
   const [method, setMethod] = useState(methods[0]);
   const [busy, setBusy] = useState(false);
   const pay = () => {

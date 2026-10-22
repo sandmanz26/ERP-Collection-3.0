@@ -314,6 +314,7 @@ export function buildSeed() {
     weatherCallHours: 48,
     vendorLateMinutes: 15,
     accountingProvider: 'quickbooks',
+    defaults: { currency: 'USD', jurisdictionId: 'US-NY-NYC', country: 'US' },
     counters: { invoice: 2000, changeOrder: 100, creditNote: 500 },
   };
 

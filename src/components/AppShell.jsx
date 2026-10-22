@@ -5,12 +5,18 @@ import { Icon, Avatar, Badge, Toast } from '../design-system/index.js';
 import { navFor, homeFor, visibleNotifications } from '../lib/permissions.js';
 import { fmtDateTime } from '../lib/dates.js';
 import { ROLES } from '../data/config.js';
+import { useWorkspace } from '../platform/PlatformStore.jsx';
+import { SubscriptionBanner } from '../platform/SaasChrome.jsx';
+import { ROUTE_FEATURE } from '../platform/entitlements.js';
+import { PLATFORM } from '../platform/plans.js';
 
 const roleLabel = (r) => ROLES.find((x) => x.id === r)?.label ?? r;
 
 /** Template: authenticated app shell — grouped sidebar (drawer on small screens), search, notifications, user menu. */
 export default function AppShell({ children }) {
   const { state, user } = useStore();
+  const ws = useWorkspace();
+  const locked = (path) => ws && ROUTE_FEATURE[path] && !ws.ent.features.has(ROUTE_FEATURE[path]);
   const loc = useLocation();
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState(null);
@@ -46,23 +52,24 @@ export default function AppShell({ children }) {
   return (
     <div className={`app ${drawer ? 'drawer-open' : ''}`}>
       <aside className="sidebar" aria-label="Main navigation">
-        <div className="brand"><span className="logo" aria-hidden>L</span><span>{state.settings.company.name}</span></div>
+        <div className="brand"><span className="logo" aria-hidden>{state.settings.company.name.trim()[0]?.toUpperCase()}</span><span>{state.settings.company.name}</span></div>
         <nav>
           {groups.map((g) => (
             <div key={g.name} className="nav-section">
               <div className="nav-group">{g.name}</div>
               {g.items.map((n) => (
                 <NavLink key={n.path + n.label} to={n.path} end={n.path === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>
-                  <Icon name={n.icon} size={17} /><span>{n.label}</span>
+                  <Icon name={n.icon} size={17} /><span>{n.label}</span>{locked(n.path) && <Icon name="lock" size={13} className="nav-lock" />}
                 </NavLink>
               ))}
             </div>
           ))}
         </nav>
-        <div className="side-foot">Demo workspace · data stays in this browser · {state.activityLog.length} actions logged</div>
+        <div className="side-foot">{ws ? <>{ws.tenant.slug}.{PLATFORM.domain} · {ws.ent.plan.name}{ws.ent.status === 'trialing' ? ' trial' : ws.ent.status !== 'active' ? ` · ${ws.ent.status.replace('_', ' ')}` : ''}{ws.isDemo ? ' · demo' : ''}</> : 'Demo workspace'} · data stays in this browser · {state.activityLog.length} actions logged</div>
       </aside>
       <div className="drawer-scrim" onClick={() => setDrawer(false)} aria-hidden />
       <div className="main">
+        <SubscriptionBanner />
         {!state.online && <div className="offline-banner" role="status"><Icon name="wifiOff" size={14} /> Offline. Changes are saved on this device and sync when you reconnect ({state.offlineQueue.length} queued).</div>}
         <header className="topbar">
           <button className="btn ghost menu-btn" onClick={() => setDrawer((d) => !d)} aria-label="Open navigation" aria-expanded={drawer}><Icon name="menu" size={20} /></button>
@@ -174,7 +181,10 @@ function Notifications() {
 
 function UserMenu() {
   const { state, act, user } = useStore();
+  const ws = useWorkspace();
   const nav = useNavigate();
+  // Jumping into other accounts without a password is a demo convenience only — never in a real workspace.
+  const canSwitch = !ws || ws.isDemo;
   const { open, setOpen, ref } = usePopover();
   const team = state.users.filter((u) => !['client', 'vendor'].includes(u.role) && u.status !== 'suspended');
   const portals = state.users.filter((u) => ['client', 'vendor'].includes(u.role));
@@ -198,7 +208,15 @@ function UserMenu() {
               <button key={id} role="radio" aria-checked={state.theme === id} className={state.theme === id ? 'on' : ''} onClick={() => act('THEME_SET', { theme: id })}><Icon name={icon} size={14} /> {label}</button>
             ))}
           </div>
-          <div className="menu-label">Switch demo account</div>
+          {ws && (
+            <>
+              <div className="menu-label">Workspace</div>
+              <div className="menu-sub" style={{ padding: '0 12px 6px' }}><b>{ws.tenant.name}</b><div className="faint text-xs">{ws.tenant.slug}.{PLATFORM.domain} · {ws.ent.plan.name}</div></div>
+              {user.role === 'admin' && <button className="menu-row" onClick={() => { setOpen(false); nav('/settings?tab=billing'); }}><Icon name="wallet" size={16} /> Plan &amp; billing</button>}
+              <button className="menu-row" onClick={() => { setOpen(false); act('LOGOUT'); ws.leave('/login'); }}><Icon name="external" size={16} /> Switch workspace</button>
+            </>
+          )}
+          {canSwitch && <><div className="menu-label">Switch demo account</div>
           <div className="menu-scroll">
             {[['Team', team], ['Client & vendor portals', portals]].map(([label, list]) => (
               <div key={label}>
@@ -211,7 +229,7 @@ function UserMenu() {
                 ))}
               </div>
             ))}
-          </div>
+          </div></>}
           <button className="menu-row signout" onClick={() => { act('LOGOUT'); nav('/'); }}><Icon name="logout" size={16} /> Sign out</button>
         </div>
       )}
