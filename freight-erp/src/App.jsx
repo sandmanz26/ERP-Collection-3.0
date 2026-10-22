@@ -1,14 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { Layout, Menu, Select, Space, Tag, Tooltip, Dropdown, Avatar, Button, Badge, Typography, Popconfirm, Drawer, Grid } from 'antd';
-import {
-  DashboardOutlined, InboxOutlined, FileTextOutlined, ContainerOutlined, FileSearchOutlined, AimOutlined, DollarOutlined,
-  CheckSquareOutlined, AuditOutlined, BarChartOutlined, ApiOutlined, SettingOutlined, CloudServerOutlined, BulbOutlined,
-  ReloadOutlined, MenuOutlined, SwapOutlined,
-} from '@ant-design/icons';
+import { Layout, Select, Space, Tag, Tooltip, Dropdown, Avatar, Button, Typography, Popconfirm, Drawer, Grid } from 'antd';
+import { CloudServerOutlined, BulbOutlined, ReloadOutlined, MenuOutlined, SwapOutlined } from '@ant-design/icons';
 import { useStore } from './store/StoreProvider.jsx';
 import { REGIONS, ROLES } from './lib/reference.js';
-import { pendingItems } from './lib/inbox.js';
+import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Rfqs from './pages/Rfqs.jsx';
 import RfqDetail from './pages/RfqDetail.jsx';
@@ -26,85 +22,47 @@ import Connectors from './pages/Connectors.jsx';
 import Settings from './pages/Settings.jsx';
 import Platform from './pages/Platform.jsx';
 
-const { Header, Sider, Content } = Layout;
-
-function useMenu(counts) {
-  const badge = (n, color) => (n ? <Badge count={n} size="small" color={color} offset={[8, 0]} /> : null);
-  return [
-    { type: 'group', label: 'Overview', children: [
-      { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
-      { key: '/approvals', icon: <CheckSquareOutlined />, label: <span>Approvals {badge(counts.approvals, '#fa541c')}</span> },
-    ] },
-    { type: 'group', label: 'RFQ → Booking', children: [
-      { key: '/rfqs', icon: <InboxOutlined />, label: <span>RFQ inbox {badge(counts.rfqNew, '#2f54eb')}</span> },
-      { key: '/quotes', icon: <FileTextOutlined />, label: 'Quotations' },
-      { key: '/shipments', icon: <ContainerOutlined />, label: 'Shipments' },
-    ] },
-    { type: 'group', label: 'Execution', children: [
-      { key: '/documents', icon: <FileSearchOutlined />, label: <span>Documents {badge(counts.docs, '#f5222d')}</span> },
-      { key: '/tracking', icon: <AimOutlined />, label: 'Tracking' },
-      { key: '/invoicing', icon: <DollarOutlined />, label: 'Invoicing' },
-    ] },
-    { type: 'group', label: 'Platform', children: [
-      { key: '/audit', icon: <AuditOutlined />, label: 'AI audit log' },
-      { key: '/usage', icon: <BarChartOutlined />, label: 'Usage & billing' },
-      { key: '/connectors', icon: <ApiOutlined />, label: 'Connectors' },
-      { key: '/settings', icon: <SettingOutlined />, label: 'Tenant settings' },
-      { key: '/platform', icon: <CloudServerOutlined />, label: 'Tenants & regions' },
-    ] },
-  ];
-}
+const { Header, Content } = Layout;
 
 export default function AppRoutes({ dark, toggleDark }) {
-  const { state, tenant, user, scoped, lookup, setSession, reset } = useStore();
+  const { state, tenant, user, scoped, setSession, reset } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const screens = Grid.useBreakpoint();
   const [mobileNav, setMobileNav] = useState(false);
-  const counts = useMemo(() => ({
-    approvals: pendingItems(scoped, lookup).length,
-    rfqNew: scoped.rfqs.filter((r) => r.status === 'new').length,
-    docs: scoped.documents.filter((d) => d.status === 'mismatch').length,
-  }), [scoped, lookup]);
-  const menuItems = useMenu(counts);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('freightpilot-rail') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleRail = () => setCollapsed((v) => {
+    try {
+      localStorage.setItem('freightpilot-rail', v ? '0' : '1');
+    } catch {
+      /* ignore */
+    }
+    return !v;
+  });
   const selected = '/' + (location.pathname.split('/')[1] || '');
   const region = REGIONS[tenant.region];
   const tenantUsers = scoped.users.filter((u) => u.active !== false);
 
-  const menu = (
-    <Menu
-      theme="dark"
-      mode="inline"
-      selectedKeys={[selected]}
-      items={menuItems}
-      onClick={({ key }) => {
-        navigate(key);
-        setMobileNav(false);
-      }}
-      style={{ borderInlineEnd: 0 }}
-    />
-  );
-  const logo = (
-    <div className="fp-logo">
-      <div className="fp-logo-mark">✈</div>
-      <div>
-        FreightPilot
-        <small>RFQ → Invoice automation</small>
-      </div>
-    </div>
-  );
+  const go = (key) => {
+    navigate(key);
+    setMobileNav(false);
+  };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout hasSider style={{ minHeight: '100vh' }}>
       {screens.lg ? (
-        <Sider width={236} style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'auto' }}>
-          {logo}
-          {menu}
-        </Sider>
+        <div style={{ position: 'sticky', top: 0, height: '100vh', zIndex: 20 }}>
+          <Sidebar selected={selected} onNavigate={go} collapsed={collapsed} onToggle={toggleRail} />
+        </div>
       ) : (
-        <Drawer open={mobileNav} onClose={() => setMobileNav(false)} placement="left" width={260} styles={{ body: { padding: 0, background: '#0b1437' }, header: { display: 'none' } }}>
-          {logo}
-          {menu}
+        <Drawer open={mobileNav} onClose={() => setMobileNav(false)} placement="left" width={264} styles={{ body: { padding: 0, background: '#0c1224' }, header: { display: 'none' } }}>
+          <Sidebar selected={selected} onNavigate={go} />
         </Drawer>
       )}
       <Layout>
