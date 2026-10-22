@@ -55,7 +55,7 @@ export default function Staff() {
       <Card title="All upcoming shifts" className="mt">
         <table className="t">
           <thead><tr><th>Date</th><th>Staff</th><th>Event</th><th>Role</th><th>Shift</th><th>Confirmed</th></tr></thead>
-          <tbody>{all.filter((s) => s.date >= today).sort((a, b) => a.date.localeCompare(b.date)).map((s) => <tr key={s.id}><td>{fmtDate(s.date)}</td><td>{state.staff.find((x) => x.id === s.staffId)?.name}</td><td><Link to={`/events/${s.eventId}?tab=staff`}>{s.eventName}</Link></td><td>{s.role}</td><td>{s.start}–{s.end}</td><td>{s.confirmed ? <Badge tone="ok">yes</Badge> : <Badge tone="warn">pending</Badge>}</td></tr>)}</tbody>
+          <tbody>{all.filter((s) => s.date >= today).sort((a, b) => a.date.localeCompare(b.date)).map((s) => <tr key={s.id}><td className="nowrap">{fmtDate(s.date)}</td><td>{state.staff.find((x) => x.id === s.staffId)?.name}</td><td><Link to={`/events/${s.eventId}?tab=staff`}>{s.eventName}</Link></td><td>{s.role}</td><td>{s.start}–{s.end}</td><td>{s.confirmed ? <Badge tone="ok">yes</Badge> : <Badge tone="warn">pending</Badge>}</td></tr>)}</tbody>
         </table>
       </Card>
       {add && <AddStaff onClose={() => setAdd(false)} />}

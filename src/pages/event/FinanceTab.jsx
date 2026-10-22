@@ -46,13 +46,13 @@ export function InvoiceTable({ ev, portal, payerFilter }) {
               const bal = invoiceBalance(ev, i);
               return (
                 <tr key={i.id}>
-                  <td><b>{i.number}</b><div className="faint">{i.kind}</div></td>
+                  <td className="nowrap"><b>{i.number}</b><div className="faint">{i.kind}</div></td>
                   <td>{i.label}</td>
                   <td>{portal ? ev.payers.find((p) => p.id === i.payerId)?.name : (
                     <select value={i.payerId || ''} onChange={(e) => act('INVOICE_SET_PAYER', { eventId: ev.id, invoiceId: i.id, payerId: e.target.value })}>{ev.payers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}{i.billTo === 'venue' && <option value="">Venue</option>}</select>
                   )}</td>
-                  <td>{fmtDate(i.issuedAt)}</td>
-                  <td style={{ color: st === 'overdue' ? 'var(--danger)' : undefined }}>{fmtDate(i.dueDate)}</td>
+                  <td className="nowrap">{fmtDate(i.issuedAt)}</td>
+                  <td className="nowrap" style={{ color: st === 'overdue' ? 'var(--danger)' : undefined }}>{fmtDate(i.dueDate)}</td>
                   <td className="num"><Money value={i.amount} currency={i.currency} /></td>
                   <td className="num">{i.lateFeeApplied ? <Money value={i.lateFeeApplied} currency={i.currency} /> : '—'}</td>
                   <td className="num"><Money value={bal} currency={i.currency} /></td>
@@ -98,7 +98,7 @@ export default function FinanceTab({ ev }) {
         <Card title="Payment schedule (from contract & change orders)">
           <table className="t">
             <thead><tr><th>Installment</th><th>Source</th><th>Due</th><th className="num">Amount</th><th>Status</th><th /></tr></thead>
-            <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}</td><td><Badge>{p.source}</Badge></td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /></td><td>{p.status === 'scheduled' && <Button size="sm" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: p.id })}>Invoice now</Button>}</td></tr>)}</tbody>
+            <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}</td><td><Badge>{p.source}</Badge></td><td className="nowrap">{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /></td><td>{p.status === 'scheduled' && <Button size="sm" onClick={() => act('INVOICE_FROM_SCHEDULE', { eventId: ev.id, itemId: p.id })}>Invoice now</Button>}</td></tr>)}</tbody>
           </table>
           <div className="faint mt" style={{ fontSize: 12 }}>The automation engine invoices installments automatically 30 days before they fall due.</div>
         </Card>
@@ -107,7 +107,7 @@ export default function FinanceTab({ ev }) {
             <thead><tr><th>Date</th><th>Invoice</th><th>Method</th><th>Processor ref</th><th className="num">Amount</th><th /></tr></thead>
             <tbody>{ev.payments.map((p) => (
               <tr key={p.id} className={p.reversed ? 'row-cancelled' : ''}>
-                <td>{fmtDateTime(p.at)}</td><td>{ev.invoices.find((i) => i.id === p.invoiceId)?.number}</td><td><Badge>{p.method}</Badge></td>
+                <td className="nowrap">{fmtDateTime(p.at)}</td><td>{ev.invoices.find((i) => i.id === p.invoiceId)?.number}</td><td><Badge>{p.method}</Badge></td>
                 <td className="faint">{p.ref}{p.reversalOf && <div><Badge tone="danger">reversal · {p.reason}</Badge></div>}{p.reversed && <div><Badge tone="danger">reversed</Badge></div>}</td>
                 <td className="num"><Money value={p.amount} currency={cur} /></td>
                 <td>{p.amount > 0 && !p.reversed && ['admin', 'finance'].includes(user.role) && <Button size="sm" variant="ghost" onClick={async () => { const r = await dialog.form({ title: `Reverse payment ${p.ref}?`, fields: [{ name: 'reason', label: 'Reason', type: 'select', options: ['ACH return — insufficient funds', 'Card chargeback', 'Bounced cheque', 'Duplicate payment', 'Wire recalled by bank'], defaultValue: 'ACH return — insufficient funds' }, { name: 'chargeFee', label: `Re-bill the returned-payment fee (${state.settings.returnedPaymentFee ?? 35} ${cur})`, type: 'checkbox', defaultValue: true }] }); r && act('PAYMENT_REVERSE', { eventId: ev.id, paymentId: p.id, ...r }); }}>Reverse…</Button>}</td>

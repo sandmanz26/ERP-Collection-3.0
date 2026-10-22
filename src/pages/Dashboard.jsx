@@ -86,63 +86,80 @@ export default function Dashboard() {
         actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">+ New inquiry</Link>} />
       <GettingStarted />
       {top.length > 0 && (
-        <section className="priorities" aria-label="Today's priorities">
-          <div className="row between mb"><h2 style={{ margin: 0 }}>Today's priorities</h2><span className="faint text-sm">Most urgent first · {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
+        <section className="dash-section" aria-label="Today's priorities">
+          <div className="dash-head"><h2>Today's priorities</h2><span className="faint text-sm">Most urgent first · {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
           <div className="grid g2">
             {top.map((a, i) => <Callout key={i} tone={a.severity} icon={a.icon} meta={`${a.ev.name}${a.ev.date ? ` · ${fmtDate(a.ev.date)}` : ''}`} title={a.title} action={{ label: a.cta, onClick: () => nav(`/events/${a.ev.id}?tab=${a.tab}`) }}>{a.detail}</Callout>)}
           </div>
         </section>
       )}
-      <div className={`grid g${(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).length} mt`}>{(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).map((k) => KPIS[k])}</div>
 
-      <div className="grid g2 mt">
-        <Card title="Needs your attention" actions={<Badge>{attention.length}</Badge>}>
-          <AttentionList items={[...attention].sort((a, b) => (a.tone === 'danger' ? 0 : 1) - (b.tone === 'danger' ? 0 : 1))} />
-        </Card>
-        {role === 'finance' ? (
-          <Card title="Receivables due in 14 days" actions={<Link to="/finance">Finance →</Link>}>
-            <table className="t"><thead><tr><th>Due</th><th>Invoice</th><th>Event</th><th className="num">Balance</th></tr></thead>
-              <tbody>{dueSoon.map(({ i, e, bal }) => <tr key={i.id}><td>{fmtDate(i.dueDate)}</td><td>{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody></table>
-            {dueSoon.length === 0 && <EmptyState>Nothing due</EmptyState>}
-          </Card>
-        ) : role === 'production' ? (
-          <Card title="Upcoming load-ins">
-            <table className="t"><thead><tr><th>Load-in</th><th>Vendor</th><th>Event</th><th>Contact</th></tr></thead>
-              <tbody>{loadIns.slice(0, 12).map(({ b, e }) => <tr key={b.id}><td>{fmtDateTime(b.loadIn)}</td><td>{state.vendors.find((v) => v.id === b.vendorId)?.name}</td><td><Link to={`/events/${e.id}?tab=ros`}>{e.name}</Link></td><td className="faint">{b.onsiteContact}</td></tr>)}</tbody></table>
-          </Card>
-        ) : (
-          <Card title="Upcoming events" actions={<Link to="/events">All events →</Link>}>
-            <table className="t">
-              <thead><tr><th>Date</th><th>Event</th><th>Stage</th><th>Date status</th><th className="num">Days out</th></tr></thead>
-              <tbody>{upcoming.slice(0, 8).map((e) => (
-                <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}><td>{fmtDate(e.date)}</td><td><Link to={`/events/${e.id}`} onClick={(x) => x.stopPropagation()}>{e.name}</Link><div className="faint">{e.segment} · {e.venue?.name}</div></td><td><StageBadge stage={e.stage} /></td>
-                  <td><Badge tone={e.dateStatus === 'locked' ? 'ok' : 'warn'}>{e.dateStatus === 'locked' ? <><Icon name="lock" size={12} /> locked</> : <><Icon name="hourglass" size={12} /> hold</>}</Badge></td><td className="num">{diffDays(today, e.date)}</td></tr>
-              ))}</tbody>
-            </table>
-          </Card>
-        )}
-      </div>
+      <section className="dash-section" aria-label="Key numbers">
+        <div className="dash-head"><h2>At a glance</h2></div>
+        <div className="kpis">{(KPI_BY_ROLE[role] ?? KPI_BY_ROLE.admin).map((k) => KPIS[k])}</div>
+      </section>
 
-      <div className="grid g2 mt">
-        <Card title="Tasks due in the next 14 days">
-          <table className="t">
-            <thead><tr><th>Due</th><th>Task</th><th>Event</th><th>Status</th></tr></thead>
-            <tbody>{tasks.slice(0, 10).map((t) => (
-              <tr key={t.id}><td className={t.dueDate < today ? 'text-danger' : ''}>{fmtDate(t.dueDate)}</td><td>{t.title}</td><td><Link to={`/events/${t.ev.id}?tab=planning`}>{t.ev.name}</Link></td><td><Badge>{t.status}</Badge></td></tr>
-            ))}</tbody>
-          </table>
-          {tasks.length === 0 && <EmptyState>No tasks due</EmptyState>}
-        </Card>
-        <Card title="Revenue leakage" actions={<Link to="/reports">Reports →</Link>}>
-          {leaks.length === 0 ? <EmptyState>No leakage detected</EmptyState> : (
-            <table className="t">
-              <thead><tr><th>Type</th><th>Event</th><th>Ref</th><th className="num">Amount</th></tr></thead>
-              <tbody>{leaks.map((l, i) => <tr key={i}><td>{l.type}</td><td><Link to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td>{l.ref}</td><td className="num"><Money value={l.amount} currency={l.currency} /></td></tr>)}</tbody>
-              <tfoot><tr><td colSpan={3}>Total ({BASE} equiv.)</td><td className="num">{fmtMoney(round2(leakBase), BASE)}</td></tr></tfoot>
-            </table>
+      <section className="dash-section">
+        <div className="grid g2">
+          <Card title="Needs your attention" actions={<Badge>{attention.length}</Badge>}>
+            <AttentionList max={5} items={[...attention].sort((a, b) => (a.tone === 'danger' ? 0 : 1) - (b.tone === 'danger' ? 0 : 1))} />
+          </Card>
+          {role === 'finance' ? (
+            <Card title="Receivables due in 14 days" actions={<Link to="/finance">Finance →</Link>}>
+              {dueSoon.length === 0 ? <EmptyState>Nothing due</EmptyState> : (
+                <table className="t"><thead><tr><th>Due</th><th>Invoice · event</th><th className="num">Balance</th></tr></thead>
+                  <tbody>{dueSoon.slice(0, 6).map(({ i, e, bal }) => <tr key={i.id}><td className="nowrap">{fmtDate(i.dueDate, { year: undefined })}</td><td>{i.number}<Link className="cell-sub" to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody>
+                </table>
+              )}
+            </Card>
+          ) : role === 'production' ? (
+            <Card title="Upcoming load-ins">
+              <table className="t"><thead><tr><th>Load-in</th><th>Vendor · event</th></tr></thead>
+                <tbody>{loadIns.slice(0, 6).map(({ b, e }) => <tr key={b.id}><td className="nowrap">{fmtDate(b.loadIn.slice(0, 10), { year: undefined })} · {b.loadIn.slice(11, 16)}</td><td>{state.vendors.find((v) => v.id === b.vendorId)?.name}<Link className="cell-sub" to={`/events/${e.id}?tab=ros`}>{e.name} · {b.onsiteContact}</Link></td></tr>)}</tbody>
+              </table>
+            </Card>
+          ) : (
+            <Card title="Upcoming events" actions={<Link to="/events">All events →</Link>}>
+              {upcoming.length === 0 ? <EmptyState>No booked events ahead</EmptyState> : (
+                <table className="t">
+                  <thead><tr><th>When</th><th>Event</th><th>Status</th></tr></thead>
+                  <tbody>{upcoming.slice(0, 6).map((e) => (
+                    <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}>
+                      <td className="nowrap"><b>{fmtDate(e.date, { year: undefined })}</b><span className="cell-sub">in {diffDays(today, e.date)} days</span></td>
+                      <td><Link to={`/events/${e.id}`} onClick={(x) => x.stopPropagation()}>{e.name}</Link><span className="cell-sub">{e.venue?.name}</span></td>
+                      <td className="nowrap"><StageBadge stage={e.stage} /><span className="cell-sub">{e.dateStatus === 'locked' ? <><Icon name="lock" size={12} /> date locked</> : <><Icon name="hourglass" size={12} /> date on hold</>}</span></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              )}
+            </Card>
           )}
-        </Card>
-      </div>
+        </div>
+      </section>
+
+      <section className="dash-section">
+        <div className="grid g2">
+          <Card title="Due in the next 14 days" actions={tasks.length > 6 && <Link to="/events">{tasks.length} tasks →</Link>}>
+            {tasks.length === 0 ? <EmptyState>No tasks due</EmptyState> : (
+              <table className="t">
+                <thead><tr><th>Due</th><th>Task</th></tr></thead>
+                <tbody>{tasks.slice(0, 6).map((t) => (
+                  <tr key={t.id}><td className={`nowrap ${t.dueDate < today ? 'text-danger' : ''}`}>{fmtDate(t.dueDate, { year: undefined })}{t.dueDate < today && <span className="cell-sub">overdue</span>}</td><td>{t.title}<Link className="cell-sub" to={`/events/${t.ev.id}?tab=planning`}>{t.ev.name}</Link></td></tr>
+                ))}</tbody>
+              </table>
+            )}
+          </Card>
+          <Card title="Revenue leakage" actions={<Link to="/reports">Reports →</Link>}>
+            {leaks.length === 0 ? <EmptyState>No leakage detected</EmptyState> : (
+              <table className="t">
+                <thead><tr><th>Issue</th><th className="num">Amount</th></tr></thead>
+                <tbody>{leaks.slice(0, 5).map((l, i) => <tr key={i}><td>{l.type} · {l.ref}<Link className="cell-sub" to={`/events/${l.eventId}`}>{l.eventName}</Link></td><td className="num nowrap"><Money value={l.amount} currency={l.currency} /></td></tr>)}</tbody>
+                <tfoot><tr><td>Total{leaks.length > 5 ? ` (${leaks.length} items)` : ''}</td><td className="num nowrap">{fmtMoney(round2(leakBase), BASE)}</td></tr></tfoot>
+              </table>
+            )}
+          </Card>
+        </div>
+      </section>
     </div>
   );
 }

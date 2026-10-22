@@ -22,7 +22,7 @@ export default function StaffTab({ ev }) {
               <tr key={s.id}>
                 <td>{st?.name}</td>
                 <td><Badge tone={st?.type === 'freelancer' ? 'warn' : 'info'}>{st?.type}</Badge></td>
-                <td>{s.role}</td><td>{fmtDate(s.date)}</td><td>{s.start}–{s.end}</td>
+                <td>{s.role}</td><td className="nowrap">{fmtDate(s.date)}</td><td>{s.start}–{s.end}</td>
                 <td className="faint" style={{ fontSize: 12 }}>{s.clockIn ? s.clockIn.slice(11, 16) : '—'} / {s.clockOut ? s.clockOut.slice(11, 16) : '—'}{s.clockLocation && <div><Icon name="pin" size={11} /> {s.clockLocation}</div>}</td>
                 <td className="num">{c.hours}</td>
                 <td style={{ fontSize: 11.5 }}>{LABOR_RULES[st?.laborRegion]?.label}{c.warnings.map((w) => <div key={w} style={{ color: 'var(--warn)' }}>{w}</div>)}</td>

@@ -66,8 +66,8 @@ export const PAYMENT_SCHEDULES = [
     name: 'Social standard (30/40/30)',
     installments: [
       { label: 'Deposit (30%) — due at signing', pct: 30, due: 'signing' },
-      { label: 'Second payment (40%) — T-90', pct: 40, due: { daysBefore: 90 } },
-      { label: 'Final payment (30%) — T-14', pct: 30, due: { daysBefore: 14 } },
+      { label: 'Second payment (40%) — T‑90', pct: 40, due: { daysBefore: 90 } },
+      { label: 'Final payment (30%) — T‑14', pct: 30, due: { daysBefore: 14 } },
     ],
   },
   {
@@ -75,7 +75,7 @@ export const PAYMENT_SCHEDULES = [
     name: 'Corporate (50/50, Net terms)',
     installments: [
       { label: 'Deposit (50%) — due at signing / PO', pct: 50, due: 'signing' },
-      { label: 'Balance (50%) — T-30', pct: 50, due: { daysBefore: 30 } },
+      { label: 'Balance (50%) — T‑30', pct: 50, due: { daysBefore: 30 } },
     ],
   },
   {
@@ -83,7 +83,7 @@ export const PAYMENT_SCHEDULES = [
     name: 'Half & half (50/50, T-14)',
     installments: [
       { label: 'Down payment (50%) — due at signing', pct: 50, due: 'signing' },
-      { label: 'Balance (50%) — T-14', pct: 50, due: { daysBefore: 14 } },
+      { label: 'Balance (50%) — T‑14', pct: 50, due: { daysBefore: 14 } },
     ],
   },
 ];

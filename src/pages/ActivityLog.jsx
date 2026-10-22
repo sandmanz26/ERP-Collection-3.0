@@ -33,7 +33,7 @@ export default function ActivityLog() {
           <tbody>
             {log.slice(0, 500).map((l) => (
               <tr key={l.id}>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(l.ts)}</td>
+                <td className="nowrap" style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(l.ts)}</td>
                 <td>{l.userName}<div className="faint">{l.role}</div></td>
                 <td><code>{l.type}</code></td>
                 <td>{l.eventId && <Link to={`/events/${l.eventId}`}>{state.events.find((e) => e.id === l.eventId)?.name ?? l.eventId}</Link>}</td>

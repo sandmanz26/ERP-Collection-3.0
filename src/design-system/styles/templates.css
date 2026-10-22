@@ -18,7 +18,7 @@
 .topbar { display: flex; align-items: center; gap: var(--space-3); padding: 10px 24px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); position: sticky; top: 0; z-index: var(--z-sticky); }
 .topbar .grow { flex: 1; }
 .menu-btn { display: none; }
-.content { padding: 24px; max-width: 1480px; width: 100%; }
+.content { padding: 32px 36px 48px; max-width: 1440px; width: 100%; }
 .offline-banner { background: var(--color-toast-err-bg); color: var(--color-toast-err-ink); padding: 6px var(--space-3); font-size: 12px; text-align: center; display: flex; gap: 6px; justify-content: center; align-items: center; }
 
 /* search */
@@ -186,3 +186,12 @@
 .cp-reason-warning { background: var(--color-warning-soft); border-color: var(--color-warning-border); color: var(--color-warning-ink); }
 .cp-reason-info { background: var(--color-info-soft); border-color: var(--color-info-border); color: var(--color-info-ink); }
 @media (max-width: 560px) { .cp-where { flex-wrap: wrap; } }
+
+/* ---------- dashboard rhythm: sections with air between them ---------- */
+.dash-section { margin-top: 36px; }
+.dash-section:first-of-type { margin-top: 28px; }
+.dash-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.dash-head h2 { margin: 0; font-size: 22px; }
+.kpis { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.kpis > * { min-width: 0; }
+.kpis > .card, .kpis > .stat { margin-top: 0; }

@@ -25,6 +25,8 @@ export default function Overview({ ev, et, open }) {
   const dialog = useDialog();
   const [modal, setModal] = useState(null);
   const [step, setStep] = useState(ev.stage);
+  const [moreActions, setMoreActions] = useState(false);
+  const [allDates, setAllDates] = useState(false);
   const closed = ['archived', 'lost', 'cancelled_client', 'cancelled_eo'].includes(ev.stage);
   const ctx = eventContext(state, ev, today);
   const next = nextStage(ev.stage);
@@ -48,7 +50,7 @@ export default function Overview({ ev, et, open }) {
   };
 
   return (
-    <div className="stack" style={{ gap: 14 }}>
+    <div className="stack" style={{ gap: 20 }}>
       {/* 1. Lifecycle */}
       <Card title="Lifecycle" actions={!closed && next && (
         <div className="row">
@@ -77,13 +79,14 @@ export default function Overview({ ev, et, open }) {
       </Card>
 
       {/* 2. What to do next + countdown/key dates */}
+      <SectionHead title="What needs doing" />
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1.7fr) minmax(280px, 1fr)' }}>
         {closed ? <ClosedSummary ev={ev} f={f} /> : (
           <Card title="Next steps" actions={<Badge tone={actions.some((a) => a.severity === 'danger') ? 'danger' : 'info'}>{actions.length}</Badge>}>
             <div className="stack">
-              {actions.slice(0, 7).map((a, i) => <Callout key={i} compact tone={a.severity} icon={a.icon} title={a.title} action={{ label: a.cta, onClick: () => runAction(a) }}>{a.detail}</Callout>)}
+              {actions.slice(0, moreActions ? actions.length : 4).map((a, i) => <Callout key={i} compact tone={a.severity} icon={a.icon} title={a.title} action={{ label: a.cta, onClick: () => runAction(a) }}>{a.detail}</Callout>)}
               {actions.length === 0 && <EmptyState>Nothing outstanding for this stage.</EmptyState>}
-              {actions.length > 7 && <div className="faint text-sm">+{actions.length - 7} more in the tabs above.</div>}
+              {actions.length > 4 && <Button size="sm" variant="ghost" onClick={() => setMoreActions((x) => !x)}>{moreActions ? 'Show fewer' : `Show ${actions.length - 4} more`}</Button>}
             </div>
           </Card>
         )}
@@ -95,7 +98,7 @@ export default function Overview({ ev, et, open }) {
             </div>
           )}
           <ul className="dates">
-            {dates.map((d, i) => (
+            {(allDates ? dates : dates.filter((d) => !d.past).slice(0, 6)).map((d, i) => (
               <li key={i} className={`${d.past ? 'past' : ''} ${d.event ? 'is-event' : ''} ${d.today ? 'today-row' : ''}`}>
                 <button type="button" onClick={() => go(d.tab)}>
                   <time>{fmtDate(d.date, { year: undefined })}</time>
@@ -105,11 +108,13 @@ export default function Overview({ ev, et, open }) {
               </li>
             ))}
           </ul>
+          {dates.length > dates.filter((d) => !d.past).slice(0, 6).length && <Button size="sm" variant="ghost" className="mt" onClick={() => setAllDates((x) => !x)}>{allDates ? 'Upcoming only' : `All ${dates.length} dates`}</Button>}
         </Card>
       </div>
 
       {/* 3. Readiness by area */}
-      <Card title="Readiness" actions={<span className="faint text-sm">Click an area to work on it</span>}>
+      <SectionHead title="How ready is it" />
+      <Card title="Readiness by area" actions={<span className="faint text-sm">Click an area to work on it</span>}>
         <div className="ready-grid">
           {areas.map((a) => (
             <button key={a.id} type="button" className="ready" onClick={() => go(a.tab)}>
@@ -122,6 +127,7 @@ export default function Overview({ ev, et, open }) {
       </Card>
 
       {/* 4. Event details, functions, venue */}
+      <SectionHead title="The event" />
       <div className="grid g3">
         <Card title="Event details" actions={!closed && <Button size="sm" onClick={() => setModal('edit')}><Icon name="edit" size={13} /> Edit</Button>}>
           <KeyValue rows={[
@@ -167,6 +173,7 @@ export default function Overview({ ev, et, open }) {
       </div>
 
       {/* 5. People */}
+      <SectionHead title="People & vendors" />
       <div className="grid g2">
         <Card title="Who's who">
           <div className="stack" style={{ gap: 6 }}>
@@ -191,6 +198,7 @@ export default function Overview({ ev, et, open }) {
       {!closed && (stageIndex(ev.stage) < stageIndex('planning') || et.features.clientApprovalLayers) && <HoldsAndApprovals ev={ev} et={et} />}
 
       {/* 7. Risks & contingencies: weather, final balance, vendor fallout, custody, vendor meals */}
+      <SectionHead title="Risks & log" />
       <RiskPanel ev={ev} open={open} closed={closed} />
 
       {/* 8. Interactions */}
@@ -293,6 +301,10 @@ function HoldsAndApprovals({ ev, et }) {
   );
 }
 
+function SectionHead({ title }) {
+  return <h2 className="section-title">{title}</h2>;
+}
+
 function Interactions({ ev }) {
   const { state, act } = useStore();
   const [note, setNote] = useState({ type: 'call', summary: '' });
@@ -305,7 +317,7 @@ function Interactions({ ev }) {
       </div>
       <table className="t">
         <tbody>
-          {ev.interactions.slice(0, 8).map((i) => <tr key={i.id}><td style={{ width: 150 }} className="text-sm">{fmtDateTime(i.at)}</td><td style={{ width: 80 }}><Badge>{i.type}</Badge></td><td>{i.summary}</td><td className="faint text-sm">{state.users.find((u) => u.id === i.by)?.name}</td></tr>)}
+          {ev.interactions.slice(0, 8).map((i) => <tr key={i.id}><td className="nowrap text-sm">{fmtDateTime(i.at)}</td><td className="nowrap"><Badge>{i.type}</Badge></td><td>{i.summary}</td><td className="faint text-sm">{state.users.find((u) => u.id === i.by)?.name}</td></tr>)}
         </tbody>
       </table>
     </Card>

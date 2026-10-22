@@ -130,8 +130,12 @@
 .upgrade-wall h2 { font-family: var(--font-display); font-weight: 500; margin: 0; }
 .meter { display: grid; gap: 6px; }
 .meter-head { display: flex; justify-content: space-between; font-size: 13.5px; }
-.gs-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
-.gs-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.gs-card { margin-top: 28px; }
+.gs-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.gs-progress { display: grid; grid-template-columns: auto auto; gap: 4px 12px; align-items: baseline; min-width: min(420px, 100%); }
+.gs-progress .progress { grid-column: 1 / -1; margin-top: 6px; }
+.gs-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.gs-item { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
 .gs-item.done { background: var(--color-success-soft); border-color: var(--color-success-border); }
 .gs-item .gs-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--color-ink-3); display: grid; place-items: center; flex: none; }
 .gs-item.done .gs-check { background: var(--color-success); border-color: var(--color-success); color: var(--color-ink-inverse); }

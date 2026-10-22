@@ -49,8 +49,8 @@ export default function Finance() {
           <table className="t">
             <thead><tr><th>Invoice</th><th>Event</th><th>Description</th><th>Due</th><th className="num">Amount</th><th className="num">Balance</th><th>Status</th><th /></tr></thead>
             <tbody>{ar.map(({ i, e, st, bal }) => (
-              <tr key={i.id}><td>{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td>{i.label}</td><td>{fmtDate(i.dueDate)}{st === 'overdue' && <div style={{ color: 'var(--danger)', fontSize: 11 }}>{diffDays(i.dueDate, today)}d late</div>}</td><td className="num"><Money value={i.amount} currency={i.currency} /></td><td className="num"><Money value={bal} currency={i.currency} /></td><td><StatusBadge status={st} /></td>
-                <td className="row">{bal > 0 && st !== 'void' && <Button size="sm" onClick={() => setPay({ e, i })}>Record payment</Button>}{st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</Button>}</td></tr>
+              <tr key={i.id}><td className="nowrap">{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td>{i.label}</td><td className="nowrap">{fmtDate(i.dueDate)}{st === 'overdue' && <div style={{ color: 'var(--danger)', fontSize: 11 }}>{diffDays(i.dueDate, today)}d late</div>}</td><td className="num"><Money value={i.amount} currency={i.currency} /></td><td className="num"><Money value={bal} currency={i.currency} /></td><td><StatusBadge status={st} /></td>
+                <td><div className="row">{bal > 0 && st !== 'void' && <Button size="sm" onClick={() => setPay({ e, i })}>Record payment</Button>}{st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</Button>}</div></td></tr>
             ))}</tbody>
           </table>
         </Card>
@@ -60,7 +60,7 @@ export default function Finance() {
           <table className="t">
             <thead><tr><th>Due</th><th>Vendor</th><th>Event</th><th>Label</th><th className="num">Amount</th><th>Status</th><th>Proof</th><th /></tr></thead>
             <tbody>{ap.map(({ p, b, e, v }) => (
-              <tr key={p.id}><td style={{ color: p.status !== 'paid' && p.dueDate < today ? 'var(--danger)' : undefined }}>{fmtDate(p.dueDate)}</td><td>{v.name}</td><td><Link to={`/events/${e.id}?tab=vendors`}>{e.name}</Link></td><td>{p.label}</td><td className="num"><Money value={p.amount} currency={e.currency} /></td><td><StatusBadge status={p.status} /></td><td className="faint">{p.proofRef}</td>
+              <tr key={p.id}><td className="nowrap" style={{ color: p.status !== 'paid' && p.dueDate < today ? 'var(--danger)' : undefined }}>{fmtDate(p.dueDate)}</td><td>{v.name}</td><td><Link to={`/events/${e.id}?tab=vendors`}>{e.name}</Link></td><td>{p.label}</td><td className="num"><Money value={p.amount} currency={e.currency} /></td><td><StatusBadge status={p.status} /></td><td className="faint">{p.proofRef}</td>
                 <td>{p.status !== 'paid' && <Button variant="success" size="sm" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: e.id, bookingId: b.id, paymentId: p.id })}>Mark paid</Button>}</td></tr>
             ))}</tbody>
           </table>
@@ -71,7 +71,7 @@ export default function Finance() {
           <div className="faint mb" style={{ fontSize: 12 }}>Cash received before the event is a liability (revenue received in advance) and is recognized only once the event has taken place — essential for refunds on cancellation.</div>
           <table className="t">
             <thead><tr><th>Event</th><th>Date</th><th>Stage</th><th className="num">Received</th><th className="num">Refunded</th><th className="num">Deferred</th><th className="num">Recognized</th></tr></thead>
-            <tbody>{fin.filter((x) => x.f.paid > 0).map(({ e, f }) => <tr key={e.id}><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td>{fmtDate(e.date)}</td><td>{e.stage}</td><td className="num"><Money value={f.paid} currency={e.currency} /></td><td className="num"><Money value={f.refunds} currency={e.currency} /></td><td className="num"><Money value={f.deferred} currency={e.currency} /></td><td className="num"><Money value={f.recognizedRevenue} currency={e.currency} /></td></tr>)}</tbody>
+            <tbody>{fin.filter((x) => x.f.paid > 0).map(({ e, f }) => <tr key={e.id}><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="nowrap">{fmtDate(e.date)}</td><td>{e.stage}</td><td className="num"><Money value={f.paid} currency={e.currency} /></td><td className="num"><Money value={f.refunds} currency={e.currency} /></td><td className="num"><Money value={f.deferred} currency={e.currency} /></td><td className="num"><Money value={f.recognizedRevenue} currency={e.currency} /></td></tr>)}</tbody>
           </table>
         </Card>
       )}

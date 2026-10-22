@@ -120,7 +120,7 @@ export default function Reports() {
           <Card title="Profitability per event">
             <table className="t">
               <thead><tr><th>Event</th><th>Date</th><th className="num">Revenue</th><th className="num">Vendor</th><th className="num">Decor</th><th className="num">Crew</th><th className="num">Profit</th><th className="num">Margin</th></tr></thead>
-              <tbody>{prof.sort((a, b) => b.f.marginPct - a.f.marginPct).map(({ e, f }) => <tr key={e.id}><td><Link to={`/events/${e.id}?tab=budget`}>{e.name}</Link></td><td>{fmtDate(e.date)}</td><td className="num"><Money value={f.revenueNet} currency={e.currency} /></td><td className="num"><Money value={f.vendorCost} currency={e.currency} /></td><td className="num"><Money value={f.decorCost} currency={e.currency} /></td><td className="num"><Money value={f.crewCost} currency={e.currency} /></td><td className="num"><Money value={f.profit} currency={e.currency} /></td><td className="num">{f.marginPct}%</td></tr>)}</tbody>
+              <tbody>{prof.sort((a, b) => b.f.marginPct - a.f.marginPct).map(({ e, f }) => <tr key={e.id}><td><Link to={`/events/${e.id}?tab=budget`}>{e.name}</Link></td><td className="nowrap">{fmtDate(e.date)}</td><td className="num"><Money value={f.revenueNet} currency={e.currency} /></td><td className="num"><Money value={f.vendorCost} currency={e.currency} /></td><td className="num"><Money value={f.decorCost} currency={e.currency} /></td><td className="num"><Money value={f.crewCost} currency={e.currency} /></td><td className="num"><Money value={f.profit} currency={e.currency} /></td><td className="num">{f.marginPct}%</td></tr>)}</tbody>
             </table>
           </Card>
           <div className="grid g2 mt">

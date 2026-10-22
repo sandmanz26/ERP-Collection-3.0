@@ -87,7 +87,7 @@ function VendorRfqs({ vendor }) {
               <tr key={r.id}>
                 <td>{e.name}<div className="faint">{fmtDate(e.date)}</div></td>
                 <td>{r.category}: {r.description}</td>
-                <td>{fmtDate(r.dueDate)}</td>
+                <td className="nowrap">{fmtDate(r.dueDate)}</td>
                 <td>{mine ? <Money value={mine.amount} currency={e.currency} /> : '—'}</td>
                 <td><StatusBadge status={status} /></td>
                 <td>{!r.awardedVendorId && <Button size="sm" variant={mine ? 'secondary' : 'primary'} onClick={async () => {

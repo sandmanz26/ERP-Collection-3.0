@@ -90,8 +90,8 @@ export default function CalendarPage() {
               <tbody>
                 {activeHolds.map((h) => (
                   <tr key={h.id} onClick={() => { setSel(h.date); setMonth(h.date.slice(0, 7)); }} style={{ cursor: 'pointer' }}>
-                    <td>{fmtDate(h.date)}</td><td>{h.priority}</td><td>{state.events.find((e) => e.id === h.eventId)?.name}</td>
-                    <td style={{ color: diffDays(today, h.expiresAt) <= 2 ? 'var(--danger)' : undefined }}>{fmtDate(h.expiresAt)}</td>
+                    <td className="nowrap">{fmtDate(h.date)}</td><td>{h.priority}</td><td>{state.events.find((e) => e.id === h.eventId)?.name}</td>
+                    <td className="nowrap" style={{ color: diffDays(today, h.expiresAt) <= 2 ? 'var(--danger)' : undefined }}>{fmtDate(h.expiresAt)}</td>
                   </tr>
                 ))}
               </tbody>

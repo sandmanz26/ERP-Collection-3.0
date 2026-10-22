@@ -1,5 +1,5 @@
 // In-app SaaS chrome: subscription banner, upgrade walls, getting-started checklist.
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon, Card, ProgressBar } from '../design-system/index.js';
 import { useStore } from '../store/AppStore.jsx';
@@ -49,6 +49,7 @@ export function GettingStarted() {
   const { state, act, user } = useStore();
   const ws = useWorkspace();
   const nav = useNavigate();
+  const [all, setAll] = useState(false);
   if (!ws || user?.role !== 'admin' || state.settings.gettingStarted?.dismissed) return null;
   const s = state.settings;
   const realEvents = state.events.filter((e) => !e.sample);
@@ -63,14 +64,25 @@ export function GettingStarted() {
   ];
   const done = items.filter((i) => i.done).length;
   if (done === items.length) return null;
+  const shown = all ? items : items.filter((i) => !i.done).slice(0, 3);
   return (
-    <Card title={`Get ${s.company.name} ready · ${done} of ${items.length}`} actions={<Button size="sm" variant="ghost" onClick={() => act('GETTING_STARTED_DISMISS')}>Hide</Button>} className="mb">
-      <ProgressBar value={(done / items.length) * 100} tone="ok" />
-      <ul className="gs-list mt">
-        {items.map((i) => (
+    <Card className="gs-card">
+      <div className="gs-head">
+        <div className="gs-progress">
+          <b>Get {s.company.name} ready</b>
+          <span className="faint text-sm">{done} of {items.length} steps done</span>
+          <ProgressBar value={(done / items.length) * 100} tone="ok" />
+        </div>
+        <div className="row" style={{ gap: 4 }}>
+          <Button size="sm" variant="ghost" onClick={() => setAll((x) => !x)}>{all ? 'Show next steps only' : `Show all ${items.length} steps`}</Button>
+          <Button size="sm" variant="ghost" onClick={() => act('GETTING_STARTED_DISMISS')}>Hide</Button>
+        </div>
+      </div>
+      <ul className="gs-list">
+        {shown.map((i) => (
           <li key={i.id} className={`gs-item ${i.done ? 'done' : ''}`}>
             <span className="gs-check">{i.done && <Icon name="check" size={13} strokeWidth={2.5} />}</span>
-            <span className="grow"><div className="gs-title"><b>{i.title}</b></div><div className="faint text-xs">{i.hint}</div></span>
+            <span className="grow"><div className="gs-title"><b>{i.title}</b></div><div className="faint text-sm">{i.hint}</div></span>
             {!i.done && <Button size="sm" onClick={i.action ?? i.go}>{i.action ? 'Connect' : 'Open'}</Button>}
           </li>
         ))}

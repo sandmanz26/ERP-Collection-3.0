@@ -58,32 +58,31 @@ export default function Pipeline() {
               onDragOver={(e) => { e.preventDefault(); setOver(col); }}
               onDragLeave={() => setOver(null)}
               onDrop={() => { setOver(null); if (drag && drag.stage !== col) act('STAGE_CHANGE', { eventId: drag.id, to: col }); setDrag(null); }}>
-              <h4><span>{stageLabel(col)}</span><span>{items.length}</span></h4>
-              <div className="faint" style={{ fontSize: 11 }}>{fmtMoney(total, baseCurrency(state))} · weighted {fmtMoney(weighted, baseCurrency(state))}</div>
+              <h4 className="kcol-head"><span>{stageLabel(col)}</span><Badge>{items.length}</Badge></h4>
+              <div className="kcol-sum">{fmtMoney(total, baseCurrency(state), { whole: true })} · weighted {fmtMoney(weighted, baseCurrency(state), { whole: true })}</div>
               {items.map((e) => {
                 const hold = state.holds.find((h) => h.eventId === e.id && h.status === 'active');
                 const next = COLS[COLS.indexOf(col) + 1];
                 const blockers = next ? transitionBlockers(e, next, eventContext(state, e, today)) : [];
                 return (
                   <div key={e.id} className="kcard" draggable onDragStart={() => setDrag(e)} onDoubleClick={() => nav(`/events/${e.id}`)}>
-                    <div className="row between">
+                    <div>
                       <Link className="title" to={`/events/${e.id}`}>{e.name}</Link>
+                      <div className="kcard-meta">{clientOf(state, e)?.name}</div>
                     </div>
-                    <div className="faint" style={{ fontSize: 12 }}>{clientOf(state, e)?.name}</div>
-                    <div className="row" style={{ marginTop: 6 }}>
-                      <Badge>{e.source}</Badge>
-                      <Badge tone="brand">{e.probability}%</Badge>
-                      {e.date ? <Badge>{fmtDate(e.date)}</Badge> : <Badge tone="warn">no date</Badge>}
+                    <div className="kcard-meta">
+                      {e.date ? <span className="nowrap">{fmtDate(e.date)}</span> : <Badge tone="warn">No date yet</Badge>}<span className="sep">·</span>{e.source}
                     </div>
-                    <div className="row between" style={{ marginTop: 6 }}>
+                    <div className="kcard-money">
                       <b><Money value={value(e)} currency={e.currency} /></b>
-                      {hold && <Badge tone={diffDays(today, hold.expiresAt) <= 2 ? 'danger' : 'warn'}>hold #{hold.priority} · {diffDays(today, hold.expiresAt)}d</Badge>}
+                      <span className="faint text-sm" title="Win probability">{e.probability}% likely</span>
                     </div>
-                    {next && blockers.length > 0 && <div className="faint" style={{ fontSize: 11, marginTop: 6 }}>Next: {blockers[0]}</div>}
+                    {hold && <div><Badge tone={diffDays(today, hold.expiresAt) <= 2 ? 'danger' : 'warn'}><Icon name="hourglass" size={12} /> Hold #{hold.priority} · expires in {diffDays(today, hold.expiresAt)}d</Badge></div>}
+                    {next && blockers.length > 0 && <div className="kcard-next"><b>Next:</b> {blockers[0]}</div>}
                     {col !== 'booked' && (
-                      <div className="row" style={{ marginTop: 6 }}>
-                        {next && <Button size="sm" onClick={() => act('STAGE_CHANGE', { eventId: e.id, to: next })}>→ {stageLabel(next)}</Button>}
-                        <Button variant="danger" size="sm" onClick={() => setLostFor(e)}>Lost</Button>
+                      <div className="kcard-actions">
+                        {next && <Button size="sm" onClick={() => act('STAGE_CHANGE', { eventId: e.id, to: next })}>→ {stageLabel(next).replace(' (Booked)', '')}</Button>}
+                        <Button variant="ghost" size="sm" onClick={() => setLostFor(e)}>Mark lost</Button>
                       </div>
                     )}
                   </div>
@@ -98,7 +97,7 @@ export default function Pipeline() {
           <thead><tr><th>Event</th><th>Source</th><th>Stage</th><th>Reason</th><th>Created</th></tr></thead>
           <tbody>
             {evs.filter((e) => ['lost', 'cancelled_client', 'cancelled_eo'].includes(e.stage)).map((e) => (
-              <tr key={e.id}><td><Link to={`/events/${e.id}`}>{e.name}</Link></td><td>{e.source}</td><td>{stageLabel(e.stage)}</td><td>{e.lostReason || e.cancellation?.reason}</td><td>{fmtDate(e.createdAt.slice(0, 10))}</td></tr>
+              <tr key={e.id}><td><Link to={`/events/${e.id}`}>{e.name}</Link></td><td>{e.source}</td><td>{stageLabel(e.stage)}</td><td>{e.lostReason || e.cancellation?.reason}</td><td className="nowrap">{fmtDate(e.createdAt.slice(0, 10))}</td></tr>
             ))}
           </tbody>
         </table>

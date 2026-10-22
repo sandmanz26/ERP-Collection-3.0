@@ -22,7 +22,7 @@ export default function Automation() {
         <Card>
           <table className="t">
             <thead><tr><th>Sent</th><th>To</th><th>Subject</th><th>Event</th><th>Workflow</th></tr></thead>
-            <tbody>{state.outbox.map((m) => <tr key={m.id} onClick={() => setMail(m)} style={{ cursor: 'pointer' }}><td>{fmtDateTime(m.ts)}</td><td>{m.to}</td><td>{m.subject}</td><td>{m.eventId && <Link to={`/events/${m.eventId}`} onClick={(e) => e.stopPropagation()}>{state.events.find((e) => e.id === m.eventId)?.name}</Link>}</td><td className="faint">{state.settings.automations.find((a) => a.id === m.automationId)?.name ?? 'manual'}</td></tr>)}</tbody>
+            <tbody>{state.outbox.map((m) => <tr key={m.id} onClick={() => setMail(m)} style={{ cursor: 'pointer' }}><td className="nowrap">{fmtDateTime(m.ts)}</td><td>{m.to}</td><td>{m.subject}</td><td>{m.eventId && <Link to={`/events/${m.eventId}`} onClick={(e) => e.stopPropagation()}>{state.events.find((e) => e.id === m.eventId)?.name}</Link>}</td><td className="faint">{state.settings.automations.find((a) => a.id === m.automationId)?.name ?? 'manual'}</td></tr>)}</tbody>
           </table>
           {state.outbox.length === 0 && <div className="empty">Nothing sent yet.</div>}
         </Card>

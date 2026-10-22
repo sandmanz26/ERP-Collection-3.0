@@ -19,7 +19,7 @@ export default function VendorsTab({ ev }) {
         <div className="legend mb"><span><b>Pass-through</b>: EO pays vendor & bills client (cash-flow risk, markup possible)</span><span><b>Direct</b>: client pays vendor; EO coordinates (commission possible)</span></div>
         <div className="table-wrap">
           <table className="t">
-            <thead><tr><th>Vendor</th><th>Service</th><th>Model</th><th className="num">Cost</th><th className="num">Sell</th><th className="num">Margin</th><th>Commission</th><th>Load-in / out</th><th>Compliance</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>Vendor</th><th>Service</th><th>Model</th><th className="num">Cost → sell</th><th>Commission</th><th>On site</th><th>Compliance</th><th>Status</th></tr></thead>
             <tbody>
               {ev.vendorBookings.map((b) => {
                 const v = state.vendors.find((x) => x.id === b.vendorId);
@@ -27,31 +27,29 @@ export default function VendorsTab({ ev }) {
                 return (
                   <React.Fragment key={b.id}>
                     <tr className={b.status === 'cancelled' ? 'row-cancelled' : ''}>
-                      <td><b>{v.name}</b><div className="faint">{b.category} · {b.onsiteContact}</div></td>
-                      <td>{b.service}{b.minGuarantee ? <div className="faint">min guarantee {b.minGuarantee} · contracted {b.contractedGuests}</div> : null}</td>
+                      <td style={{ minWidth: 150 }}><b>{v.name}</b><span className="cell-sub">{b.category} · {b.onsiteContact}</span></td>
+                      <td style={{ minWidth: 150 }}>{b.service}{b.minGuarantee ? <span className="cell-sub">min. guarantee {b.minGuarantee} · contracted {b.contractedGuests}</span> : null}</td>
                       <td><select value={b.model} onChange={(e) => act('BOOKING_UPDATE', { eventId: ev.id, bookingId: b.id, patch: { model: e.target.value } })}><option value="pass_through">pass-through</option><option value="direct">direct</option></select></td>
-                      <td className="num"><Money value={b.cost} currency={cur} /></td>
-                      <td className="num">{b.model === 'pass_through' ? <Money value={b.sellPrice} currency={cur} /> : <span className="faint">client pays</span>}</td>
-                      <td className="num">{b.model === 'pass_through' ? <Money value={round2(b.sellPrice - b.cost)} currency={cur} /> : '—'}</td>
-                      <td>{b.commissionAmount ? <><Money value={b.commissionAmount} currency={cur} /> <StatusBadge status={b.commissionStatus} /><select value={b.commissionStatus} onChange={(e) => act('COMMISSION_STATUS', { eventId: ev.id, bookingId: b.id, status: e.target.value })}><option>pending</option><option>invoiced</option><option>paid</option></select></> : '—'}</td>
-                      <td className="faint" style={{ fontSize: 12 }}>{b.loadIn ? fmtDateTime(b.loadIn) : '—'}<br />{b.loadOut ? fmtDateTime(b.loadOut) : ''}</td>
-                      <td>{issues.length ? issues.map((i) => <div key={i.text}><Badge tone={i.level}>{i.text}</Badge></div>) : <Badge tone="ok">OK</Badge>}</td>
-                      <td>
-                        <StatusBadge status={b.status} />{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Mark confirmed</Button>}
+                      <td className="num nowrap"><Money value={b.cost} currency={cur} />{b.model === 'pass_through' ? <> → <Money value={b.sellPrice} currency={cur} /><span className="cell-sub">margin <Money value={round2(b.sellPrice - b.cost)} currency={cur} /></span></> : <span className="cell-sub">client pays the vendor</span>}</td>
+                      <td>{b.commissionAmount ? <div className="stack" style={{ gap: 6, alignItems: 'flex-start' }}><Money value={b.commissionAmount} currency={cur} /><select aria-label="Commission status" value={b.commissionStatus} onChange={(e) => act('COMMISSION_STATUS', { eventId: ev.id, bookingId: b.id, status: e.target.value })}><option>pending</option><option>invoiced</option><option>paid</option></select></div> : '—'}</td>
+                      <td className="nowrap">{b.loadIn ? <>{fmtDate(b.loadIn.slice(0, 10), { year: undefined })}<span className="cell-sub">{b.loadIn.slice(11, 16)} → {b.loadOut ? b.loadOut.slice(11, 16) : '—'}</span></> : '—'}</td>
+                      <td><div className="stack" style={{ gap: 4, alignItems: 'flex-start' }}>{issues.length ? issues.map((i) => <Badge key={i.text} tone={i.level}>{i.text}</Badge>) : <Badge tone="ok">OK</Badge>}</div></td>
+                      <td><div className="stack" style={{ gap: 6, alignItems: 'flex-start' }}>
+                        <StatusBadge status={b.status} />
+                        <Button size="sm" variant="ghost" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide payments' : 'Payments'}</Button>{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Confirm</Button>}
                         {b.status === 'cancelled' && <div className="faint text-xs">{b.cancelledBy === 'eo' ? 'by us' : 'by vendor'}: {b.cancelReason}</div>}
                         {b.refundDue > 0 && (b.refundRecovered ? <Badge tone="ok">deposit recovered</Badge> : <Button size="sm" onClick={() => act('VENDOR_REFUND_RECOVERED', { eventId: ev.id, bookingId: b.id })}>Recovered {fmtMoney(b.refundDue, cur)}</Button>)}
                         {b.status !== 'cancelled' && <Button size="sm" variant="ghost" onClick={async () => { const r = await dialog.form({ title: `Cancel ${v.name}?`, fields: [{ name: 'initiatedBy', label: 'Who cancelled', type: 'select', options: [{ value: 'vendor', label: 'The vendor cancelled / no-show' }, { value: 'eo', label: 'We cancelled the vendor' }], defaultValue: 'vendor' }, { name: 'reason', label: 'Reason (shared internally; client gets a neutral notice)', type: 'textarea', required: true }] }); r && act('BOOKING_CANCEL', { eventId: ev.id, bookingId: b.id, ...r }); }}>Cancel…</Button>}
-                      </td>
-                      <td><Button size="sm" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide' : 'Payments'}</Button></td>
+                      </div></td>
                     </tr>
                     {open === b.id && (
-                      <tr><td colSpan={11} style={{ background: 'var(--panel-2)' }}>
+                      <tr><td colSpan={8} style={{ background: 'var(--panel-2)' }}>
                         <div className="grid g2">
                           <div>
                             <h4>Vendor payables</h4>
                             <table className="t"><tbody>
                               {b.payments.map((p) => (
-                                <tr key={p.id}><td>{p.label}</td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /> {p.proofRef && <span className="faint">{p.proofRef}</span>}</td>
+                                <tr key={p.id}><td>{p.label}</td><td className="nowrap">{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={cur} /></td><td><StatusBadge status={p.status} /> {p.proofRef && <span className="faint">{p.proofRef}</span>}</td>
                                   <td>{p.status !== 'paid' && <Button variant="success" size="sm" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: ev.id, bookingId: b.id, paymentId: p.id })}>Mark paid</Button>}</td></tr>
                               ))}
                             </tbody></table>

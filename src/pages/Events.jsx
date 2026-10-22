@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StageBadge, Badge, Money, PillSelect, SearchInput } from '../design-system/index.js';
+import { Card, StageBadge, Badge, Money, PillSelect, SearchInput, Icon } from '../design-system/index.js';
 import { fmtDate } from '../lib/dates.js';
 import { eventFinancials, clientOf } from '../lib/derived.js';
 import { STAGES, EXIT_STAGES } from '../lib/lifecycle.js';
@@ -36,23 +36,20 @@ export default function Events() {
       <Card>
         <div className="table-wrap">
           <table className="t">
-            <thead><tr><th>Date</th><th>Event</th><th>Client</th><th>Type</th><th>Stage</th><th>Date</th><th>Planner</th><th className="num">Contract</th><th className="num">Paid</th><th className="num">Margin</th></tr></thead>
+            <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Stage</th><th>Planner</th><th className="num">Contract</th><th className="num">Margin</th></tr></thead>
             <tbody>
               {list.map((e) => {
                 const f = eventFinancials(state, e);
                 const et = state.settings.eventTypes.find((t) => t.id === e.eventTypeId);
                 return (
                   <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}>
-                    <td>{fmtDate(e.date)}</td>
-                    <td><Link to={`/events/${e.id}`}>{e.name}</Link></td>
-                    <td>{clientOf(state, e)?.name}</td>
-                    <td>{et?.name}<div className="faint">{e.segment}</div></td>
-                    <td><StageBadge stage={e.stage} /></td>
-                    <td>{e.dateStatus === 'locked' ? <Badge tone="ok">locked</Badge> : e.dateStatus === 'hold' ? <Badge tone="warn">hold</Badge> : <Badge>—</Badge>}</td>
-                    <td>{state.users.find((u) => u.id === e.plannerId)?.name ?? '—'}</td>
-                    <td className="num"><Money value={f.contractTotal} currency={e.currency} /></td>
-                    <td className="num"><Money value={f.paid} currency={e.currency} /></td>
-                    <td className="num">{f.revenueNet ? `${f.marginPct}%` : '—'}</td>
+                    <td className="nowrap">{fmtDate(e.date)}</td>
+                    <td><Link to={`/events/${e.id}`}>{e.name}</Link><span className="cell-sub">{clientOf(state, e)?.name}</span></td>
+                    <td>{et?.name}<span className="cell-sub">{e.segment}</span></td>
+                    <td className="nowrap"><StageBadge stage={e.stage} /><span className="cell-sub">{e.dateStatus === 'locked' ? <><Icon name="lock" size={12} /> date locked</> : e.dateStatus === 'hold' ? <><Icon name="hourglass" size={12} /> date on hold</> : 'no date held'}</span></td>
+                    <td className="nowrap">{state.users.find((u) => u.id === e.plannerId)?.name ?? '—'}</td>
+                    <td className="num nowrap"><Money value={f.contractTotal} currency={e.currency} />{f.contractTotal > 0 && <span className="cell-sub">{Math.round((f.paid / f.contractTotal) * 100)}% paid</span>}</td>
+                    <td className="num nowrap">{f.revenueNet ? `${f.marginPct}%` : '—'}</td>
                   </tr>
                 );
               })}

@@ -88,7 +88,7 @@ export default function ContractTab({ ev, et }) {
           {ev.paymentSchedule.length === 0 ? <div className="faint">Generated automatically when all parties have signed.</div> : (
             <table className="t">
               <thead><tr><th>Installment</th><th>Due</th><th className="num">Amount</th><th>Status</th></tr></thead>
-              <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}{p.isDeposit && <Badge tone="brand">deposit → locks date</Badge>}</td><td>{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={ev.currency} /></td><td><StatusBadge status={p.status} /></td></tr>)}</tbody>
+              <tbody>{ev.paymentSchedule.map((p) => <tr key={p.id}><td>{p.label}{p.isDeposit && <Badge tone="brand">deposit → locks date</Badge>}</td><td className="nowrap">{fmtDate(p.dueDate)}</td><td className="num"><Money value={p.amount} currency={ev.currency} /></td><td><StatusBadge status={p.status} /></td></tr>)}</tbody>
             </table>
           )}
         </Card>

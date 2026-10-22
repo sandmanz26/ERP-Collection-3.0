@@ -96,7 +96,7 @@ export default function PeopleTab({ ev }) {
                       <React.Fragment key={p.id}>
                         <tr>
                           <td><b>{p.role}</b><div className="faint">{p.qty} needed · {positionHours(p)} h</div></td>
-                          <td>{fmtDate(p.date, { weekday: 'short' })}<div className="faint">{p.start}–{p.end}</div></td>
+                          <td className="nowrap">{fmtDate(p.date, { weekday: 'short' })}<div className="faint">{p.start}–{p.end}</div></td>
                           <td><Badge tone={SOURCE_TONE[p.source]}>{SOURCES.find((s) => s.id === p.source)?.label}</Badge>{vendor && <div className="faint" style={{ fontSize: 12 }}>via {vendor.name}</div>}</td>
                           <td>
                             <div className="row between text-sm"><span>{f.confirmed}/{p.qty} confirmed</span>{f.unassigned > 0 && <Badge tone="danger">{f.unassigned} unnamed</Badge>}</div>

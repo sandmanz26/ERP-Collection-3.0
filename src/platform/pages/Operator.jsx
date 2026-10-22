@@ -92,7 +92,7 @@ function Console() {
                   <td className="num">{use.seats}/{ent.limits.seats ?? '∞'}</td>
                   <td className="num">{use.activeEvents}/{ent.limits.activeEvents ?? '∞'}</td>
                   <td className="num">{usd(m)}</td>
-                  <td>{fmtDate(t.createdAt)}</td>
+                  <td className="nowrap">{fmtDate(t.createdAt)}</td>
                   <td>{ent.status === 'trialing' || ent.status === 'expired' ? `trial ${ent.status === 'expired' ? 'ended' : 'ends'} ${fmtDate(t.trialEndsAt)}` : ent.status === 'past_due' ? `payment failed ${fmtDate(t.pastDueSince)}` : ent.status === 'canceled' ? `ended ${fmtDate(t.canceledAt ?? t.currentPeriodEnd)}` : ent.status === 'suspended' ? '—' : t.currentPeriodEnd ? `${t.cancelAtPeriodEnd ? 'ends' : 'renews'} ${fmtDate(t.currentPeriodEnd)}` : '—'}</td>
                   <td className="op-actions"><div>
                     {['trialing', 'expired'].includes(ent.status) && <Button size="sm" onClick={() => pact('OP_EXTEND_TRIAL', { tenantId: t.id, days: 7 })}>+7 days</Button>}

@@ -191,7 +191,7 @@ function Docs({ ev }) {
       </div>
       <table className="t">
         <thead><tr><th>Name</th><th>Type</th><th>Uploaded</th><th>By</th><th>Expires</th></tr></thead>
-        <tbody>{ev.documents.map((d) => <tr key={d.id}><td><Icon name="file" size={14} /> {d.name}</td><td>{d.type}</td><td>{fmtDateTime(d.at)}</td><td>{state.users.find((u) => u.id === d.uploadedBy)?.name}</td><td>{d.expiresAt ? <span style={{ color: diffDays(today, d.expiresAt) < 30 ? 'var(--danger)' : undefined }}>{fmtDate(d.expiresAt)}</span> : '—'}</td></tr>)}</tbody>
+        <tbody>{ev.documents.map((d) => <tr key={d.id}><td><Icon name="file" size={14} /> {d.name}</td><td>{d.type}</td><td className="nowrap">{fmtDateTime(d.at)}</td><td>{state.users.find((u) => u.id === d.uploadedBy)?.name}</td><td>{d.expiresAt ? <span style={{ color: diffDays(today, d.expiresAt) < 30 ? 'var(--danger)' : undefined }}>{fmtDate(d.expiresAt)}</span> : '—'}</td></tr>)}</tbody>
       </table>
     </Card>
   );
@@ -210,7 +210,7 @@ function Decisions({ ev }) {
       </div>
       <table className="t">
         <thead><tr><th>When</th><th>Decision</th><th>Approved by</th><th>Reference</th><th>Recorded by</th></tr></thead>
-        <tbody>{ev.decisions.map((d) => <tr key={d.id}><td>{fmtDateTime(d.approvedAt)}</td><td>{d.decision}</td><td>{d.decidedBy}</td><td>{d.reference}</td><td className="faint">{state.users.find((u) => u.id === d.recordedBy)?.name}</td></tr>)}</tbody>
+        <tbody>{ev.decisions.map((d) => <tr key={d.id}><td className="nowrap">{fmtDateTime(d.approvedAt)}</td><td>{d.decision}</td><td>{d.decidedBy}</td><td>{d.reference}</td><td className="faint">{state.users.find((u) => u.id === d.recordedBy)?.name}</td></tr>)}</tbody>
       </table>
     </Card>
   );

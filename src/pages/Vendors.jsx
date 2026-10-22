@@ -31,7 +31,7 @@ export default function Vendors() {
                     <td><b>{v.name}</b><div className="faint">{v.contact} · {v.email}</div></td>
                     <td>{v.category}</td><td style={{ fontSize: 12 }}>{v.regions.join(', ')}</td><td>{v.priceRange}</td>
                     <td><Icon name="star" size={12} /> {vendorScore(v)}<div className="faint">{v.performance.length} reviews</div></td>
-                    <td>{fmtDate(v.coiExpiry)}</td>
+                    <td className="nowrap">{fmtDate(v.coiExpiry)}</td>
                     <td style={{ fontSize: 12 }}>{v.licenses.map((l) => <div key={l.name}>{l.name} — {fmtDate(l.expiry)}</div>)}</td>
                     <td>{v.country === 'US' ? (v.w9 ? <Badge tone="ok">on file</Badge> : <Badge tone="warn">missing</Badge>) : <span className="faint">n/a</span>}</td>
                     <td>{v.commissionPct ? `${v.commissionPct}%` : '—'}</td>

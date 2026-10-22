@@ -1,10 +1,11 @@
 /* base layer — reset, typography, layout utilities */
 * { box-sizing: border-box; }
-html { font-family: var(--font-sans); font-size: var(--text-md); color: var(--color-ink); background: var(--color-bg); }
+html { font-family: var(--font-sans); font-size: var(--text-md); line-height: 1.5; color: var(--color-ink); background: var(--color-bg); }
 body { margin: 0; background: var(--color-bg); }
 a { color: var(--color-brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1, h2, h3, h4 { margin: 0 0 var(--space-2); line-height: 1.25; text-wrap: balance; }
+p { line-height: 1.55; }
 h1 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.005em; }
 h2 { font-family: var(--font-display); font-weight: 500; }
 h3 { font-weight: var(--weight-semibold); }
@@ -21,17 +22,18 @@ small, .muted { color: var(--color-ink-2); }
 .text-danger { color: var(--color-danger); } .text-success { color: var(--color-success); } .text-warning { color: var(--color-warning); }
 .num-tabular { font-variant-numeric: tabular-nums; }
 
-.grid { display: grid; gap: var(--space-3); }
+.grid { display: grid; gap: var(--space-4); }
 .grid > * { min-width: 0; }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.row { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.row { display: flex; gap: var(--space-2); row-gap: 10px; align-items: center; flex-wrap: wrap; }
 .row.between { justify-content: space-between; }
-.stack { display: flex; flex-direction: column; gap: var(--space-2); }
+.stack { display: flex; flex-direction: column; gap: var(--space-3); }
 .spacer { flex: 1; }
-.mt { margin-top: var(--space-3); } .mt2 { margin-top: var(--space-5); } .mb { margin-bottom: var(--space-3); }
+.mt { margin-top: var(--space-4); } .mt2 { margin-top: var(--space-6); } .mb { margin-bottom: var(--space-4); }
+.nowrap { white-space: nowrap; }
 @media (max-width: 1100px) {
   .g4, .g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

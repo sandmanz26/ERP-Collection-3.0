@@ -1,14 +1,17 @@
 /* organisms layer — complex, self-contained sections */
-.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--space-4); min-width: 0; overflow-x: auto; }
-.card + .card { margin-top: 14px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--space-5); min-width: 0; overflow-x: auto; }
+.card + .card { margin-top: var(--space-4); }
 .grid > .card { margin-top: 0; }
-.card-head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.card-head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap; }
 .card-head h3 { margin: 0; flex: 1; }
-.card.compact { padding: 10px; }
+.card.compact { padding: 12px 14px; }
 
-table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
-table.t th { text-align: left; font-weight: var(--weight-semibold); color: var(--color-ink-2); font-size: 12px; padding: 7px var(--space-2); border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); position: sticky; top: 0; }
-table.t td { padding: 7px var(--space-2); border-bottom: 1px solid var(--color-border-subtle); vertical-align: top; }
+table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.45; }
+table.t th { text-align: left; font-weight: var(--weight-semibold); color: var(--color-ink-2); font-size: 12px; padding: 10px var(--space-3); border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); position: sticky; top: 0; white-space: nowrap; }
+table.t td { padding: 11px var(--space-3); border-bottom: 1px solid var(--color-border-subtle); vertical-align: middle; }
+table.t td .cell-sub { display: block; margin-top: 2px; font-size: var(--text-sm); color: var(--color-ink-3); font-weight: var(--weight-regular); white-space: normal; }
+table.t td a.cell-sub:hover { color: var(--color-brand); }
+table.t td time, table.t td.date { white-space: nowrap; }
 table.t tr:hover td { background: var(--color-row-hover); }
 table.t td.num, table.t th.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.t tfoot td { font-weight: var(--weight-bold); border-top: 2px solid var(--color-border); }
@@ -22,13 +25,21 @@ table.t tfoot td { font-weight: var(--weight-bold); border-top: 2px solid var(--
 .modal-body { padding: 18px; }
 .modal-foot { padding: var(--space-3) 18px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: var(--space-2); position: sticky; bottom: 0; background: var(--color-surface); }
 
-.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: var(--space-3); overflow-x: auto; padding-bottom: var(--space-2); }
-.kcol { background: var(--color-surface-sunken); border-radius: var(--radius-lg); padding: 10px; min-height: 200px; }
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(268px, 1fr); gap: var(--space-4); overflow-x: auto; padding-bottom: var(--space-2); }
+.kcol { background: var(--color-surface-sunken); border-radius: var(--radius-lg); padding: 14px; min-height: 200px; }
 .kcol.dragover { outline: 2px dashed var(--color-brand); }
 .kcol h4 { display: flex; justify-content: space-between; }
-.kcard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px; margin-top: var(--space-2); cursor: grab; box-shadow: var(--shadow-sm); }
+.kcard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px; margin-top: var(--space-3); cursor: grab; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
 .kcard:hover { border-color: var(--color-brand-tint); }
-.kcard .title { font-weight: var(--weight-semibold); }
+.kcard .title { font-weight: var(--weight-semibold); line-height: 1.35; }
+.kcol-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0; }
+.kcol-sum { font-size: var(--text-xs); color: var(--color-ink-3); margin-top: 4px; padding-bottom: 2px; }
+.kcard-meta { font-size: var(--text-sm); color: var(--color-ink-2); }
+.kcard-meta .sep { margin: 0 6px; color: var(--color-ink-3); }
+.kcard-money { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.kcard-money b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.kcard-next { font-size: var(--text-xs); color: var(--color-ink-2); background: var(--color-surface-2); border-radius: var(--radius-sm); padding: 6px 8px; line-height: 1.45; }
+.kcard-actions { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--color-border-subtle); }
 
 .lifecycle { display: flex; overflow-x: auto; margin-bottom: 14px; }
 .lifecycle .st { flex: 1; min-width: 92px; text-align: center; font-size: 11px; padding: var(--space-2) var(--space-1); background: var(--color-surface-sunken); color: var(--color-ink-3); border-right: 2px solid var(--color-bg); }
@@ -275,3 +286,9 @@ tr.row-cancelled td { opacity: .6; } tr.row-cancelled td:first-child b { text-de
 .jmap-marker { width: 18px; height: 18px; border-radius: 50%; background: var(--color-brand); border: 3px solid var(--color-surface); box-shadow: 0 0 0 0 rgba(106, 69, 245, .5); animation: jmap-pulse 2s ease-out infinite; margin-bottom: -9px; }
 @keyframes jmap-pulse { 0% { box-shadow: 0 0 0 0 rgba(106, 69, 245, .45); } 70% { box-shadow: 0 0 0 14px rgba(106, 69, 245, 0); } 100% { box-shadow: 0 0 0 0 rgba(106, 69, 245, 0); } }
 @media (prefers-reduced-motion: reduce) { .jmap-marker { animation: none; } }
+
+/* action cells: buttons side by side, never squeezing the data columns */
+table.t td > .row { flex-wrap: nowrap; }
+/* page sections inside long pages (event cockpit): a quiet label + air above, so the eye can rest */
+.section-title { font-family: var(--font-sans); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-ink-3); font-weight: var(--weight-semibold); margin: 24px 0 -4px; }
+table.t td.nowrap .cell-sub { white-space: nowrap; }
