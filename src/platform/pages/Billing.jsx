@@ -3,7 +3,7 @@ import { Card, Badge, Button, Alert, Field, Modal, ProgressBar, Callout, Icon, u
 import { useStore } from '../../store/AppStore.jsx';
 import { usePlatform, useWorkspace } from '../PlatformStore.jsx';
 import { usage } from '../entitlements.js';
-import { PLATFORM, PLANS, planById, planPrice, BRAND_COLORS, FEATURES } from '../plans.js';
+import { PLATFORM, PLANS, planById, planPrice, BRAND_COLORS, DEFAULT_BRAND, FEATURES } from '../plans.js';
 import { slugify } from '../workspace.js';
 import { fmtMoney } from '../../lib/money.js';
 import { fmtDate } from '../../lib/dates.js';
@@ -160,10 +160,11 @@ function BrandingCard() {
   const { ent } = useWorkspace();
   const [msg, setMsg] = useState(state.settings.company.portalWelcome ?? '');
   const can = ent.features.has('branding');
+  const current = BRAND_COLORS.some((b) => b.id === state.settings.company.brandColor) ? state.settings.company.brandColor : DEFAULT_BRAND;
   return (
     <Card title="Branding" actions={!can && <Badge tone="brand">Studio+</Badge>}>
       <div className="swatches" role="radiogroup" aria-label="Brand color">
-        {BRAND_COLORS.map((b) => <button key={b.id} type="button" role="radio" aria-checked={state.settings.company.brandColor === b.id} aria-label={b.label} disabled={!can} className={`swatch-btn ${(state.settings.company.brandColor ?? 'violet') === b.id ? 'on' : ''}`} style={{ background: b.brand, opacity: can ? 1 : 0.4 }} onClick={() => act('BRANDING_SET', { brandColor: b.id })} />)}
+        {BRAND_COLORS.map((b) => <button key={b.id} type="button" role="radio" aria-checked={current === b.id} aria-label={b.label} disabled={!can} className={`swatch-btn ${current === b.id ? 'on' : ''}`} style={{ background: b.brand, opacity: can ? 1 : 0.4 }} onClick={() => act('BRANDING_SET', { brandColor: b.id })} />)}
       </div>
       <Field label="Client portal welcome message" style={{ marginTop: 12 }}><textarea rows={2} value={msg} disabled={!can} maxLength={280} onChange={(e) => setMsg(e.target.value)} /></Field>
       <Button className="mt" disabled={!can || msg === (state.settings.company.portalWelcome ?? '')} onClick={() => act('BRANDING_SET', { portalWelcome: msg })}>Save message</Button>

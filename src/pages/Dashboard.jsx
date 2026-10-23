@@ -100,7 +100,7 @@ export default function Dashboard() {
       </section>
 
       <section className="dash-section">
-        <div className="grid g2">
+        <div className="grid g2 top">
           <Card title="Needs your attention" actions={<Badge>{attention.length}</Badge>}>
             <AttentionList max={5} items={[...attention].sort((a, b) => (a.tone === 'danger' ? 0 : 1) - (b.tone === 'danger' ? 0 : 1))} />
           </Card>
@@ -108,14 +108,14 @@ export default function Dashboard() {
             <Card title="Receivables due in 14 days" actions={<Link to="/finance">Finance →</Link>}>
               {dueSoon.length === 0 ? <EmptyState>Nothing due</EmptyState> : (
                 <table className="t"><thead><tr><th>Due</th><th>Invoice · event</th><th className="num">Balance</th></tr></thead>
-                  <tbody>{dueSoon.slice(0, 6).map(({ i, e, bal }) => <tr key={i.id}><td className="nowrap">{fmtDate(i.dueDate, { year: undefined })}</td><td>{i.number}<Link className="cell-sub" to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody>
+                  <tbody>{dueSoon.slice(0, 5).map(({ i, e, bal }) => <tr key={i.id}><td className="nowrap">{fmtDate(i.dueDate, { year: undefined })}</td><td>{i.number}<Link className="cell-sub" to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody>
                 </table>
               )}
             </Card>
           ) : role === 'production' ? (
             <Card title="Upcoming load-ins">
               <table className="t"><thead><tr><th>Load-in</th><th>Vendor · event</th></tr></thead>
-                <tbody>{loadIns.slice(0, 6).map(({ b, e }) => <tr key={b.id}><td className="nowrap">{fmtDate(b.loadIn.slice(0, 10), { year: undefined })} · {b.loadIn.slice(11, 16)}</td><td>{state.vendors.find((v) => v.id === b.vendorId)?.name}<Link className="cell-sub" to={`/events/${e.id}?tab=ros`}>{e.name} · {b.onsiteContact}</Link></td></tr>)}</tbody>
+                <tbody>{loadIns.slice(0, 5).map(({ b, e }) => <tr key={b.id}><td className="nowrap">{fmtDate(b.loadIn.slice(0, 10), { year: undefined })} · {b.loadIn.slice(11, 16)}</td><td>{state.vendors.find((v) => v.id === b.vendorId)?.name}<Link className="cell-sub" to={`/events/${e.id}?tab=ros`}>{e.name} · {b.onsiteContact}</Link></td></tr>)}</tbody>
               </table>
             </Card>
           ) : (
@@ -123,7 +123,7 @@ export default function Dashboard() {
               {upcoming.length === 0 ? <EmptyState>No booked events ahead</EmptyState> : (
                 <table className="t">
                   <thead><tr><th>When</th><th>Event</th><th>Status</th></tr></thead>
-                  <tbody>{upcoming.slice(0, 6).map((e) => (
+                  <tbody>{upcoming.slice(0, 5).map((e) => (
                     <tr key={e.id} className="clickable" onClick={() => nav(`/events/${e.id}`)}>
                       <td className="nowrap"><b>{fmtDate(e.date, { year: undefined })}</b><span className="cell-sub">in {diffDays(today, e.date)} days</span></td>
                       <td><Link to={`/events/${e.id}`} onClick={(x) => x.stopPropagation()}>{e.name}</Link><span className="cell-sub">{e.venue?.name}</span></td>
@@ -138,12 +138,12 @@ export default function Dashboard() {
       </section>
 
       <section className="dash-section">
-        <div className="grid g2">
-          <Card title="Due in the next 14 days" actions={tasks.length > 6 && <Link to="/events">{tasks.length} tasks →</Link>}>
+        <div className="grid g2 top">
+          <Card title="Due in the next 14 days" actions={tasks.length > 5 && <Link to="/events">{tasks.length} tasks →</Link>}>
             {tasks.length === 0 ? <EmptyState>No tasks due</EmptyState> : (
               <table className="t">
                 <thead><tr><th>Due</th><th>Task</th></tr></thead>
-                <tbody>{tasks.slice(0, 6).map((t) => (
+                <tbody>{tasks.slice(0, 5).map((t) => (
                   <tr key={t.id}><td className={`nowrap ${t.dueDate < today ? 'text-danger' : ''}`}>{fmtDate(t.dueDate, { year: undefined })}{t.dueDate < today && <span className="cell-sub">overdue</span>}</td><td>{t.title}<Link className="cell-sub" to={`/events/${t.ev.id}?tab=planning`}>{t.ev.name}</Link></td></tr>
                 ))}</tbody>
               </table>

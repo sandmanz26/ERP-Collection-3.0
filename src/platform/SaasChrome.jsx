@@ -5,7 +5,7 @@ import { Button, Icon, Card, ProgressBar } from '../design-system/index.js';
 import { useStore } from '../store/AppStore.jsx';
 import { useWorkspace } from './PlatformStore.jsx';
 import { FEATURES, PLANS } from './plans.js';
-import { SEAT_ROLES } from './plans.js';
+import { SEAT_ROLES, BRAND_COLORS, DEFAULT_BRAND } from './plans.js';
 
 /** Trial countdown, read-only, past-due or scheduled-cancel notice — shown to everyone in the workspace. */
 export function SubscriptionBanner() {
@@ -60,7 +60,7 @@ export function GettingStarted() {
     { id: 'proposal', title: 'Send a proposal', hint: 'Clients pick extras and accept online', done: state.events.some((e) => e.proposals.some((p) => ['active', 'accepted'].includes(p.status))), go: () => nav(state.events[0] ? `/events/${state.events[0].id}?tab=proposal` : '/pipeline') },
     { id: 'vendors', title: 'Add vendors you work with', hint: 'Florists, caterers, AV, agencies', done: state.vendors.length > 0, go: () => nav('/vendors') },
     { id: 'payments', title: 'Accept online payments', hint: 'Connect Stripe (test mode)', done: !!s.paymentsConnected, action: () => act('PAYMENTS_CONNECT', { provider: 'stripe' }) },
-    { id: 'brand', title: 'Brand your client portal', hint: 'Colors & welcome message', done: !!(s.company.brandColor && s.company.brandColor !== 'violet') || !!s.company.portalWelcome, go: () => nav('/settings?tab=billing') },
+    { id: 'brand', title: 'Brand your client portal', hint: 'Colors & welcome message', done: !!(s.company.brandColor && BRAND_COLORS.some((b) => b.id === s.company.brandColor && b.id !== DEFAULT_BRAND)) || !!s.company.portalWelcome, go: () => nav('/settings?tab=billing') },
   ];
   const done = items.filter((i) => i.done).length;
   if (done === items.length) return null;

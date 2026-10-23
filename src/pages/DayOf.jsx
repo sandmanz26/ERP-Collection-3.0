@@ -55,7 +55,7 @@ export default function DayOf() {
                 <div className="mt">
                   {items.map((i) => (
                     <div key={i.id} className={`timeline-item ${i.liveStatus}`}>
-                      <div className="time">{i.start}<div className="faint" style={{ fontSize: 10, fontWeight: 400 }}>→{addMinutes(i.start, i.duration)}</div></div>
+                      <div className="time">{i.start}<div className="faint" style={{ fontSize: 11.5, fontWeight: 400 }}>→{addMinutes(i.start, i.duration)}</div></div>
                       <div>
                         <b>{i.activity}</b> {i.track === 'production' && <Badge tone="warn">prod</Badge>}
                         <div className="faint" style={{ fontSize: 11.5 }}>{i.location} · {state.staff.find((s) => s.id === i.ownerStaffId)?.name}{i.cue && <> · <Icon name="music" size={11} /> {i.cue}</>}</div>
@@ -65,7 +65,7 @@ export default function DayOf() {
                           {i.liveStatus !== 'done' && <><Button size="sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 5 })}>+5</Button><Button size="sm" onClick={() => act('ROS_SHIFT', { eventId: ev.id, itemId: i.id, minutes: 15 })}>+15</Button></>}
                         </div>
                       </div>
-                      <div><StatusBadge status={i.liveStatus} />{i.delayedBy ? <div className="faint" style={{ fontSize: 10 }}>+{i.delayedBy}m</div> : null}</div>
+                      <div><StatusBadge status={i.liveStatus} />{i.delayedBy ? <div className="faint" style={{ fontSize: 11.5 }}>+{i.delayedBy}m</div> : null}</div>
                     </div>
                   ))}
                   {items.length === 0 && <div className="empty">Nothing assigned.</div>}

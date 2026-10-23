@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { StoreProvider, useStore } from '../store/AppStore.jsx';
 import { usePlatform, WorkspaceCtx, loadTenantState, readTenantState, saveTenantState } from './PlatformStore.jsx';
 import { entitlement, checkAction, hasFeature } from './entitlements.js';
-import { BRAND_COLORS } from './plans.js';
+import { BRAND_COLORS, DEFAULT_BRAND } from './plans.js';
 
 const App = lazy(() => import('../App.jsx')); // the event-management app loads only when a workspace is opened
 
@@ -41,7 +41,7 @@ function BrandSync({ ent }) {
   const id = state.settings.company.brandColor;
   useEffect(() => {
     const root = document.documentElement;
-    const c = hasFeature(ent, 'branding') && id && id !== 'violet' ? BRAND_COLORS.find((b) => b.id === id) : null;
+    const c = hasFeature(ent, 'branding') && id && id !== DEFAULT_BRAND ? BRAND_COLORS.find((b) => b.id === id) : null;
     const apply = () => {
       const dark = root.dataset.theme === 'dark' || (root.dataset.theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       if (!c) { ['--color-brand', '--color-brand-strong', '--color-brand-soft', '--color-brand-tint'].forEach((k) => root.style.removeProperty(k)); return; }

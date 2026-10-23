@@ -54,7 +54,8 @@ export function StatTile({ label, value, sub, tone }) {
   return (
     <div className="card stat">
       <div className="label">{label}</div>
-      <div className="value" style={tone ? { color: `var(--color-${{ ok: 'success', warn: 'warning' }[tone] ?? tone})` } : undefined}>{value}</div>
+      {/* colour only says bad news; a good or zero state stays in ink (taste-skill: no status colour on a zero) */}
+      <div className="value" style={tone && tone !== 'ok' ? { color: `var(--color-${{ warn: 'warning' }[tone] ?? tone})` } : undefined}>{value}</div>
       {sub && <div className="sub">{sub}</div>}
     </div>
   );
@@ -164,7 +165,7 @@ export function Callout({ tone = 'info', icon = 'info', title, children, action,
         <div className="callout-title">{title}</div>
         {children && <div className="callout-text">{children}</div>}
       </div>
-      {action && <button type="button" className={`btn sm ${tone === 'danger' ? 'primary' : ''} callout-action`} onClick={action.onClick}>{action.label}<Icon name="chevron" size={13} /></button>}
+      {action && <button type="button" className="btn sm callout-action" onClick={action.onClick}>{action.label}<Icon name="chevron" size={13} /></button>}
     </div>
   );
 }

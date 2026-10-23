@@ -29,7 +29,7 @@ export default function Pipeline() {
     const names = ['Taylor Brooks', 'Jordan Reyes', 'Morgan Ellis', 'Casey Nguyen', 'Riley Patel'];
     const n = names[Math.floor(Math.random() * names.length)];
     const d = new Date(); d.setDate(d.getDate() + 120 + Math.floor(Math.random() * 200)); while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
-    act('LEAD_CREATE', { name: `${n.split(' ')[1]} Wedding`, eventTypeId: 'wedding', clientName: n, email: `${n.split(' ')[0].toLowerCase()}@example.com`, source: m, date: d.toISOString().slice(0, 10), guestCount: 80 + Math.floor(Math.random() * 120), budget: 40000 + Math.floor(Math.random() * 80) * 1000, message: `Parsed from ${m} lead notification email` }, { system: true });
+    act('LEAD_CREATE', { name: `${n.split(' ')[1]} Wedding`, eventTypeId: 'wedding', clientName: n, email: `${n.split(' ')[0].toLowerCase()}@gmail.com`, source: m, date: d.toISOString().slice(0, 10), guestCount: 80 + Math.floor(Math.random() * 120), budget: 40000 + Math.floor(Math.random() * 80) * 1000, message: `Parsed from ${m} lead notification email` }, { system: true });
   };
   const value = (e) => proposalTotals(state, e)?.total ?? e.budget ?? 0;
 

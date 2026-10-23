@@ -5,7 +5,7 @@ import { convert } from '../lib/money.js';
 import { reducer } from '../store/reducer.js';
 import { FX_RATES_TO_USD, JURISDICTIONS, CATALOG, PAYMENT_SCHEDULES, CANCELLATION_POLICIES, CONTRACT_TEMPLATES, EVENT_TYPES, LEAD_SOURCES, EMAIL_TEMPLATES, AUTOMATIONS, ACCOUNT_MAPPING } from '../data/config.js';
 import { RISK_DEFAULTS } from '../lib/risk.js';
-import { regionById, RESERVED_SLUGS, BRAND_COLORS } from './plans.js';
+import { regionById, RESERVED_SLUGS, BRAND_COLORS, DEFAULT_BRAND } from './plans.js';
 
 export const STATE_VERSION = 6;
 
@@ -43,7 +43,7 @@ export const DEFAULT_PROFILE = {
   lateFeePct: 1.5,
   jurisdictionId: null,
   invites: [],
-  brandColor: 'violet',
+  brandColor: DEFAULT_BRAND,
   portalWelcome: '',
   sample: true,
 };
@@ -67,7 +67,7 @@ export function buildWorkspace({ owner, company, profile: p0 = {} }, today = tod
   const settings = {
     company: {
       name: company.name, country: region.country, state: '', euVatCountry: region.vat ? region.country : null, baseCurrency: cur, address: '',
-      timezone: region.timezone, brandColor: BRAND_COLORS.some((b) => b.id === p.brandColor) ? p.brandColor : 'violet', portalWelcome: p.portalWelcome || '',
+      timezone: region.timezone, brandColor: BRAND_COLORS.some((b) => b.id === p.brandColor) ? p.brandColor : DEFAULT_BRAND, portalWelcome: p.portalWelcome || '',
     },
     fxRates: FX_RATES_TO_USD,
     jurisdictions,
@@ -129,7 +129,7 @@ function addSampleEvent(state, today) {
   const run = (s, type, payload) => reducer(s, { type, payload });
   let s = run(state, 'LEAD_CREATE', {
     name: `Sample — ${et.segment === 'social' ? 'Rivera & Tan Wedding' : 'Northstar Annual Kickoff'}`, eventTypeId: et.id, clientName: et.segment === 'social' ? 'Maya Rivera & Daniel Tan (sample)' : 'Northstar Ltd. (sample)',
-    clientType: et.segment === 'social' ? 'individual' : 'company', email: 'sample.client@example.com', source: state.settings.leadSources[0], date, guestCount: 120,
+    clientType: et.segment === 'social' ? 'individual' : 'company', email: 'sample.client@gmail.com', source: state.settings.leadSources[0], date, guestCount: 120,
     budget: nicePrice(convert(60000, 'USD', cur, state.settings.fxRates)), venue: 'Garden venue (sample)', message: 'This is sample data to explore — delete it any time.',
   });
   const ev = s.events[0];

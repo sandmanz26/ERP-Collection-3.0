@@ -1,21 +1,22 @@
 /* base layer — reset, typography, layout utilities */
 * { box-sizing: border-box; }
-html { font-family: var(--font-sans); font-size: var(--text-md); line-height: 1.5; color: var(--color-ink); background: var(--color-bg); }
+button, input, select, textarea { font-family: inherit; }
+html { font-family: var(--font-sans); font-size: var(--text-md); line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; color: var(--color-ink); background: var(--color-bg); }
 body { margin: 0; background: var(--color-bg); }
 a { color: var(--color-brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
 h1, h2, h3, h4 { margin: 0 0 var(--space-2); line-height: 1.25; text-wrap: balance; }
 p { line-height: 1.55; }
-h1 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.005em; }
-h2 { font-family: var(--font-display); font-weight: 500; }
+h1 { font-weight: var(--weight-semibold); letter-spacing: -0.01em; }
+h2 { font-weight: var(--weight-semibold); }
 h3 { font-weight: var(--weight-semibold); }
-code, kbd, time { font-family: var(--font-mono); }
+code, kbd { font-family: var(--font-mono); }
 :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 ::selection { background: var(--color-brand-tint); }
 h1 { font-size: var(--text-2xl); }
-h2 { font-size: var(--text-xl); }
-h3 { font-size: var(--text-lg); }
-h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--color-ink-3); font-weight: var(--weight-semibold); }
+h2 { font-size: var(--text-lg); }
+h3 { font-size: 15px; }
+h4 { font-size: var(--text-sm); color: var(--color-ink-2); font-weight: var(--weight-semibold); }
 small, .muted { color: var(--color-ink-2); }
 .faint { color: var(--color-ink-3); }
 .text-xs { font-size: var(--text-xs); } .text-sm { font-size: var(--text-sm); }
@@ -34,6 +35,7 @@ small, .muted { color: var(--color-ink-2); }
 .spacer { flex: 1; }
 .mt { margin-top: var(--space-4); } .mt2 { margin-top: var(--space-6); } .mb { margin-bottom: var(--space-4); }
 .nowrap { white-space: nowrap; }
+.grid.top { align-items: start; }
 @media (max-width: 1100px) {
   .g4, .g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

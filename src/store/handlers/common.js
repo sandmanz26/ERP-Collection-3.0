@@ -51,7 +51,7 @@ export function automationsFor(state, trigger) {
 }
 
 export function clientEmail(state, ev) {
-  return state.clients.find((c) => c.id === ev.clientId)?.email ?? 'client@example.com';
+  return state.clients.find((c) => c.id === ev.clientId)?.email ?? 'client@gmail.com';
 }
 
 /** Hold release / expiry -> re-number remaining holds on the date and notify the new first hold. */

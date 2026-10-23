@@ -35,11 +35,11 @@ export default function DesignSystem() {
         </Section>
         <Section level="Tokens" title="Spacing, radius, type">
           <div className="row">{SPACE.map((s) => <div key={s} style={{ textAlign: 'center', fontSize: 11 }}><div style={{ width: `var(--space-${s})`, height: 24, background: 'var(--color-brand)' }} /><div className="faint">space-{s}</div></div>)}</div>
-          <div className="row">{['sm', 'md', 'lg', 'xl', 'pill'].map((r) => <div key={r} style={{ width: 48, height: 32, border: '1px solid var(--color-border)', borderRadius: `var(--radius-${r})`, display: 'grid', placeItems: 'center', fontSize: 10 }}>{r}</div>)}</div>
+          <div className="row">{['sm', 'md', 'lg', 'xl', 'pill'].map((r) => <div key={r} style={{ width: 48, height: 32, border: '1px solid var(--color-border)', borderRadius: `var(--radius-${r})`, display: 'grid', placeItems: 'center', fontSize: 11 }}>{r}</div>)}</div>
           <div><span style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>2xl</span> · <span style={{ fontSize: 'var(--text-xl)' }}>xl</span> · <span style={{ fontSize: 'var(--text-md)' }}>md</span> · <span style={{ fontSize: 'var(--text-xs)' }}>xs</span></div>
         </Section>
         <Section level="Atoms" title={`Icons (${ICON_NAMES.length}) — never emoji`}>
-          <div className="row" style={{ gap: 14 }}>{ICON_NAMES.map((n) => <span key={n} title={n} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: 56, fontSize: 10, color: 'var(--color-ink-3)' }}><Icon name={n} size={20} />{n}</span>)}</div>
+          <div className="row" style={{ gap: 14 }}>{ICON_NAMES.map((n) => <span key={n} title={n} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: 56, fontSize: 11, color: 'var(--color-ink-3)' }}><Icon name={n} size={20} />{n}</span>)}</div>
         </Section>
         <Section level="Molecules" title="Attention list">
           <AttentionList items={[{ tone: 'danger', icon: 'money', node: 'INV-1002 overdue since Oct 11' }, { tone: 'warning', icon: 'hourglass', node: 'Hold #1 expires tomorrow' }, { tone: 'info', icon: 'edit', node: 'CO-102 awaiting client approval' }]} />

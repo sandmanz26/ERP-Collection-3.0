@@ -67,7 +67,7 @@ function buildHouseholds({ count, categories, subEventIds, rsvpMix = 0.75, today
       name: `The ${last} ${size > 1 ? 'Family' : ''}`.trim(),
       code: `${last.slice(0, 3).toUpperCase()}${(1000 + i * 37 + seed).toString().slice(-4)}`,
       category: cat,
-      email: `${last.toLowerCase()}${i}@example.com`,
+      email: `${last.toLowerCase()}${i}@gmail.com`,
       invitedSubEventIds: invited,
       plusOnesAllowed: i % 5 === 0 ? 1 : 0,
       guests,
@@ -223,10 +223,10 @@ export function buildSeed() {
     { id: 'u_prod', name: 'Diego Santos', role: 'production', email: 'diego@lumiere.events' },
     { id: 'u_fin', name: 'Hannah Kim', role: 'finance', email: 'hannah@lumiere.events' },
     { id: 'u_crew', name: 'Jamal Brooks', role: 'crew', email: 'jamal@lumiere.events', staffId: 'st_jamal' },
-    { id: 'u_client1', name: 'Emily Carter', role: 'client', email: 'emily.carter@example.com', clientId: 'cl_carter', permissions: ['view_all', 'approve_costs', 'sign', 'pay', 'manage_guests', 'forms', 'message'] },
-    { id: 'u_client2', name: 'Robert Carter (father)', role: 'client', email: 'robert.carter@example.com', clientId: 'cl_carter', permissions: ['pay', 'sign', 'message'], payerScope: ['Catering'] },
-    { id: 'u_client3', name: 'Nina Patel (Acme EA)', role: 'client', email: 'nina@acmerobotics.com', clientId: 'cl_acme', permissions: ['manage_guests', 'forms', 'message'] },
-    { id: 'u_client4', name: 'David Lee (Acme VP)', role: 'client', email: 'david.lee@acmerobotics.com', clientId: 'cl_acme', permissions: ['view_all', 'approve_costs', 'sign', 'pay', 'message', 'manage_guests', 'forms'] },
+    { id: 'u_client1', name: 'Emily Carter', role: 'client', email: 'emily.carter@gmail.com', clientId: 'cl_carter', permissions: ['view_all', 'approve_costs', 'sign', 'pay', 'manage_guests', 'forms', 'message'] },
+    { id: 'u_client2', name: 'Robert Carter (father)', role: 'client', email: 'robert.carter@gmail.com', clientId: 'cl_carter', permissions: ['pay', 'sign', 'message'], payerScope: ['Catering'] },
+    { id: 'u_client3', name: 'Nina Patel (Halvorsen EA)', role: 'client', email: 'nina@halvorsenrobotics.com', clientId: 'cl_acme', permissions: ['manage_guests', 'forms', 'message'] },
+    { id: 'u_client4', name: 'David Lee (Halvorsen VP)', role: 'client', email: 'david.lee@halvorsenrobotics.com', clientId: 'cl_acme', permissions: ['view_all', 'approve_costs', 'sign', 'pay', 'message', 'manage_guests', 'forms'] },
     { id: 'u_vendor1', name: 'Bloom & Vine (Florist)', role: 'vendor', email: 'hello@bloomvine.com', vendorId: 'vd_bloom' },
     { id: 'u_vendor2', name: 'SoundWave AV', role: 'vendor', email: 'ops@soundwave.av', vendorId: 'vd_soundwave' },
     { id: 'u_vendor3', name: 'StaffPro Events (agency)', role: 'vendor', email: 'booking@staffpro.events', vendorId: 'vd_staffpro' },
@@ -239,16 +239,16 @@ export function buildSeed() {
 
   // ---------- Clients ----------
   const clients = [
-    { id: 'cl_carter', name: 'Emily Carter & James Walker', type: 'individual', email: 'emily.carter@example.com', phone: '+1 212 555 0101', country: 'US', decisionMakers: ['Emily Carter (bride)', 'James Walker (groom)', 'Robert & Linda Carter (parents, paying catering)'] },
-    { id: 'cl_acme', name: 'Acme Robotics Inc.', type: 'company', email: 'events@acmerobotics.com', phone: '+1 310 555 0144', country: 'US', vatId: '', billingAddress: '1 Innovation Way, Los Angeles, CA', decisionMakers: ['David Lee (VP Marketing, approver)', 'Karen Wu (Procurement, PO)', 'Nina Patel (EA, logistics)'] },
+    { id: 'cl_carter', name: 'Emily Carter & James Walker', type: 'individual', email: 'emily.carter@gmail.com', phone: '+1 212 555 0101', country: 'US', decisionMakers: ['Emily Carter (bride)', 'James Walker (groom)', 'Robert & Linda Carter (parents, paying catering)'] },
+    { id: 'cl_acme', name: 'Halvorsen Robotics Inc.', type: 'company', email: 'events@halvorsenrobotics.com', phone: '+1 310 555 0144', country: 'US', vatId: '', billingAddress: '1 Innovation Way, Los Angeles, CA', decisionMakers: ['David Lee (VP Marketing, approver)', 'Karen Wu (Procurement, PO)', 'Nina Patel (EA, logistics)'] },
     { id: 'cl_nordlicht', name: 'Nordlicht GmbH', type: 'company', email: 'events@nordlicht.de', phone: '+49 30 5550 1122', country: 'DE', vatId: 'DE298765432', billingAddress: 'Friedrichstraße 100, Berlin', decisionMakers: ['Anja Weber (Chief of Staff)', 'Procurement'] },
     { id: 'cl_laurent', name: 'Sophie Laurent & Marc Dubois', type: 'individual', email: 'sophie.laurent@example.fr', phone: '+33 6 55 12 34 56', country: 'FR', decisionMakers: ['Sophie Laurent', 'Marc Dubois'] },
-    { id: 'cl_harper', name: 'Diane Harper', type: 'individual', email: 'diane.harper@example.com', phone: '+1 305 555 0199', country: 'US', decisionMakers: ['Diane Harper'] },
+    { id: 'cl_harper', name: 'Diane Harper', type: 'individual', email: 'diane.harper@gmail.com', phone: '+1 305 555 0199', country: 'US', decisionMakers: ['Diane Harper'] },
     { id: 'cl_brightwave', name: 'Brightwave Media Ltd', type: 'company', email: 'studio@brightwave.co.uk', phone: '+44 20 5555 0188', country: 'GB', vatId: 'GB123456789', decisionMakers: ['Tom Hughes (CMO)'] },
-    { id: 'cl_nguyen', name: 'Kim Nguyen & Alex Rivera', type: 'individual', email: 'kim.nguyen@example.com', phone: '+1 512 555 0177', country: 'US', decisionMakers: ['Kim Nguyen', 'Alex Rivera'] },
-    { id: 'cl_okafor', name: 'Grace Okafor', type: 'individual', email: 'grace.okafor@example.com', phone: '+1 917 555 0133', country: 'US', decisionMakers: ['Grace Okafor'] },
+    { id: 'cl_nguyen', name: 'Kim Nguyen & Alex Rivera', type: 'individual', email: 'kim.nguyen@gmail.com', phone: '+1 512 555 0177', country: 'US', decisionMakers: ['Kim Nguyen', 'Alex Rivera'] },
+    { id: 'cl_okafor', name: 'Grace Okafor', type: 'individual', email: 'grace.okafor@gmail.com', phone: '+1 917 555 0133', country: 'US', decisionMakers: ['Grace Okafor'] },
     { id: 'cl_stellar', name: 'Stellar Bank N.A.', type: 'company', email: 'events@stellarbank.com', phone: '+1 212 555 0190', country: 'US', decisionMakers: ['Patricia Gomez (Events Director)', 'Finance Committee'] },
-    { id: 'cl_moss', name: 'Ethan Moss', type: 'individual', email: 'ethan.moss@example.com', phone: '+1 646 555 0111', country: 'US', decisionMakers: ['Ethan Moss'] },
+    { id: 'cl_moss', name: 'Ethan Moss', type: 'individual', email: 'ethan.moss@gmail.com', phone: '+1 646 555 0111', country: 'US', decisionMakers: ['Ethan Moss'] },
     { id: 'cl_rossi', name: 'Giulia Rossi', type: 'individual', email: 'giulia.rossi@example.it', phone: '+39 02 5555 1234', country: 'IT', decisionMakers: ['Giulia Rossi'] },
   ];
 
@@ -349,8 +349,8 @@ export function buildSeed() {
     const signDate = addDays(today, -135);
     const { contract, schedule } = makeContract({ ev, client, proposal: v2, totals, signDate, today, signers: [
       { name: 'Emily Carter', email: client.email, role: 'Client (bride)' },
-      { name: 'James Walker', email: 'james.walker@example.com', role: 'Client (groom)' },
-      { name: 'Robert Carter', email: 'robert.carter@example.com', role: 'Payer (father of bride)' },
+      { name: 'James Walker', email: 'james.walker@gmail.com', role: 'Client (groom)' },
+      { name: 'Robert Carter', email: 'robert.carter@gmail.com', role: 'Payer (father of bride)' },
     ] });
     ev.contract = contract;
     ev.payers = [
@@ -443,10 +443,10 @@ export function buildSeed() {
     events.push(ev);
   }
 
-  // ===== 2. Acme Robotics Summit (corporate conference, details locked) =====
+  // ===== 2. Halvorsen Robotics Summit (corporate conference, details locked) =====
   {
     const date = addDays(today, 40);
-    const ev = { id: 'ev_acme', name: 'Acme Robotics Annual Summit', eventTypeId: 'conference', segment: 'corporate', clientId: 'cl_acme', date, dateStatus: 'locked', stage: 'details_locked', source: 'Referral', plannerId: 'u_planner', salesId: 'u_sales2', guestCount: 300, budget: 260000, currency: 'USD', jurisdictionId: 'US-CA-LA', probability: 100, poNumber: 'PO-ACME-88412', createdAt: ts(today, -200), venue: { name: 'Pacific Hall Convention Center', address: '1201 S Figueroa St, Los Angeles, CA 90015', parking: 'Structure P2 validated; trucks via Pico Blvd dock', accessCode: 'Dock badge pickup at security', emergencyContact: 'Rachel Stone — +1 310 555 0355', nearestHospital: 'Good Samaritan Hospital — 1225 Wilshire Blvd (1.4 mi)', curfew: '23:00' }, ...emptyEventParts() };
+    const ev = { id: 'ev_acme', name: 'Halvorsen Robotics Annual Summit', eventTypeId: 'conference', segment: 'corporate', clientId: 'cl_acme', date, dateStatus: 'locked', stage: 'details_locked', source: 'Referral', plannerId: 'u_planner', salesId: 'u_sales2', guestCount: 300, budget: 260000, currency: 'USD', jurisdictionId: 'US-CA-LA', probability: 100, poNumber: 'PO-ACME-88412', createdAt: ts(today, -200), venue: { name: 'Pacific Hall Convention Center', address: '1201 S Figueroa St, Los Angeles, CA 90015', parking: 'Structure P2 validated; trucks via Pico Blvd dock', accessCode: 'Dock badge pickup at security', emergencyContact: 'Rachel Stone — +1 310 555 0355', nearestHospital: 'Good Samaritan Hospital — 1225 Wilshire Blvd (1.4 mi)', curfew: '23:00' }, ...emptyEventParts() };
     ev.subEvents = [
       { id: 'se_a1', name: 'Registration', date, venue: 'Pacific Hall', room: 'Lobby', start: '07:30', end: '09:00', guestCount: 300 },
       { id: 'se_a2', name: 'Opening Keynote', date, venue: 'Pacific Hall', room: 'Hall A', start: '09:00', end: '10:30', guestCount: 300 },
@@ -459,22 +459,22 @@ export function buildSeed() {
     const client = clients[1];
     const totals = totalsOf(v1, client);
     const signDate = addDays(today, -170);
-    const { contract, schedule } = makeContract({ ev, client, proposal: v1, totals, signDate, today, signers: [{ name: 'David Lee', email: 'david.lee@acmerobotics.com', role: 'VP Marketing (approver)' }, { name: 'Karen Wu', email: 'karen.wu@acmerobotics.com', role: 'Procurement' }] });
+    const { contract, schedule } = makeContract({ ev, client, proposal: v1, totals, signDate, today, signers: [{ name: 'David Lee', email: 'david.lee@halvorsenrobotics.com', role: 'VP Marketing (approver)' }, { name: 'Karen Wu', email: 'karen.wu@halvorsenrobotics.com', role: 'Procurement' }] });
     ev.contract = contract;
     ev.paymentSchedule = schedule;
-    ev.payers = [{ id: 'py_acme', name: 'Acme Robotics AP', userId: 'u_client4', categories: [] }];
+    ev.payers = [{ id: 'py_acme', name: 'Halvorsen Robotics AP', userId: 'u_client4', categories: [] }];
     const r1 = invoiceFor(schedule[0], ev, today, { paid: true, payerId: 'py_acme', method: 'ach' });
     ev.invoices = [r1.inv];
     ev.payments = r1.payments;
     ev.approvals = [
       { id: id('apr'), step: 'Budget owner', by: 'David Lee', at: ts(today, -172), status: 'approved' },
       { id: id('apr'), step: 'Procurement (PO issued)', by: 'Karen Wu', at: ts(today, -171), status: 'approved' },
-      { id: id('apr'), step: 'Finance — balance invoice', by: 'Acme AP', at: null, status: 'pending' },
+      { id: id('apr'), step: 'Finance — balance invoice', by: 'Halvorsen AP', at: null, status: 'pending' },
     ];
     ev.clientBudget = { Planning: 25000, Venue: 45000, Catering: 40000, AV: 60000, Registration: 5000, Transportation: 3000, Fees: 30000, Other: 12000 };
     ev.tasks = generateTasks(EVENT_TYPES[2].taskTemplate, date, id).map((t) => ({ ...t, status: t.dueDate < today ? 'done' : 'todo', assigneeId: t.assigneeType === 'client' ? 'u_client4' : 'st_ava' }));
     ev.forms = formsFor(EVENT_TYPES[2], true);
-    ev.households = buildAttendees({ count: 48, subEventIds: ['se_a1', 'se_a2', 'se_a3', 'se_a4'], today, company: 'acmerobotics.com' });
+    ev.households = buildAttendees({ count: 48, subEventIds: ['se_a1', 'se_a2', 'se_a3', 'se_a4'], today, company: 'halvorsenrobotics.com' });
     ev.finalHeadcount = 290;
     ev.vendorBookings = [
       { id: id('vb'), vendorId: 'vd_pacific', category: 'Venue', service: 'Hall A, Ballroom, 6 breakout rooms', qty: 1, cost: 38000, sellPrice: 42000, model: 'pass_through', markupPct: 10, minGuarantee: 250, contractedGuests: 300, commissionPct: 8, commissionAmount: 3040, commissionStatus: 'invoiced', status: 'confirmed', loadIn: `${addDays(date, -1)}T18:00`, loadOut: `${date}T23:00`, onsiteContact: 'Rachel — +1 310 555 0355', payments: [{ id: id('vp'), label: 'Deposit', dueDate: addDays(today, -150), amount: 19000, status: 'paid', paidAt: ts(today, -150), proofRef: 'WIRE-55120' }, { id: id('vp'), label: 'Balance', dueDate: addDays(date, -14), amount: 19000, status: 'scheduled' }], vendorInvoices: [], confirmedAt: ts(today, -160) },

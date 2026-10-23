@@ -33,7 +33,7 @@ npm run build    # static output in dist/
 | jamal@lumiere.events | Crew (freelance) | lands on Day-of mode |
 | mei@lumiere.events | Planner | *invited* — first sign-in activates |
 | tyler@lumiere.events | Sales | *suspended* — sign-in refused |
-| emily.carter@… · robert.carter@… · nina@acmerobotics.com · david.lee@acmerobotics.com | Client portal | different permissions |
+| emily.carter@… · robert.carter@… · nina@halvorsenrobotics.com · david.lee@halvorsenrobotics.com | Client portal | different permissions |
 | hello@bloomvine.com · ops@soundwave.av · booking@staffpro.events | Vendor / agency portal | |
 
 5 wrong passwords lock an e-mail for 15 minutes (admins can *Reset password* in Settings → Users). The user menu (top right) switches theme and offers a demo-only account switch.
@@ -79,7 +79,7 @@ Derived data (totals, tax, margin, headcount, leakage, closing) = lib/derived.js
 | `organisms/` | `Card`, `PageHeader`, `Modal`, `DialogProvider/useDialog`, `BarChart`, **`Gantt`** (+ `hourTicks`, `dayTicks`), **`CoverageChart`**, **`SitePlan`**, **`Stepper`** (clickable lifecycle: done/current/todo/exit), **`Timeline`** (vertical dated list grouped by period, with a Today divider), **`JourneyMap`** (road from first to last stop with a pulsing "You are here" pin; stops are buttons; scrolls sideways on phones and centers the pin) |
 | `templates/` | `PortalTemplate`, `MobileTemplate`, `PublicTemplate` (app shell: `src/components/AppShell.jsx`) |
 | `hooks/` | `useForm`, `download`, `printDocument`, `escapeHtml` |
-Fonts: self-hosted via `@fontsource` (Fraunces display, Hanken Grotesk UI, JetBrains Mono data), imported in `main.jsx`. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
+Fonts: self-hosted via `@fontsource` (IBM Plex Sans for everything, IBM Plex Mono for code/IDs only), imported in `main.jsx`. Visual style: taste-skill app style **framed sheet** (#040) — sidebar + top bar on one tinted frame, pages on a white sheet, colour only on data/status, lagoon accent `#1b6c80`, ink primary button, KPIs as one divided container. Rules in CONTEXT #040; don't reintroduce violet/indigo, uppercase micro-labels, tinted icon squares, card shadows or a dark sidebar. Theme: `state.theme` (system/light/dark) → `data-theme` on `<html>` (App.jsx).
 Rules: components reference tokens only (no literal colors in CSS); status colors (success/warning/danger/info) are reserved for state; add new atoms to the style guide page.
 
 ## 4b. Events are not projects — how the system models that
@@ -156,7 +156,7 @@ An event is a **one-day (or few-day) production assembled from many companies an
 4. **Carter–Walker Wedding**: seating (deliberate rule violation), budget (multiple payers), Change Orders (CO-102 pending), Vendors (Groove can't be confirmed — COI expired), Run of Show → call sheet, Guests → QR place cards.
 5. **Emily Carter (client)**: Overview (journey stepper, progress tiles, coming up, latest updates, contacts) → Timeline (road map + month list, Event day agenda) → To prepare (one list of everything due) → Payments (summary, payment plan, who pays what, pay invoices) → Team (planner team, vendors with arrival times, crew by department, venue). Approve CO-102, pay, forms, download proposal PDF. **Robert Carter**: only catering invoices. **Nina Patel**: guests only.
 6. **Bloom & Vine (vendor)**: submit an RFQ quote, tick the assigned task, see only its own run-of-show rows.
-7. **Acme Summit**: CO-103 exception → client approval rejected until admin *Grant exception approval*.
+7. **Halvorsen Summit**: CO-103 exception → client approval rejected until admin *Grant exception approval*.
 8. **Day-of Mobile**: start/done/+15 min, incident with photo, QR check-in, *simulate offline* → "pending sync" in Activity Log → reconnect.
 9. **Harper 50th** (post-event): pull Decor return report → bill damage → rate vendors → survey → Financial close.
 10. **Carter → Timeline**: planning Gantt (today/event markers, vendor lanes) → *Event days* → *By venue resource* shows the loading-dock clash; drag *Rental delivery* to 08:15 and watch the Production check clear. **People**: 13 open slots, assign Tom as stagehand, print QR credentials. **Site plan**: drag a table, assign a vendor.

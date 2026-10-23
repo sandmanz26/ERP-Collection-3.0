@@ -69,7 +69,7 @@ export default function Overview({ ev, et, open }) {
           </div>
           {sel.status === 'todo' && (
             <div className="text-sm">
-              <div className="faint text-xs" style={{ textTransform: 'uppercase', letterSpacing: '.08em' }}>To get here</div>
+              <div className="muted text-sm">To get here</div>
               {selReqs.length ? selReqs.map((r) => <div key={r}><Icon name="square" size={12} /> {r}</div>) : <div><Icon name="check" size={12} /> No extra requirements</div>}
             </div>
           )}

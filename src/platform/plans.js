@@ -78,9 +78,11 @@ export const REGIONS = [
 ];
 export const regionById = (id) => REGIONS.find((r) => r.id === id) ?? REGIONS[0];
 
-/** Brand colors a workspace can pick (curated so contrast stays accessible in both themes). */
+/** Brand colors a workspace can pick (curated so contrast stays accessible in both themes).
+ *  'lagoon' is the token default; an unknown id (e.g. the retired 'violet') falls back to it. */
+export const DEFAULT_BRAND = 'lagoon';
 export const BRAND_COLORS = [
-  { id: 'violet', label: 'Violet', brand: '#6a45f5', strong: '#4a2fd1' },
+  { id: 'lagoon', label: 'Lagoon', brand: '#1b6c80', strong: '#134f5e' }, // the product default (design tokens)
   { id: 'rose', label: 'Rose', brand: '#c2185b', strong: '#8e0f42' },
   { id: 'emerald', label: 'Emerald', brand: '#0f7a55', strong: '#0a5a3e' },
   { id: 'ocean', label: 'Ocean', brand: '#0b63c9', strong: '#084b99' },
