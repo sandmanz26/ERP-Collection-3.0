@@ -5,6 +5,7 @@ import { vendorCompliance } from '../../lib/derived.js';
 import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { round2, fmtMoney } from '../../lib/money.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
+import { RoomBlocksCard } from './ObligationPanels.jsx';
 
 export default function VendorsTab({ ev }) {
   const dialog = useDialog();
@@ -75,6 +76,7 @@ export default function VendorsTab({ ev }) {
           </table>
         </div>
       </Card>
+      <RoomBlocksCard ev={ev} />
       <Card title="Requests for quote (RFQ) — compare vendors">
         {ev.rfqs.length === 0 && <div className="faint">No RFQs yet.</div>}
         {ev.rfqs.map((r) => <RfqBlock key={r.id} ev={ev} r={r} />)}

@@ -66,15 +66,22 @@ export const guestHandlers = {
     return { summary: `Guest ${g.name} removed`, eventId };
   },
   /** RSVP per sub-event; can come from public RSVP page (by household code), portal or staff. */
-  RSVP_SET(ctx, { eventId, guestId, subEventId, value, meal, dietary, viaPublic }) {
+  RSVP_SET(ctx, { eventId, guestId, subEventId, value, meal, dietary, allergySeverity, viaPublic }) {
     const ev = ctx.ev(eventId);
     const deadline = addDays(ev.date, -ctx.state.settings.rsvpDeadlineDays);
     assert(!viaPublic || ctx.today <= deadline, `The RSVP deadline (${deadline}) has passed — please contact the hosts.`);
     const { h, g } = guestById(ev, guestId);
     assert(h.invitedSubEventIds.includes(subEventId), `${g.name} is not invited to this function`);
+    const se0 = ev.subEvents.find((s) => s.id === subEventId);
+    if (value === 'yes' && g.rsvp[subEventId] !== 'yes' && se0?.capacity) {
+      const yes = ev.households.flatMap((x) => x.guests).filter((x) => x.rsvp[subEventId] === 'yes').length;
+      // a public RSVP never pushes a room past its licensed (fire-code) capacity; staff see a warning instead
+      assert(!viaPublic || yes < se0.capacity, `${se0.name} is at capacity — please contact the hosts.`);
+    }
     g.rsvp[subEventId] = value;
     if (meal !== undefined) g.meal = meal;
     if (dietary !== undefined) g.dietary = dietary;
+    if (allergySeverity !== undefined) g.allergySeverity = allergySeverity || '';
     h.respondedAt = new Date().toISOString();
     const se = ev.subEvents.find((s) => s.id === subEventId);
     return { summary: `RSVP: ${g.name} → ${value.toUpperCase()} for ${se?.name}${meal ? `, meal ${meal}` : ''}`, eventId };

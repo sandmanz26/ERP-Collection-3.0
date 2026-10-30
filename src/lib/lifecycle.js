@@ -74,6 +74,9 @@ export function transitionBlockers(ev, to, ctx) {
     case 'event_day':
       if (ctx.finalPayment?.status === 'breach') blockers.push(`Final balance ${ctx.finalPayment.balance} unpaid after the cutoff (${ctx.finalPayment.cutoff}) — collect it or override with a reason`);
       if (ctx.vendorGaps?.length) blockers.push(...ctx.vendorGaps.map((g) => `No ${g.category} vendor — the booking was cancelled and not yet replaced`));
+      // safety & legal: a guest with a severe allergy, a room over its licensed capacity, an overdue permit
+      if (ctx.allergy?.severe.length && !ctx.allergy.signed) blockers.push(`Severe-allergy sheet not signed by the caterer${ctx.allergy.stale ? ' (changed since the last sign-off)' : ''}`);
+      (ctx.obligations || []).filter((o) => o.level === 'danger' && (o.area === 'capacity' || o.area === 'permit')).forEach((o) => blockers.push(o.text));
       break;
     case 'post_event':
       if (ev.date > ctx.today) blockers.push('Event date has not passed yet');

@@ -5,6 +5,7 @@ import BillingPanel from '../platform/pages/Billing.jsx';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Tabs, Badge, CommitInput, ConfirmButton, KeyValue, PillSelect, Button, useDialog, Icon, Avatar } from '../design-system/index.js';
 import { fmtDateTime } from '../lib/dates.js';
+import { RISK_DEFAULTS } from '../lib/risk.js';
 import { ROLES, CLIENT_PERMISSIONS, BUDGET_CATEGORIES } from '../data/config.js';
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -47,7 +48,7 @@ export default function Settings() {
             <label className="row"><input type="checkbox" checked={!!s.capacity.plannerBased} onChange={(e) => set('capacity', { ...s.capacity, plannerBased: e.target.checked }, 'planner-based capacity')} />Cap daily capacity by number of lead planners</label>
             <div className="row">Late fee % / month <CommitInput className="inline" type="number" value={s.lateFeePct} onCommit={(n) => set('lateFeePct', n)} /></div>
             <h4 className="mt">Risk rules</h4>
-            {[['finalPaymentCutoffDays', 'Final balance cutoff (T-days)'], ['leadResponseHours', 'Lead first-response SLA (hours)'], ['returnedPaymentFee', 'Returned-payment fee'], ['overtimeCrewMultiplier', 'Crew overtime multiplier'], ['overtimeMarkupPct', 'Overtime markup %'], ['weatherCallHours', 'Default weather call (hours before)'], ['vendorLateMinutes', 'Vendor late after (minutes)']].map(([k, l]) => <div key={k} className="row">{l} <CommitInput className="inline" type="number" value={s[k]} onCommit={(n) => set(k, n)} /></div>)}
+            {[['finalPaymentCutoffDays', 'Final balance cutoff (T-days)'], ['leadResponseHours', 'Lead first-response SLA (hours)'], ['returnedPaymentFee', 'Returned-payment fee'], ['overtimeCrewMultiplier', 'Crew overtime multiplier'], ['overtimeMarkupPct', 'Overtime markup %'], ['weatherCallHours', 'Default weather call (hours before)'], ['vendorLateMinutes', 'Vendor late after (minutes)'], ['guaranteeReductionPct', 'Max reduction after guarantee date (%)'], ['oversetPct', 'Kitchen overset (%)'], ['postponementFeePct', 'Postponement fee (% of contract)'], ['postponementMax', 'Postponements allowed per contract']].map(([k, l]) => <div key={k} className="row">{l} <CommitInput className="inline" type="number" value={s[k] ?? RISK_DEFAULTS[k]} onCommit={(n) => set(k, n)} /></div>)}
             <div className="row">Accounting provider <select value={s.accountingProvider} onChange={(e) => set('accountingProvider', e.target.value)}><option value="quickbooks">QuickBooks</option><option value="xero">Xero</option></select></div>
           </Card>
         </div>

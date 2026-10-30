@@ -1,14 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
-import { Card, StatTile, StageBadge, Badge, Money, PageHeader, EmptyState, Icon, AttentionList, Callout } from '../design-system/index.js';
+import { Card, StatTile, StageBadge, Badge, Money, PageHeader, EmptyState, Icon, AttentionList, Button, Runway } from '../design-system/index.js';
 import { useNavigate } from 'react-router-dom';
 import { fmtDate, diffDays, addDays, fmtDateTime } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { GettingStarted } from '../platform/SaasChrome.jsx';
 import { SALES_STAGES, ACTIVE_BOOKED_STAGES } from '../lib/lifecycle.js';
 import { productionIssues } from '../lib/timeline.js';
-import { priorities } from '../lib/eventGuide.js';
+import { priorities, nextActions } from '../lib/eventGuide.js';
 import { staffingSummary } from '../lib/workforce.js';
 import { eventFinancials, leakage, toBase, baseCurrency, vendorCompliance, proposalTotals, invoiceStatus, invoiceBalance, guaranteeWarnings } from '../lib/derived.js';
 
@@ -42,6 +42,11 @@ export default function Dashboard() {
   const conflicts = soon.flatMap((e) => productionIssues(state, e).filter((i) => i.level === 'danger' && i.kind !== 'staffing').map((i) => ({ i, e })));
   const converted = evs.filter((e) => e.contract?.immutable).length;
   const decided = converted + evs.filter((e) => e.stage === 'lost').length;
+
+  // runway: booked events and dates on hold in the next 120 days; red ring when the event has a danger next step
+  const runwayItems = evs.filter((e) => e.date && (ACTIVE_BOOKED_STAGES.includes(e.stage) || (SALES_STAGES.includes(e.stage) && state.holds.some((h) => h.eventId === e.id && h.status === 'active'))))
+    .filter((e) => role === 'admin' || role === 'finance' || [e.plannerId, e.salesId].includes(user.id) || role === 'production')
+    .map((e) => ({ id: e.id, date: e.date, label: e.name, kind: ACTIVE_BOOKED_STAGES.includes(e.stage) ? 'booked' : 'hold', alert: ACTIVE_BOOKED_STAGES.includes(e.stage) && nextActions(state, e, today).some((a) => a.severity === 'danger'), onClick: () => nav(`/events/${e.id}`) }));
 
   const KPIS = {
     pipeline: <StatTile key="p" label={`Weighted pipeline (${BASE})`} value={fmtMoney(pipeValue, BASE, { whole: true })} sub={`${pipeline.length} open deals`} />,
@@ -82,15 +87,31 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader title={`Good day, ${user.name.split(' ')[0]}`} subtitle={`${fmtDate(today, { weekday: 'long' })} · ${state.users.find((u) => u.id === user.id)?.role} view · ${upcoming.length} booked events ahead · ${pipeline.length} open deals`}
-        actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">+ New inquiry</Link>} />
+      <PageHeader title={`Good day, ${user.name.split(' ')[0]}`} subtitle={`${fmtDate(today, { weekday: 'long', year: undefined })}. ${upcoming.length} booked ${upcoming.length === 1 ? 'event' : 'events'} ahead and ${pipeline.length} open ${pipeline.length === 1 ? 'deal' : 'deals'}.`}
+        actions={['admin', 'sales'].includes(role) && <Link className="btn primary" to="/pipeline">New inquiry</Link>} />
+      <section className="dash-section runway-section" aria-label="Next 120 days">
+        <div className="dash-head"><h2>Next 120 days</h2>
+          <div className="runway-legend"><span><i />Booked</span><span><i className="rl-hold" />Date on hold</span><span><i className="rl-alert" />Needs attention</span></div>
+        </div>
+        <Runway today={today} days={120} items={runwayItems} />
+      </section>
       <GettingStarted />
       {top.length > 0 && (
         <section className="dash-section" aria-label="Today's priorities">
-          <div className="dash-head"><h2>Today's priorities</h2><span className="faint text-sm">Most urgent first · {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
-          <div className="grid g2">
-            {top.map((a, i) => <Callout key={i} tone={a.severity} icon={a.icon} meta={`${a.ev.name}${a.ev.date ? ` · ${fmtDate(a.ev.date)}` : ''}`} title={a.title} action={{ label: a.cta, onClick: () => nav(`/events/${a.ev.id}?tab=${a.tab}`) }}>{a.detail}</Callout>)}
-          </div>
+          <div className="dash-head"><h2>Today's priorities</h2><span className="faint text-sm">Most urgent first, across {role === 'admin' || role === 'finance' ? 'all events' : 'your events'}</span></div>
+          <Card className="prio">
+            {top.map((a, i) => (
+              <div key={i} className={`prio-row prio-${a.severity}`}>
+                <span className="callout-icon"><Icon name={a.icon} size={17} /></span>
+                <div>
+                  <div className="prio-event">{a.ev.name}{a.ev.date ? `, ${fmtDate(a.ev.date)}` : ''}</div>
+                  <div className="prio-title">{a.title}</div>
+                  {a.detail && <div className="prio-detail">{a.detail}</div>}
+                </div>
+                <Button size="sm" onClick={() => nav(`/events/${a.ev.id}?tab=${a.tab}`)}>{a.cta}</Button>
+              </div>
+            ))}
+          </Card>
         </section>
       )}
 
@@ -105,7 +126,7 @@ export default function Dashboard() {
             <AttentionList max={5} items={[...attention].sort((a, b) => (a.tone === 'danger' ? 0 : 1) - (b.tone === 'danger' ? 0 : 1))} />
           </Card>
           {role === 'finance' ? (
-            <Card title="Receivables due in 14 days" actions={<Link to="/finance">Finance →</Link>}>
+            <Card title="Receivables due in 14 days" actions={<Link to="/finance">Open finance</Link>}>
               {dueSoon.length === 0 ? <EmptyState>Nothing due</EmptyState> : (
                 <table className="t"><thead><tr><th>Due</th><th>Invoice · event</th><th className="num">Balance</th></tr></thead>
                   <tbody>{dueSoon.slice(0, 5).map(({ i, e, bal }) => <tr key={i.id}><td className="nowrap">{fmtDate(i.dueDate, { year: undefined })}</td><td>{i.number}<Link className="cell-sub" to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td className="num"><Money value={bal} currency={i.currency} /></td></tr>)}</tbody>
@@ -119,7 +140,7 @@ export default function Dashboard() {
               </table>
             </Card>
           ) : (
-            <Card title="Upcoming events" actions={<Link to="/events">All events →</Link>}>
+            <Card title="Upcoming events" actions={<Link to="/events">All events</Link>}>
               {upcoming.length === 0 ? <EmptyState>No booked events ahead</EmptyState> : (
                 <table className="t">
                   <thead><tr><th>When</th><th>Event</th><th>Status</th></tr></thead>
@@ -139,7 +160,7 @@ export default function Dashboard() {
 
       <section className="dash-section">
         <div className="grid g2 top">
-          <Card title="Due in the next 14 days" actions={tasks.length > 5 && <Link to="/events">{tasks.length} tasks →</Link>}>
+          <Card title="Due in the next 14 days" actions={tasks.length > 5 && <Link to="/events">All {tasks.length} tasks</Link>}>
             {tasks.length === 0 ? <EmptyState>No tasks due</EmptyState> : (
               <table className="t">
                 <thead><tr><th>Due</th><th>Task</th></tr></thead>
@@ -149,7 +170,7 @@ export default function Dashboard() {
               </table>
             )}
           </Card>
-          <Card title="Revenue leakage" actions={<Link to="/reports">Reports →</Link>}>
+          <Card title="Revenue leakage" actions={<Link to="/reports">Open reports</Link>}>
             {leaks.length === 0 ? <EmptyState>No leakage detected</EmptyState> : (
               <table className="t">
                 <thead><tr><th>Issue</th><th className="num">Amount</th></tr></thead>

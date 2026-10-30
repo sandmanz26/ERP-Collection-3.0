@@ -165,7 +165,7 @@ export function Callout({ tone = 'info', icon = 'info', title, children, action,
         <div className="callout-title">{title}</div>
         {children && <div className="callout-text">{children}</div>}
       </div>
-      {action && <button type="button" className="btn sm callout-action" onClick={action.onClick}>{action.label}<Icon name="chevron" size={13} /></button>}
+      {action && <button type="button" className="btn sm callout-action" onClick={action.onClick}>{action.label}</button>}
     </div>
   );
 }

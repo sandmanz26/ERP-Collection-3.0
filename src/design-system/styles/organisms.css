@@ -295,3 +295,66 @@ table.t td > .row { flex-wrap: nowrap; }
 /* page sections inside long pages (event cockpit): a sentence-case heading + air above, so the eye can rest */
 .section-title { font-size: 16px; color: var(--color-ink); font-weight: var(--weight-semibold); margin: 28px 0 -2px; }
 table.t td.nowrap .cell-sub { white-space: nowrap; }
+
+/* ---------- obligations: room blocks, allergy sheet, permits ---------- */
+.ob-list { display: flex; flex-direction: column; }
+.ob-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 0; border-top: 1px solid var(--color-border-subtle); }
+.ob-row:first-child { border-top: none; padding-top: 0; }
+.ob-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ob-title { display: flex; align-items: center; gap: 8px; }
+.ob-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ob-meter { position: relative; max-width: 420px; margin: 4px 0 2px; }
+.ob-meter .progress { height: 8px; }
+/* the attrition minimum as a 1px tick on the track — the line the pick-up has to cross */
+.ob-tick { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--color-ink); border-radius: 1px; }
+.ob-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin-bottom: 12px; border-radius: var(--radius-md); background: var(--color-surface-2); font-size: 13px; line-height: 1.5; }
+.ob-note .icon { margin-top: 2px; }
+.ob-note.ok .icon { color: var(--color-success); }
+.ob-note.warn .icon { color: var(--color-warning); }
+.ob-note.danger .icon { color: var(--color-danger); }
+table.t.compact td, table.t.compact th { padding: 7px 8px; }
+@media (max-width: 560px) { .ob-row { grid-template-columns: minmax(0, 1fr); } .ob-actions { justify-content: flex-start; } }
+/* functions editor: inputs fill their column so every column (incl. licensed capacity) fits the card */
+table.fn-table td { padding: 8px 6px; }
+table.fn-table input { width: 100%; min-width: 0; }
+table.fn-table input[type=date] { min-width: 130px; }
+table.fn-table input[type=time] { min-width: 96px; }
+table.fn-table input[type=number] { width: 72px; }
+
+/* ---------- runway: the next 120 days as one line (dashboard signature element) ---------- */
+.runway { position: relative; margin: 8px 0 0; padding-right: 10px; }
+.runway-axis { position: absolute; left: 0; right: 0; top: 14px; height: 2px; background: var(--color-border); border-radius: 1px; }
+.runway-today, .runway-month { position: absolute; top: 0; height: 30px; border-left: 1px solid var(--color-border); }
+.runway-today { border-left: 2px solid var(--color-ink); }
+.runway-today span, .runway-month span { position: absolute; top: -2px; left: 6px; font-size: 12px; color: var(--color-ink-3); white-space: nowrap; }
+.runway-today span { color: var(--color-ink); font-weight: var(--weight-semibold); }
+.runway-item { position: absolute; left: 0; top: 0; width: 100%; height: 100%; padding: 0; border: none; background: none; pointer-events: none; font: inherit; color: var(--color-ink); text-align: left; }
+.runway-dot { position: absolute; top: 8px; left: calc(var(--x) - 7px); width: 14px; height: 14px; border-radius: 50%; background: var(--color-brand); border: 2px solid var(--color-surface); box-shadow: 0 0 0 1px var(--color-brand); pointer-events: auto; cursor: pointer; }
+.runway-item.hold .runway-dot { background: var(--color-surface); box-shadow: 0 0 0 2px var(--color-brand); }
+.runway-item.is-alert .runway-dot { box-shadow: 0 0 0 2px var(--color-danger); }
+.runway-stem { position: absolute; left: var(--x); top: 22px; width: 1px; height: calc(14px + var(--lane) * 40px); background: var(--color-border); }
+.runway-label { position: absolute; left: var(--left); top: calc(36px + var(--lane) * 40px); display: flex; flex-direction: column; line-height: 1.3; padding: 0 6px; border-left: 2px solid var(--color-brand); pointer-events: auto; cursor: pointer; white-space: nowrap; }
+.runway-item.hold .runway-label { border-left-style: dashed; }
+.runway-item.is-alert .runway-label { border-left-color: var(--color-danger); }
+.runway-label b { font-size: 13px; font-weight: var(--weight-semibold); }
+.runway-label span { font-size: 12px; color: var(--color-ink-3); }
+.runway-item:hover .runway-label b, .runway-item:focus-visible .runway-label b { text-decoration: underline; }
+.runway-item:focus-visible { outline: none; }
+.runway-item:focus-visible .runway-dot { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.runway-empty { position: absolute; top: 34px; left: 0; color: var(--color-ink-3); font-size: 13px; }
+.runway-legend { display: flex; gap: 16px; font-size: 12px; color: var(--color-ink-3); }
+.runway-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--color-brand); }
+.runway-legend i.rl-hold { background: var(--color-surface); box-shadow: inset 0 0 0 2px var(--color-brand); }
+.runway-legend i.rl-alert { background: var(--color-surface); box-shadow: inset 0 0 0 2px var(--color-danger); }
+
+/* ---------- dashboard priorities: one list, not a grid of identical cards ---------- */
+.prio { padding: 0; }
+.prio-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 16px 20px; border-top: 1px solid var(--color-border-subtle); }
+.prio-row:first-child { border-top: none; }
+.prio-row .callout-icon { margin-top: 1px; }
+.prio-event { font-size: 12.5px; color: var(--color-ink-3); }
+.prio-title { font-weight: var(--weight-semibold); margin-top: 2px; }
+.prio-detail { font-size: 13px; color: var(--color-ink-2); margin-top: 2px; max-width: 72ch; }
+.prio-row .btn { align-self: center; }
+.prio-danger .callout-icon { color: var(--color-danger); } .prio-warning .callout-icon { color: var(--color-warning); } .prio-info .callout-icon { color: var(--color-info); }
+@media (max-width: 560px) { .prio-row { grid-template-columns: 18px minmax(0, 1fr); padding: 14px 16px; } .prio-row .btn { grid-column: 2; justify-self: start; } }

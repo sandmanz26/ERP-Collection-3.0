@@ -12,6 +12,10 @@ export const RISK_DEFAULTS = {
   overtimeMarkupPct: 20, // EO margin on crew overtime billed to the client
   weatherCallHours: 48, // default "rain call" before an outdoor function
   vendorLateMinutes: 15, // grace before a vendor counts as late for load-in
+  guaranteeReductionPct: 5, // after the guarantee date the count may drop at most this much (then only up)
+  oversetPct: 3, // kitchen prepares this many % above the guarantee
+  postponementFeePct: 10, // default rescheduling fee, % of the contract
+  postponementMax: 1, // postponements allowed by the contract (more need an admin)
 };
 const S = (state, k) => state.settings?.[k] ?? RISK_DEFAULTS[k];
 

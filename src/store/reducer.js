@@ -12,6 +12,7 @@ import { opsHandlers } from './handlers/ops.js';
 import { settingsHandlers } from './handlers/settings.js';
 import { workforceHandlers } from './handlers/workforce.js';
 import { riskHandlers } from './handlers/risk.js';
+import { obligationHandlers } from './handlers/obligations.js';
 
 export const HANDLERS = {
   ...systemHandlers,
@@ -25,6 +26,7 @@ export const HANDLERS = {
   ...settingsHandlers,
   ...workforceHandlers,
   ...riskHandlers,
+  ...obligationHandlers,
 };
 
 const MAX_LOG = 2000;

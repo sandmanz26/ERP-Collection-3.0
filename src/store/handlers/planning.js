@@ -2,6 +2,7 @@
 import { addDays, diffDays } from '../../lib/dates.js';
 import { generateTasks } from '../../lib/tasks.js';
 import { assert } from './common.js';
+import { guaranteeCheck } from '../../lib/obligations.js';
 
 export const planningHandlers = {
   /** Audit entry for generated/printed documents (invoice, proposal, badges, call sheet…). */
@@ -111,13 +112,21 @@ export const planningHandlers = {
     ev.approvals.push({ id: ctx.id('apr'), step, by: '', at: null, status: 'pending' });
     return { summary: `Client approval step added: ${step}`, eventId };
   },
-  FINAL_HEADCOUNT_SET(ctx, { eventId, count }) {
+  FINAL_HEADCOUNT_SET(ctx, { eventId, count, acknowledgeShortfall, override }) {
     const ev = ctx.ev(eventId);
     const deadline = addDays(ev.date, -ctx.state.settings.finalHeadcountDays);
     assert(ctx.today <= deadline || ctx.user.role === 'admin' || ev.finalHeadcount === null, `Final headcount deadline (${deadline}) passed — use a Change Order (exception) to change the count.`);
     const prev = ev.finalHeadcount;
-    ev.finalHeadcount = Number(count);
-    ev.decisions.unshift({ id: ctx.id('dec'), decision: `Final headcount confirmed: ${count}${prev ? ` (was ${prev})` : ''}`, decidedBy: ctx.user.name, approvedAt: new Date().toISOString(), recordedBy: ctx.user.id, reference: 'Final headcount' });
+    const n = Number(count);
+    assert(Number.isInteger(n) && n > 0, 'Headcount must be a whole number above 0');
+    const cap = Number(ev.venue?.capacity) || 0;
+    assert(!cap || n <= cap, `${n} guests exceeds the venue's licensed capacity of ${cap}`);
+    const g = guaranteeCheck(ctx.state, ev, n);
+    // after the guarantee date the count may only go up (beyond a small tolerance) — venues bill the guarantee
+    if (prev && ctx.today > deadline && g.reductionFloor && n < g.reductionFloor) assert(override && override.trim(), `After the guarantee date the count can drop at most ${g.reductionPct}% (to ${g.reductionFloor}). Record the venue's written agreement as the override reason.`);
+    assert(!g.shortfalls.length || acknowledgeShortfall, `Below the minimum guarantee: ${g.shortfalls.map((s) => `${s.category} ${s.min}`).join(', ')} — you will be billed for the minimum. Confirm to continue.`);
+    ev.finalHeadcount = n;
+    ev.decisions.unshift({ id: ctx.id('dec'), decision: `Final headcount confirmed: ${count}${prev ? ` (was ${prev})` : ''}${g.shortfalls.length ? ` — below guarantee, billed at ${g.shortfalls.map((s) => `${s.category} ${s.min}`).join(', ')}` : ''}${override ? ` — override: ${override}` : ''}`, decidedBy: ctx.user.name, approvedAt: new Date().toISOString(), recordedBy: ctx.user.id, reference: 'Final headcount' });
     return { summary: `Final headcount set to ${count} for ${ev.name}`, eventId };
   },
 };

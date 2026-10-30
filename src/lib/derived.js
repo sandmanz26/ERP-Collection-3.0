@@ -8,6 +8,7 @@ import { stageIndex } from './lifecycle.js';
 import { decorSnapshot } from './decorApi.js';
 import { workforceCost } from './workforce.js';
 import { custodyOpen, finalPaymentRisk, vendorGaps, vendorRefundsDue } from './risk.js';
+import { obligationIssues, allergySheet } from './obligations.js';
 
 export function eventType(state, ev) {
   return state.settings.eventTypes.find((t) => t.id === ev.eventTypeId);
@@ -185,6 +186,8 @@ export function eventContext(state, ev, today) {
     closingOpen: closingChecklist(state, ev, today).filter((c) => !c.done).map((c) => c.label),
     finalPayment: finalPaymentRisk(state, ev, today),
     vendorGaps: vendorGaps(ev),
+    obligations: obligationIssues(state, ev, today),
+    allergy: allergySheet(ev),
   };
 }
 

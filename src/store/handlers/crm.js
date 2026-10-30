@@ -4,6 +4,7 @@ import { nextPriority, availability } from '../../lib/availability.js';
 import { shiftTasks } from '../../lib/tasks.js';
 import { eventContext } from '../../lib/derived.js';
 import { assert, promoteHolds, runStageAutomations } from './common.js';
+import { postponementTerms } from '../../lib/obligations.js';
 
 function emptyParts() {
   return {
@@ -124,6 +125,9 @@ export const crmHandlers = {
     const ev = ctx.ev(eventId);
     const old = ev.date;
     assert(newDate && newDate !== old, 'Choose a new date');
+    const terms = postponementTerms(state, ev);
+    assert(terms.allowed || ctx.user.role === 'admin', `The contract allows ${terms.maxCount} postponement(s) and ${terms.used} already used — an admin must approve another one`);
+    assert(Number(fee || 0) >= 0, 'The fee cannot be negative');
     const av = availability(newDate, { events: state.events.filter((e) => e.id !== eventId), holds: state.holds.filter((h) => h.eventId !== eventId), capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
     assert(av.free > 0, `New date ${fmtDate(newDate)} has no capacity`);
     const delta = diffDays(old, newDate);

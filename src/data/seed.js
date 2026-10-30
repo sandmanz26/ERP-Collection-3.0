@@ -310,6 +310,10 @@ export function buildSeed() {
     leadResponseHours: 24,
     returnedPaymentFee: 35,
     overtimeCrewMultiplier: 1.5,
+    guaranteeReductionPct: 5,
+    oversetPct: 3,
+    postponementFeePct: 10,
+    postponementMax: 1,
     overtimeMarkupPct: 20,
     weatherCallHours: 48,
     vendorLateMinutes: 15,
@@ -659,6 +663,7 @@ export function buildSeed() {
   enrichCarter(events.find((e) => e.id === 'ev_carter'), today);
   enrichAcme(events.find((e) => e.id === 'ev_acme'), today);
   enrichRisk(events, today);
+  enrichObligations(events, today);
 
   const notifications = [
     { id: id('ntf'), ts: ts(today, 0, '08:00'), toRoles: ['planner', 'admin'], eventId: 'ev_carter', text: 'Vendor Groove Collective COI has EXPIRED — booking at risk for Carter–Walker Wedding.', read: false, level: 'danger' },
@@ -877,4 +882,26 @@ function synthHistory(ev, today) {
   });
   if (exits.includes(ev.stage)) hist.push({ stage: ev.stage, at: ev.cancellation?.at ?? `${addDays(created, 10) > today ? today : addDays(created, 10)}T10:00:00.000Z`, by: ev.plannerId ?? ev.salesId ?? 'system' });
   return hist;
+}
+
+/** Room blocks, venue capacity, a severe allergy and permits — the obligations outside the client contract. */
+function enrichObligations(events, today) {
+  const carter = events.find((e) => e.id === 'ev_carter');
+  if (carter) {
+    // destination-style block: 20 rooms × 2 nights, cutoff in 18 days, only 11 booked → 5 short of the 80% minimum
+    carter.roomBlocks = [{ id: 'rb_c1', hotel: 'Hotel Hugo', rooms: 20, nights: 2, rate: 289, currency: 'USD', cutoffDate: addDays(today, 18), attritionPct: 80, auditClause: true, pickedUp: 11, outsideBookings: 0, status: 'open', log: [] }];
+    carter.venue.capacity = 180;
+    const cap = { 'Welcome Dinner': 70, Ceremony: 180, 'Cocktail Hour': 180, Reception: 160, 'Farewell Brunch': 100 };
+    carter.subEvents.forEach((se) => { se.capacity = cap[se.name] ?? null; });
+    // one guest with an anaphylactic allergy, seated at a table
+    const seated = carter.households.flatMap((h) => h.guests).find((g) => g.tableId && /nut/i.test(g.dietary)) ?? carter.households.flatMap((h) => h.guests).find((g) => g.tableId);
+    if (seated) { seated.dietary = 'Peanut & tree-nut allergy (anaphylaxis, carries EpiPen)'; seated.allergySeverity = 'severe'; }
+    carter.permits = [];
+  }
+  const acme = events.find((e) => e.id === 'ev_acme');
+  if (acme) {
+    acme.roomBlocks = [{ id: 'rb_a1', hotel: 'Pacific Hall Marriott', rooms: 120, nights: 2, rate: 249, currency: acme.currency, cutoffDate: addDays(today, 12), attritionPct: 85, auditClause: false, pickedUp: 108, outsideBookings: 6, status: 'open', log: [] }];
+    acme.venue.capacity = acme.venue.capacity ?? 600;
+    acme.permits = [];
+  }
 }

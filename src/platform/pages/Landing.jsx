@@ -40,11 +40,10 @@ export default function Landing() {
       <main>
         <div className="site-wrap hero">
           <div>
-            <div className="eyebrow">For wedding &amp; event planners</div>
-            <h1>From first inquiry to the <em>last dance.</em></h1>
-            <p className="lead">{PLATFORM.name} runs the whole event business in one place: sales, contracts and payments, vendors and crews, the run of show — and a portal that keeps every couple and client in the loop.</p>
+            <h1>From first inquiry to the last dance.</h1>
+            <p className="lead">{PLATFORM.name} runs a wedding or event agency in one place: sales, contracts and payments, vendors and crews, the run of show — and a portal that keeps every couple and client in the loop.</p>
             <div className="hero-ctas">
-              <Button variant="primary" className="lg" onClick={() => nav('/signup')}>Start your {TRIAL_DAYS}-day free trial <Icon name="chevron" size={15} /></Button>
+              <Button variant="primary" className="lg" onClick={() => nav('/signup')}>Start your {TRIAL_DAYS}-day free trial</Button>
               <Button className="lg" onClick={() => pact('ENTER_WORKSPACE', { tenantId: 'tn_lumiere' })}><Icon name="play" size={15} /> Explore the live demo</Button>
             </div>
             <div className="hero-note">No credit card · set up in about 3 minutes · cancel anytime</div>
@@ -66,14 +65,14 @@ export default function Landing() {
 
         <section className="section alt" id="features">
           <div className="site-wrap">
-            <div className="section-head"><div className="eyebrow">Product</div><h2>Events are not projects. The tool shouldn't pretend they are.</h2><p>An event is a couple, two families, a dozen vendors and outsourced crews that meet once, on one day, on one timeline. {PLATFORM.name} is built around that.</p></div>
+            <div className="section-head"><h2>Events are not projects. The tool shouldn't pretend they are.</h2><p>An event is a couple, two families, a dozen vendors and outsourced crews that meet once, on one day, on one timeline. {PLATFORM.name} is built around that.</p></div>
             <div className="feature-grid">{FEATURES.map((f) => <div key={f.title} className="feature"><span className="ic"><Icon name={f.icon} size={18} /></span><h3>{f.title}</h3><p>{f.text}</p></div>)}</div>
           </div>
         </section>
 
         <section className="section">
           <div className="site-wrap">
-            <div className="section-head"><div className="eyebrow">Get started</div><h2>Your workspace, ready in three minutes.</h2></div>
+            <div className="section-head"><h2>Your workspace, ready in three minutes.</h2></div>
             <div className="steps3">
               <div><h3>Create your workspace</h3><p>Pick a URL like <b>yourstudio.{PLATFORM.domain}</b>. Your data lives in its own isolated workspace.</p></div>
               <div><h3>Answer six quick questions</h3><p>Country and currency, the events you run, your payment terms, your team and your colors — we configure taxes, templates and the catalog for you.</p></div>
@@ -84,7 +83,7 @@ export default function Landing() {
 
         <section className="section alt" id="pricing">
           <div className="site-wrap">
-            <div className="section-head"><div className="eyebrow">Pricing</div><h2>Simple plans. Clients and vendors are always free.</h2><p>Every plan starts with a {TRIAL_DAYS}-day trial of Studio. Prices in USD, taxes excluded.</p></div>
+            <div className="section-head"><h2>Simple plans. Clients and vendors are always free.</h2><p>Every plan starts with a {TRIAL_DAYS}-day trial of Studio. Prices in USD, taxes excluded.</p></div>
             <IntervalToggle value={interval} onChange={setIv} />
             <PricingCards interval={interval} onChoose={() => nav('/signup')} />
             <CompareTable />
@@ -93,7 +92,7 @@ export default function Landing() {
 
         <section className="section" id="faq">
           <div className="site-wrap">
-            <div className="section-head"><div className="eyebrow">FAQ</div><h2>Questions planners ask us</h2></div>
+            <div className="section-head"><h2>Questions planners ask us</h2></div>
             <div className="faq">{FAQ.map(([q, a]) => <div key={q}><h4>{q}</h4><p>{a}</p></div>)}</div>
           </div>
         </section>

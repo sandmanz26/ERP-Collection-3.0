@@ -117,6 +117,8 @@ and in the activity log.
 
 ## Still open (honest backlog, ranked)
 
+> Update #041: rows 2 (downgrade below minimums → guarantee rules), 3 (postponement terms), 4 (allergy sheet), 7 (permits & capacity) and 8 (tradition templates) are now implemented — see `docs/PROCESS_REVIEW.md`.
+
 | # | Gap | Why it matters | Suggested approach |
 |---|---|---|---|
 | 1 | **Venue cancels / venue double-books** | Rare but catastrophic | Treat the venue as a booking with the same cancel → replacement flow; add a "relocation" change order |

@@ -29,6 +29,7 @@ const P = {
   money: 'M3 7h18v10H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 10v4M18 10v4',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
+  bed: 'M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 11.5h.01',
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
   hardhat: 'M3 18h18M5 18v-3a7 7 0 0 1 14 0v3M10 8V5h4v3',
   check: 'M5 12.5l4.5 4.5L19 7',

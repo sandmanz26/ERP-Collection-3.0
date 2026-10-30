@@ -11,6 +11,7 @@ import { fmtMoney, CURRENCIES } from '../../lib/money.js';
 import { LOST_REASONS } from '../../data/config.js';
 import { STAGE_INFO, stepperSteps, stageRequirements, nextActions, readiness, keyDates, stageDates } from '../../lib/eventGuide.js';
 import { staffingSummary } from '../../lib/workforce.js';
+import { postponementTerms } from '../../lib/obligations.js';
 
 const READY_TONE = { done: 'ok', ok: 'info', attention: 'danger', blocked: 'warn', na: '' };
 const READY_LABEL = { done: 'Ready', ok: 'On track', attention: 'Needs attention', blocked: 'Blocked', na: 'Not used' };
@@ -352,20 +353,22 @@ function EditModal({ ev, onClose }) {
       </div>
       <h4 className="mt2">Venue & call-sheet info</h4>
       <div className="grid g3">
-        {[['name', 'Venue name'], ['address', 'Address'], ['parking', 'Parking'], ['accessCode', 'Access code'], ['emergencyContact', 'Emergency contact'], ['nearestHospital', 'Nearest hospital'], ['curfew', 'Curfew']].map(([k, l]) => <Field key={k} label={l}><input value={v.venue[k] || ''} onChange={setVen(k)} /></Field>)}
+        {[['name', 'Venue name'], ['address', 'Address'], ['parking', 'Parking'], ['accessCode', 'Access code'], ['emergencyContact', 'Emergency contact'], ['nearestHospital', 'Nearest hospital'], ['curfew', 'Curfew'], ['capacity', 'Licensed capacity (guests)']].map(([k, l]) => <Field key={k} label={l}><input value={v.venue[k] || ''} onChange={setVen(k)} /></Field>)}
       </div>
     </Modal>
   );
 }
 
 function PostponeModal({ ev, onClose }) {
-  const { act } = useStore();
+  const { act, state, user } = useStore();
+  const terms = postponementTerms(state, ev);
   const [date, setDate] = useState('');
   const [reason, setReason] = useState('Client request');
-  const [fee, setFee] = useState(Math.round((ev.contract?.total || 0) * 0.1));
+  const [fee, setFee] = useState(Math.round(terms.suggestedFee));
   return (
     <Modal title="Postpone event" onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!date} onClick={() => { act('EVENT_POSTPONE', { eventId: ev.id, newDate: date, reason, fee }); onClose(); }}>Postpone</Button></>}>
-      <Alert tone="info">All relative task deadlines, sub-event dates, crew shifts, non-deposit payment due dates and the Decor Inventory reservation will move automatically.</Alert>
+      {!terms.allowed && <Alert tone="warning">The contract allows {terms.maxCount} postponement(s) and {terms.used} already used.{user.role === 'admin' ? ' As an admin you can approve another one — record why.' : ' Ask an admin to approve another one.'}</Alert>}
+      <Alert tone="info">Contract terms: {terms.feePct}% rescheduling fee ({terms.used} of {terms.maxCount} postponement(s) used). All relative task deadlines, sub-event dates, crew shifts, non-deposit payment due dates and the Decor Inventory reservation will move automatically.</Alert>
       <div className="grid g3 mt">
         <Field label="New date"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <Field label="Reason"><input value={reason} onChange={(e) => setReason(e.target.value)} /></Field>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
 import { Card, Badge, StatusBadge, Modal, Field, useForm, PillSelect, CommitInput, EmptyState, Button, useDialog, Icon } from '../../design-system/index.js';
 import { Moodboard } from './ProposalTab.jsx';
+import { PermitsCard, CapacityCell, TemplatePicker } from './ObligationPanels.jsx';
 import DecorPanel from './DecorPanel.jsx';
 import { taskBlocked } from '../../lib/tasks.js';
 import { decorSnapshot } from '../../lib/decorApi.js';
@@ -11,7 +12,7 @@ export default function PlanningTab({ ev }) {
   const [sub, setSub] = useState('tasks');
   return (
     <div>
-      <PillSelect options={[{ id: 'tasks', label: `Tasks (${ev.tasks.length})` }, { id: 'functions', label: `Sub-events (${ev.subEvents.length})` }, { id: 'forms', label: 'Planning forms' }, { id: 'design', label: 'Design board' }, { id: 'decor', label: 'Decor & equipment' }, { id: 'docs', label: 'Documents' }, { id: 'decisions', label: 'Decision log' }]} value={sub} onChange={setSub} />
+      <PillSelect options={[{ id: 'tasks', label: `Tasks (${ev.tasks.length})` }, { id: 'functions', label: `Functions & permits (${ev.subEvents.length})` }, { id: 'forms', label: 'Planning forms' }, { id: 'design', label: 'Design board' }, { id: 'decor', label: 'Decor & equipment' }, { id: 'docs', label: 'Documents' }, { id: 'decisions', label: 'Decision log' }]} value={sub} onChange={setSub} />
       <div className="mt">
         {sub === 'tasks' && <Tasks ev={ev} />}
         {sub === 'functions' && <Functions ev={ev} />}
@@ -110,9 +111,10 @@ function Functions({ ev }) {
   const { act } = useStore();
   const upd = (id, patch) => act('SUBEVENT_UPDATE', { eventId: ev.id, subEventId: id, patch });
   return (
-    <Card title="Sub-events / functions" actions={<Button variant="primary" onClick={async () => { const r = await dialog.form({ title: 'Add function', fields: [{ name: 'name', label: 'Name', defaultValue: 'Rehearsal Dinner', required: true }, { name: 'date', label: 'Date', type: 'date', defaultValue: ev.date }, { name: 'start', label: 'Start', type: 'time', defaultValue: '18:00' }, { name: 'end', label: 'End', type: 'time', defaultValue: '22:00' }, { name: 'room', label: 'Room' }, { name: 'guestCount', label: 'Guests', type: 'number', defaultValue: ev.guestCount }] }); r && act('SUBEVENT_ADD', { eventId: ev.id, data: r }); }}>+ Function</Button>}>
-      <table className="t">
-        <thead><tr><th>Name</th><th>Date</th><th>Venue</th><th>Room</th><th>Start</th><th>End</th><th className="num">Guests</th><th /></tr></thead>
+    <>
+    <Card title="Functions" actions={<div className="row"><TemplatePicker ev={ev} /><Button variant="primary" onClick={async () => { const r = await dialog.form({ title: 'Add function', fields: [{ name: 'name', label: 'Name', defaultValue: 'Rehearsal Dinner', required: true }, { name: 'date', label: 'Date', type: 'date', defaultValue: ev.date }, { name: 'start', label: 'Start', type: 'time', defaultValue: '18:00' }, { name: 'end', label: 'End', type: 'time', defaultValue: '22:00' }, { name: 'room', label: 'Room' }, { name: 'guestCount', label: 'Guests', type: 'number', defaultValue: ev.guestCount }] }); r && act('SUBEVENT_ADD', { eventId: ev.id, data: r }); }}>Add function</Button></div>}>
+      <table className="t fn-table">
+        <thead><tr><th>Name</th><th>Date</th><th>Venue</th><th>Room</th><th>Start</th><th>End</th><th className="num">Guests</th><th>Licensed for</th><th /></tr></thead>
         <tbody>
           {ev.subEvents.map((s) => (
             <tr key={s.id}>
@@ -123,12 +125,15 @@ function Functions({ ev }) {
               <td><CommitInput type="time" value={s.start} onCommit={(v) => upd(s.id, { start: v })} /></td>
               <td><CommitInput type="time" value={s.end} onCommit={(v) => upd(s.id, { end: v })} /></td>
               <td className="num"><CommitInput className="inline" type="number" value={s.guestCount} onCommit={(v) => upd(s.id, { guestCount: v })} /></td>
+              <td><CapacityCell ev={ev} s={s} /></td>
               <td><Button variant="ghost" size="sm" onClick={() => act('SUBEVENT_REMOVE', { eventId: ev.id, subEventId: s.id })}><Icon name="x" size={14} /></Button></td>
             </tr>
           ))}
         </tbody>
       </table>
     </Card>
+    <div className="mt"><PermitsCard ev={ev} /></div>
+    </>
   );
 }
 

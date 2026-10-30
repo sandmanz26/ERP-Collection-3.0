@@ -5,6 +5,7 @@ import { badgesHtml } from '../../lib/documents.js';
 import QRCode from 'qrcode';
 import { headcount, guaranteeWarnings, finalHeadcountDeadline } from '../../lib/derived.js';
 import { fmtDate, addDays } from '../../lib/dates.js';
+import { AllergyCard, FinalHeadcount, CapacityCell } from './ObligationPanels.jsx';
 
 const CYCLE = { pending: 'yes', yes: 'no', no: 'pending' };
 
@@ -132,16 +133,14 @@ export default function GuestsTab({ ev, et }) {
       {warn.map((w, i) => <Alert key={i} tone={w.level}>{w.text}</Alert>)}
       <div className="grid g3 mt">
         <Card title="Headcount per function">
-          {ev.subEvents.map((s) => <div key={s.id} className="row between"><span>{s.name}</span><b>{hc.bySubEvent[s.id] || 0}</b></div>)}
-          <div className="mt">
-            <div className="faint" style={{ fontSize: 12 }}>Final headcount deadline: <b>{fmtDate(deadline)}</b>{today > deadline && ' (passed — changes need a Change Order)'}</div>
-            <div className="row mt"><b>Final headcount: {ev.finalHeadcount ?? '—'}</b><Button size="sm" onClick={async () => { const n = await dialog.prompt({ title: 'Confirm final headcount', label: 'Guests', type: 'number', defaultValue: hc.confirmed, hint: 'Sent to catering/venue as the guaranteed number' }); n !== null && act('FINAL_HEADCOUNT_SET', { eventId: ev.id, count: Number(n) }); }}>Set</Button></div>
-          </div>
+          <table className="t compact"><thead><tr><th>Function</th><th className="num">Confirmed</th><th>Licensed for</th></tr></thead>
+            <tbody>{ev.subEvents.map((s) => <tr key={s.id}><td>{s.name}</td><td className="num">{hc.bySubEvent[s.id] || 0}</td><td><CapacityCell ev={ev} s={s} /></td></tr>)}</tbody>
+          </table>
+          <FinalHeadcount ev={ev} />
         </Card>
         <Card title={`Catering report${mainSe ? ` — ${mainSe.name}` : ''}`}>
           {Object.entries(meals).map(([m, n]) => <div key={m} className="row between"><span>{m}</span><b>{n}</b></div>)}
-          <h4 className="mt">Dietary / allergies ({diets.length})</h4>
-          <div style={{ maxHeight: 120, overflowY: 'auto', fontSize: 12 }}>{diets.map((g) => <div key={g.id}>{g.name}: <b>{g.dietary}</b></div>)}</div>
+          <div className="faint text-sm mt">{diets.length} confirmed guest(s) with a dietary requirement — see the allergy sheet below.</div>
         </Card>
         <Card title="RSVP website">
           <p className="muted" style={{ fontSize: 12.5 }}>Each household has a unique code. Guests RSVP per function, choose meals and add allowed plus-ones on the public page.</p>
@@ -150,6 +149,7 @@ export default function GuestsTab({ ev, et }) {
           <div className="row mt"><Button onClick={exportCsv}>Export CSV</Button><Button onClick={printBadges}>{et.features.registration ? 'Print badges (QR)' : 'Print QR place cards'}</Button></div>
         </Card>
       </div>
+      <div className="mt"><AllergyCard ev={ev} /></div>
       <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>
         <div className="faint mb" style={{ fontSize: 12 }}>Click an RSVP badge to cycle pending → yes → no. Confirmed headcount feeds per-guest budget lines and guarantee warnings automatically.</div>
         <GuestTable ev={ev} />

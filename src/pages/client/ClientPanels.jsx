@@ -113,7 +113,7 @@ function JourneyCard({ ev, setTab }) {
       <JourneyMap stops={p.stops} position={p.position} pinLabel="You are here" pinSub={short(today)} selectedId={step.id} onSelect={setSel} formatDate={short} />
       {p.reasons.length > 0 && (
         <div className="cp-reasons">
-          {p.reasons.map((r) => <button key={r.text} type="button" className={`cp-reason cp-reason-${r.tone}`} onClick={() => setTab(r.tab)}><Icon name={r.tone === 'info' ? 'info' : 'alert'} size={13} /> {r.text} <Icon name="chevron" size={12} /></button>)}
+          {p.reasons.map((r) => <button key={r.text} type="button" className={`cp-reason cp-reason-${r.tone}`} onClick={() => setTab(r.tab)}><Icon name={r.tone === 'info' ? 'info' : 'alert'} size={13} /> {r.text}</button>)}
         </div>
       )}
       <div className="stage-detail"><div>

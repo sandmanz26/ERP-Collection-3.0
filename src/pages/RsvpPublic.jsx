@@ -48,6 +48,7 @@ export default function RsvpPublic() {
                   <span>Meal</span>
                   <select value={g.meal} onChange={(e) => act('GUEST_UPDATE', { eventId: ev.id, guestId: g.id, patch: { meal: e.target.value } })}><option value="">Choose…</option>{['Beef tenderloin', 'Sea bass', 'Wild mushroom risotto (V)', 'Kids menu'].map((m) => <option key={m}>{m}</option>)}</select>
                   <input placeholder="Allergies / dietary" defaultValue={g.dietary} onBlur={(e) => e.target.value !== g.dietary && act('GUEST_UPDATE', { eventId: ev.id, guestId: g.id, patch: { dietary: e.target.value } })} />
+                  <label className="row nowrap text-sm"><input type="checkbox" checked={g.allergySeverity === 'severe'} onChange={(e) => act('GUEST_UPDATE', { eventId: ev.id, guestId: g.id, patch: { allergySeverity: e.target.checked ? 'severe' : '' } })} /> Severe allergy (EpiPen / anaphylaxis)</label>
                 </div>
               </div>
             ))}

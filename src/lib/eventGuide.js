@@ -9,6 +9,7 @@ import { invoiceStatus, invoiceBalance, vendorCompliance, headcount, closingChec
 import { staffingSummary } from './workforce.js';
 import { productionIssues } from './timeline.js';
 import { vendorGaps, vendorRefundsDue, finalPaymentRisk, weatherCall, leadSla, lateVendors } from './risk.js';
+import { obligationIssues } from './obligations.js';
 
 export const STAGE_INFO = {
   lead: 'A new inquiry. Qualify it: date, guest count, budget and event type.',
@@ -148,6 +149,12 @@ function riskActions(state, ev, today, cur) {
   if (stageIndex(ev.stage) >= stageIndex('booked') && stageIndex(ev.stage) < stageIndex('event_day')) {
     const fp = finalPaymentRisk(state, ev, today);
     if (fp && fp.status !== 'ok') out.push(A('danger', 'wallet', fp.status === 'breach' ? `Final balance unpaid past the cutoff — event at risk` : `Final balance due by ${fmtDate(fp.cutoff)}`, `${cur(fp.balance)} outstanding. ${fp.status === 'breach' ? 'Vendors are not released until it is paid; the event cannot move to Pre-Event without an override.' : `${fp.days} day(s) to the cutoff.`}`, 'finance', 'Chase payment'));
+  }
+  if (stageIndex(ev.stage) >= stageIndex('booked') && stageIndex(ev.stage) <= stageIndex('event_day')) {
+    const ICON = { rooms: 'bed', allergy: 'alert', capacity: 'users', permit: 'flag' };
+    const TAB = { rooms: 'vendors', allergy: 'guests', capacity: 'guests', permit: 'planning' };
+    const CTA = { rooms: 'Update pick-up', allergy: 'Open allergy sheet', capacity: 'Review guests', permit: 'Open permits' };
+    obligationIssues(state, ev, today).forEach((o) => out.push(A(o.level, ICON[o.area], o.text, o.detail, TAB[o.area], CTA[o.area])));
   }
   const w = weatherCall(state, ev, now);
   if (w && !w.decided && stageIndex(ev.stage) <= stageIndex('event_day') && (w.overdue || w.soon)) out.push(A(w.overdue ? 'danger' : 'warning', 'sun', w.overdue ? `Weather call overdue — ${w.function}` : `Weather call due ${fmtDate(w.due.slice(0, 10))} — ${w.function}`, `Plan A: ${w.planA} · Plan B: ${w.planB}. Vendors and rentals need the decision.`, 'overview', 'Make the call', 'risk-card'));
