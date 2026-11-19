@@ -28,7 +28,7 @@ export default function Reports() {
     const lost = list.filter((e) => e.stage === 'lost');
     const open = list.length - won.length - lost.length;
     const wonValue = won.reduce((a, e) => a + usd(e.contract?.total ?? 0, e.currency), 0);
-    return { s, n: list.length, won: won.length, lost: lost.length, open, conv: won.length + lost.length ? round2((won.length / (won.length + lost.length)) * 100) : 0, wonValue };
+    return { s, n: list.length, won: won.length, lost: lost.length, open, conv: won.length + lost.length ? round2((won.length / (won.length + lost.length)) * 100) : null, wonValue }; // conv null = nothing decided yet, not 0%
   }).filter((r) => r.n);
 
   // 2. contracted revenue per event month + cash to come
@@ -75,7 +75,7 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="page-head"><div className="grow"><h1>Reporting & analytics</h1><div className="muted">All money in {BASE} equivalent (rates in Settings).</div></div></div>
+      <div className="page-head"><div className="grow"><h1>Reports</h1><div className="muted">All money in {BASE} equivalent (rates in Settings).</div></div></div>
       <div className="row mb no-print">
         <PillSelect options={[{ id: 'all', label: 'All segments' }, { id: 'social', label: 'Social' }, { id: 'corporate', label: 'Corporate' }]} value={segment} onChange={setSegment} />
         <span className="muted">Event date</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" /><span className="muted">→</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
@@ -85,19 +85,19 @@ export default function Reports() {
       {tab === 'pipeline' && (
         <div className="grid g2">
           <Card title="Conversion rate by lead source (won ÷ decided)">
-            <BarChart rows={bySource.map((r) => ({ label: r.s, value: r.conv, display: `${r.conv}%` }))} max={100} />
+            <BarChart rows={bySource.map((r) => ({ label: r.s, value: r.conv ?? 0, display: r.conv === null ? 'none decided' : `${r.conv}%` }))} max={100} />
           </Card>
           <Card title="Lead sources" actions={<Button size="sm" onClick={() => exportCsv('conversion-by-source', [['Source', 'Leads', 'Open', 'Won', 'Lost', 'Conversion %', `Won value ${BASE}`], ...bySource.map((r) => [r.s, r.n, r.open, r.won, r.lost, r.conv, r.wonValue])])}>CSV</Button>}>
             <table className="t">
               <thead><tr><th>Source</th><th className="num">Leads</th><th className="num">Open</th><th className="num">Won</th><th className="num">Lost</th><th className="num">Conv.</th><th className="num">Won value</th></tr></thead>
-              <tbody>{bySource.map((r) => <tr key={r.s}><td>{r.s}</td><td className="num">{r.n}</td><td className="num">{r.open}</td><td className="num">{r.won}</td><td className="num">{r.lost}</td><td className="num">{r.conv}%</td><td className="num">{fmtMoney(r.wonValue, BASE)}</td></tr>)}</tbody>
+              <tbody>{bySource.map((r) => <tr key={r.s}><td>{r.s}</td><td className="num">{r.n}</td><td className="num">{r.open}</td><td className="num">{r.won}</td><td className="num">{r.lost}</td><td className="num">{r.conv === null ? '—' : `${r.conv}%`}</td><td className="num">{fmtMoney(r.wonValue, BASE)}</td></tr>)}</tbody>
             </table>
           </Card>
           <Card title="Open pipeline by stage">
             <BarChart rows={['lead', 'qualified', 'proposal_sent', 'negotiation'].map((s) => {
               const list = evs.filter((e) => e.stage === s);
               const v = list.reduce((a, e) => a + usd(proposalTotals(state, e)?.total ?? e.budget ?? 0, e.currency), 0);
-              return { label: `${s.replace('_', ' ')} (${list.length})`, value: v, display: fmtMoney(v, BASE) };
+              return { label: `${s[0].toUpperCase()}${s.slice(1).replace('_', ' ')} (${list.length})`, value: v, display: fmtMoney(v, BASE) };
             })} />
           </Card>
         </div>

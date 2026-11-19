@@ -83,7 +83,7 @@ export default function BudgetTab({ ev, et }) {
               <PillSelect multi options={BUDGET_CATEGORIES} value={p.categories} onChange={(cats) => act('PAYER_UPDATE', { eventId: ev.id, payers: ev.payers.map((x) => (x.id === p.id ? { ...x, categories: cats } : x)) })} />
             </div>
           ))}
-          <Button size="sm" className="mt" onClick={async () => { const n = await dialog.prompt({ title: 'Add payer', label: 'Payer name' }); n && act('PAYER_UPDATE', { eventId: ev.id, payers: [...ev.payers, { id: `py_${Date.now()}`, name: n, userId: null, categories: [] }] }); }}>+ Payer</Button>
+          <Button size="sm" className="mt" onClick={async () => { const n = await dialog.prompt({ title: 'Add payer', label: 'Payer name' }); n && act('PAYER_UPDATE', { eventId: ev.id, payers: [...ev.payers, { id: `py_${Date.now()}`, name: n, userId: null, categories: [] }] }); }}>Add payer</Button>
           <table className="t mt">
             <thead><tr><th>Payer</th><th className="num">Billed</th><th className="num">Paid</th><th className="num">Outstanding</th></tr></thead>
             <tbody>{payers.map((p) => <tr key={p.id}><td>{p.name} {p.overdue > 0 && <Badge tone="danger">{p.overdue} overdue</Badge>}</td><td className="num"><Money value={p.billed} currency={cur} /></td><td className="num"><Money value={p.paid} currency={cur} /></td><td className="num"><Money value={p.outstanding} currency={cur} /></td></tr>)}</tbody>

@@ -79,7 +79,7 @@ export default function PeopleTab({ ev }) {
         <PillSelect options={[{ id: 'department', label: 'By department' }, { id: 'source', label: 'By source' }]} value={view} onChange={setView} />
         <Button onClick={exportRoster}>Roster CSV</Button>
         <Button onClick={printCredentials}>Print QR credentials</Button>
-        <Button variant="primary" onClick={addPosition}>+ Position</Button>
+        <Button variant="primary" onClick={addPosition}>Add position</Button>
       </div>}>
         {positions.length === 0 && <EmptyState>No staffing plan yet. Add positions (e.g. 12 × banquet server from the caterer, 2 × licensed security from an agency).</EmptyState>}
         {groups.map((g) => (
@@ -169,7 +169,7 @@ function PositionPeople({ ev, p }) {
     <div>
       <div className="row mb">
         <Button size="sm" variant="primary" onClick={assignStaff}>+ Assign staff / registered freelancer</Button>
-        <Button size="sm" onClick={addWorkers}>+ Add external people</Button>
+        <Button size="sm" onClick={addWorkers}>Add external people</Button>
         {f.unassigned > 0 && <Badge tone="danger">{f.unassigned} slot(s) without a name</Badge>}
       </div>
       <table className="t">

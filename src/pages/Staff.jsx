@@ -20,7 +20,7 @@ export default function Staff() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Staff & crew</h1><div className="muted">Employees and freelancers, skills, rates, region-specific labor rules, scheduling conflicts and utilization.</div></div>
-        <Button variant="primary" onClick={() => setAdd(true)}>+ Staff</Button>
+        <Button variant="primary" onClick={() => setAdd(true)}>Add staff</Button>
       </div>
       {conflicts.map(([a, b], i) => <Alert key={i} tone="danger">Conflict: {state.staff.find((s) => s.id === a.staffId)?.name} double-booked on {fmtDate(a.date)} — <Link to={`/events/${a.eventId}?tab=staff`}>{a.eventName}</Link> vs <Link to={`/events/${b.eventId}?tab=staff`}>{b.eventName}</Link></Alert>)}
       <Card className="mt">

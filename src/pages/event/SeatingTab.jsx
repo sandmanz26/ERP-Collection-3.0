@@ -79,7 +79,7 @@ export default function SeatingTab({ ev }) {
   return (
     <div>
       <Card title="Seating chart" actions={<div className="row">
-        <Button onClick={async () => { const r = await dialog.form({ title: 'Add table', fields: [{ name: 'name', label: 'Name', defaultValue: `Table ${ev.tables.length}`, required: true }, { name: 'capacity', label: 'Seats', type: 'number', defaultValue: 10, required: true }, { name: 'shape', label: 'Shape', type: 'select', options: ['round', 'rect'], defaultValue: 'round' }] }); r && act('TABLE_ADD', { eventId: ev.id, ...r }); }}>+ Table</Button>
+        <Button onClick={async () => { const r = await dialog.form({ title: 'Add table', fields: [{ name: 'name', label: 'Name', defaultValue: `Table ${ev.tables.length}`, required: true }, { name: 'capacity', label: 'Seats', type: 'number', defaultValue: 10, required: true }, { name: 'shape', label: 'Shape', type: 'select', options: ['round', 'rect'], defaultValue: 'round' }] }); r && act('TABLE_ADD', { eventId: ev.id, ...r }); }}>Add table</Button>
         <Button onClick={escort}>Export escort cards</Button>
         <Button onClick={cateringByTable}>Catering report per table</Button>
       </div>}>

@@ -56,7 +56,7 @@ export default function ChangeOrdersTab({ ev }) {
   const approved = ev.changeOrders.filter((c) => c.status === 'approved');
   return (
     <div>
-      <Card title="Change Orders" actions={<Button variant="primary" onClick={() => setAdd(true)}>+ Change Order</Button>}>
+      <Card title="Change Orders" actions={<Button variant="primary" onClick={() => setAdd(true)}>Add change Order</Button>}>
         <Alert tone="info">Every post-contract change must be a Change Order. Once the client approves (portal signature/click with audit trail), the contract total, payment schedule, budget and the Decor Inventory request update automatically. Original contract <Money value={ev.contract.originalTotal} currency={ev.currency} /> → current <Money value={ev.contract.total} currency={ev.currency} /> ({approved.length} approved).</Alert>
         <div className="stack mt">{ev.changeOrders.slice().reverse().map((co) => <CoCard key={co.id} ev={ev} co={co} />)}</div>
       </Card>

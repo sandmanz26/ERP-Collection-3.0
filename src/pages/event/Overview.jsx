@@ -295,7 +295,7 @@ function HoldsAndApprovals({ ev, et }) {
               <span className="row"><StatusBadge status={a.status} />{a.status === 'pending' && <Button size="sm" onClick={() => act('APPROVAL_STEP', { eventId: ev.id, stepId: a.id, status: 'approved' })}>Mark approved</Button>}</span>
             </div>
           ))}
-          <Button size="sm" className="mt" onClick={async () => { const s = await dialog.prompt({ title: 'Add client approval step', label: 'Step (e.g. Legal review)' }); s && act('APPROVAL_ADD', { eventId: ev.id, step: s }); }}>+ Add step</Button>
+          <Button size="sm" className="mt" onClick={async () => { const s = await dialog.prompt({ title: 'Add client approval step', label: 'Step (e.g. Legal review)' }); s && act('APPROVAL_ADD', { eventId: ev.id, step: s }); }}>Add step</Button>
         </Card>
       ) : <div />}
     </div>

@@ -37,12 +37,12 @@ export default function Pipeline() {
     <div>
       <div className="page-head">
         <div className="grow">
-          <h1>CRM & Sales Pipeline</h1>
-          <div className="muted">Drag cards between stages. Transitions are validated (e.g. Booked requires a fully signed contract).</div>
+          <h1>Pipeline</h1>
+          <div className="muted">Open deals by stage. Drag a card to move it — a deal books only once every signer has signed.</div>
         </div>
         <a className="btn" href="#/inquiry" target="_blank" rel="noreferrer">Public inquiry form <Icon name="external" size={13} /></a>
         <Button onClick={simulateMarketplace}>Simulate marketplace lead</Button>
-        <Button variant="primary" onClick={() => setShowNew(true)}>+ New inquiry</Button>
+        <Button variant="primary" onClick={() => setShowNew(true)}>New inquiry</Button>
       </div>
       <div className="row mb">
         <span className="muted">Lead source:</span>

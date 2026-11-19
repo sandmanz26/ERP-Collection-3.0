@@ -169,7 +169,7 @@ function PortalGuests({ ev, et }) {
   const [add, setAdd] = useState(false);
   const can = clientCan(user, 'manage_guests');
   return (
-    <Card title="Guest list (shared with your planner)" actions={can && <Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>
+    <Card title="Guest list (shared with your planner)" actions={can && <Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? 'Register attendee' : 'Add household'}</Button>}>
       <GuestTable ev={ev} readOnly={!can} />
       {add && <AddHouseholdModal ev={ev} et={et} onClose={() => setAdd(false)} />}
     </Card>

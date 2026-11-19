@@ -142,7 +142,7 @@ function CrewRequests({ vendor }) {
                 <Button size="sm" variant="primary" onClick={async () => {
                   const r = await dialog.form({ title: `Submit crew — ${p.role}`, description: `${p.qty - named > 0 ? `${p.qty - named} more name(s) needed.` : 'Roster complete — you can still add stand-bys.'} One person per line, optional ", phone".`, fields: [{ name: 'names', label: 'Names', type: 'textarea', required: true }] });
                   r && act('WORKER_ADD', { eventId: e.id, positionId: p.id, workers: r.names.split('\n').map((l) => { const [name, phone] = l.split(','); return { name, phone: phone?.trim(), status: 'confirmed' }; }) });
-                }}>+ Add names</Button></span>
+                }}>Add names</Button></span>
             </div>
             {f.workers.length > 0 && (
               <table className="t mt"><tbody>{f.workers.map((w) => (

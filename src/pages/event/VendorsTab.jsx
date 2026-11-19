@@ -16,7 +16,7 @@ export default function VendorsTab({ ev }) {
   const cur = ev.currency;
   return (
     <div>
-      <Card title="Vendor bookings" actions={<div className="row"><Button onClick={() => setRfq(true)}>+ Request for quote</Button><Button variant="primary" onClick={() => setAdd(true)}>+ Book vendor</Button></div>}>
+      <Card title="Vendor bookings" actions={<div className="row"><Button onClick={() => setRfq(true)}>Request a quote</Button><Button variant="primary" onClick={() => setAdd(true)}>Book vendor</Button></div>}>
         <div className="legend mb"><span><b>Pass-through</b>: EO pays vendor & bills client (cash-flow risk, markup possible)</span><span><b>Direct</b>: client pays vendor; EO coordinates (commission possible)</span></div>
         <div className="table-wrap">
           <table className="t">
@@ -54,7 +54,7 @@ export default function VendorsTab({ ev }) {
                                   <td>{p.status !== 'paid' && <Button variant="success" size="sm" onClick={() => act('VENDOR_PAYMENT_PAID', { eventId: ev.id, bookingId: b.id, paymentId: p.id })}>Mark paid</Button>}</td></tr>
                               ))}
                             </tbody></table>
-                            <Button size="sm" className="mt" onClick={async () => { const r = await dialog.form({ title: 'Add vendor payable', fields: [{ name: 'label', label: 'Label', defaultValue: 'Installment', required: true }, { name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'dueDate', label: 'Due date', type: 'date', defaultValue: ev.date, required: true }] }); r && act('VENDOR_PAYMENT_ADD', { eventId: ev.id, bookingId: b.id, ...r }); }}>+ Payable</Button>
+                            <Button size="sm" className="mt" onClick={async () => { const r = await dialog.form({ title: 'Add vendor payable', fields: [{ name: 'label', label: 'Label', defaultValue: 'Installment', required: true }, { name: 'amount', label: `Amount (${ev.currency})`, type: 'number', required: true }, { name: 'dueDate', label: 'Due date', type: 'date', defaultValue: ev.date, required: true }] }); r && act('VENDOR_PAYMENT_ADD', { eventId: ev.id, bookingId: b.id, ...r }); }}>Add payable</Button>
                           </div>
                           <div>
                             <h4>Vendor invoices & logistics</h4>

@@ -104,7 +104,7 @@ export function CustodyPanel({ ev }) {
   };
   return (
     <section className="risk-block">
-      <h4><Icon name="key" size={14} /> Personal items in custody {openItems.length > 0 && <Badge tone="warn">{openItems.length} open</Badge>} <Button size="sm" variant="ghost" onClick={add}>+ Item</Button></h4>
+      <h4><Icon name="key" size={14} /> Personal items in custody {openItems.length > 0 && <Badge tone="warn">{openItems.length} open</Badge>} <Button size="sm" variant="ghost" onClick={add}>Add item</Button></h4>
       {!items.length ? <EmptyState>Card box, gifts, heirlooms, the marriage licence… track who holds them.</EmptyState> : (
         <ul className="custody">
           {items.map((c) => {

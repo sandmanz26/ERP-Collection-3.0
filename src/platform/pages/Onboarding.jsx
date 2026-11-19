@@ -159,7 +159,7 @@ function Team({ p, set, t, seatsLimit }) {
           </div>
         ))}
       </div>
-      <div><Button onClick={() => set({ invites: [...rows, { email: '', role: 'planner' }] })} disabled={rows.length + 1 >= seatsLimit}>+ Add another</Button></div>
+      <div><Button onClick={() => set({ invites: [...rows, { email: '', role: 'planner' }] })} disabled={rows.length + 1 >= seatsLimit}>Add another</Button></div>
       <div className="faint text-xs">Invitations are mocked: teammates sign in with the temporary password <b>welcome123</b> and are asked to change it.</div>
     </>
   );

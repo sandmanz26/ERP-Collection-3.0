@@ -32,7 +32,7 @@ export default function CalendarPage() {
       <div className="page-head">
         <div className="grow">
           <h1>Availability & Date Holds</h1>
-          <div className="muted">Capacity per date is configurable (Settings). A date is only <b>locked</b> once the deposit is received; before that it is a <b>hold</b> that expires after {state.settings.holdExpiryDays} days.</div>
+          <div className="muted">Who is free when. A date is <b>locked</b> once the deposit arrives; until then it is a <b>hold</b> that expires after {state.settings.holdExpiryDays} days.</div>
         </div>
       </div>
       <Card title="Planner workload — each event from T-45 to close-out" className="mb">
@@ -46,7 +46,7 @@ export default function CalendarPage() {
               const a = availability(d, { events: state.events, holds: state.holds, capacity: state.settings.capacity, planners: state.users.filter((u) => u.role === 'planner') });
               return (
                 <div key={d} className={`day ${d.slice(0, 7) !== month ? 'other' : ''} ${d === today ? 'today' : ''} ${a.status === 'full' ? 'full' : a.holds.length ? 'held' : ''}`} onClick={() => setSel(d)} style={sel === d ? { outline: '2px solid var(--brand)' } : undefined}>
-                  <div className="row between"><span className="num">{Number(d.slice(8))}</span><span className="faint">{a.booked.length}/{a.capacity}</span></div>
+                  <div className="row between"><span className="num">{Number(d.slice(8))}</span>{(a.booked.length > 0 || a.holds.length > 0) && <span className={a.booked.length >= a.capacity ? 'text-danger' : 'faint'}>{a.booked.length}/{a.capacity}</span>}</div>
                   {a.booked.map((e) => <span key={e.id} className={`chip ${e.dateStatus === 'locked' ? 'locked' : 'hold'}`}><Icon name={e.dateStatus === 'locked' ? 'lock' : 'hourglass'} size={10} /> {e.name}</span>)}
                   {a.holds.filter((h) => !a.booked.some((b) => b.id === h.eventId)).map((h) => <span key={h.id} className="chip hold">#{h.priority} {state.events.find((e) => e.id === h.eventId)?.name}</span>)}
                 </div>

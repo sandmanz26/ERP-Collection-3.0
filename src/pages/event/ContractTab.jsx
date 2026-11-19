@@ -61,7 +61,7 @@ export default function ContractTab({ ev, et }) {
           </div>
         ))}
         <div className="row">
-          <Button onClick={() => setSigners([...signers, { name: '', email: '', role: 'Co-signer' }])}>+ Signer</Button>
+          <Button onClick={() => setSigners([...signers, { name: '', email: '', role: 'Co-signer' }])}>Add signer</Button>
           <select value="" onChange={(e) => { const u = state.users.find((x) => x.id === e.target.value); if (u) setSigners([...signers, { name: u.name, email: u.email, role: 'Client portal user' }]); }}>
             <option value="">+ Add portal user as signer…</option>
             {state.users.filter((u) => u.role === 'client' && u.clientId === ev.clientId && (u.permissions || []).includes('sign')).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}

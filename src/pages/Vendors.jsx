@@ -16,7 +16,7 @@ export default function Vendors() {
     <div>
       <div className="page-head">
         <div className="grow"><h1>Vendor directory</h1><div className="muted">Categories, regions, price range, internal rating, compliance documents (COI, licenses, W-9) with expiry reminders.</div></div>
-        <Button variant="primary" onClick={() => setAdd(true)}>+ Vendor</Button>
+        <Button variant="primary" onClick={() => setAdd(true)}>Add vendor</Button>
       </div>
       <PillSelect options={cats} value={cat} onChange={setCat} />
       <Card className="mt">
@@ -30,7 +30,7 @@ export default function Vendors() {
                   <tr key={v.id} onClick={() => setSel(v)} style={{ cursor: 'pointer' }}>
                     <td><b>{v.name}</b><div className="faint">{v.contact} · {v.email}</div></td>
                     <td>{v.category}</td><td style={{ fontSize: 12 }}>{v.regions.join(', ')}</td><td>{v.priceRange}</td>
-                    <td><Icon name="star" size={12} /> {vendorScore(v)}<div className="faint">{v.performance.length} reviews</div></td>
+                    <td className="nowrap">{vendorScore(v)}<span className="cell-sub">{v.performance.length ? `${v.performance.length} event review${v.performance.length === 1 ? '' : 's'}` : 'not yet reviewed'}</span></td>
                     <td className="nowrap">{fmtDate(v.coiExpiry)}</td>
                     <td style={{ fontSize: 12 }}>{v.licenses.map((l) => <div key={l.name}>{l.name} — {fmtDate(l.expiry)}</div>)}</td>
                     <td>{v.country === 'US' ? (v.w9 ? <Badge tone="ok">on file</Badge> : <Badge tone="warn">missing</Badge>) : <span className="faint">n/a</span>}</td>

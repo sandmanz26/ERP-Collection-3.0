@@ -117,7 +117,7 @@ function ProductionSetup({ ev }) {
       <Card title="Venue resources" actions={<Button size="sm" onClick={async () => {
         const r = await dialog.form({ title: 'Add venue resource', description: 'Exclusive resources (loading dock, service elevator, freight lift) can only be used by one vendor at a time — overlaps are flagged.', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'exclusive', label: 'Exclusive (one vendor at a time)', type: 'checkbox', defaultValue: true }] });
         r && act('RESOURCE_ADD', { eventId: ev.id, ...r });
-      }}>+ Resource</Button>}>
+      }}>Add resource</Button>}>
         {prod.resources.length === 0 && <div className="faint">No resources yet.</div>}
         {prod.resources.map((r) => (
           <div key={r.id} className="row between" style={{ padding: '4px 0' }}>
@@ -129,7 +129,7 @@ function ProductionSetup({ ev }) {
       <Card title="Venue access windows & curfew" actions={<Button size="sm" onClick={async () => {
         const r = await dialog.form({ title: 'Add access window', fields: [{ name: 'date', label: 'Date', type: 'date', defaultValue: ev.date, required: true }, { name: 'start', label: 'Doors open to vendors', type: 'time', defaultValue: '08:00', required: true }, { name: 'end', label: 'Venue must be clear by', type: 'time', defaultValue: '01:00', required: true, hint: 'Earlier than start = after midnight' }] });
         r && act('ACCESS_WINDOW_SET', { eventId: ev.id, windows: [...prod.accessWindows, r] });
-      }}>+ Window</Button>}>
+      }}>Add window</Button>}>
         {prod.accessWindows.map((w, i) => (
           <div key={i} className="row between"><span>{fmtDate(w.date, { weekday: 'short' })} · {w.start} → {w.end}{w.end < w.start ? ' (+1 day)' : ''}</span>
             <Button variant="ghost" size="sm" onClick={() => act('ACCESS_WINDOW_SET', { eventId: ev.id, windows: prod.accessWindows.filter((_, j) => j !== i) })}><Icon name="x" size={14} /></Button></div>

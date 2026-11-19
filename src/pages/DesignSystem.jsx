@@ -28,7 +28,7 @@ export default function DesignSystem() {
   const [siteEls, setSiteEls] = useState([{ id: 's', type: 'stage', label: 'Stage', x: 4, y: 0.5, w: 4, h: 2, shape: 'rect' }, { id: 't', type: 'table', label: 'T1', x: 1, y: 4, w: 2, h: 2, shape: 'circle', sub: '8/10' }, { id: 'b', type: 'bar', label: 'Bar', x: 8.5, y: 4.5, w: 3, h: 1.5, shape: 'rect' }]);
   return (
     <div>
-      <PageHeader crumbs="Admin" title="Design System" subtitle="Atomic Design: tokens → atoms → molecules → organisms → templates → pages. Source: src/design-system/." />
+      <PageHeader crumbs="Admin" title="Design System" subtitle="Tokens, components and patterns used across the app (src/design-system)." />
       <div className="grid g2">
         <Section level="Tokens" title="Color">
           <div className="row">{COLOR_TOKENS.map((t) => <div key={t} style={{ textAlign: 'center', fontSize: 11 }}><Swatch color={`var(${t})`} size={40} /><div className="faint">{t.replace('--color-', '')}</div></div>)}</div>

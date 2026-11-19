@@ -41,10 +41,10 @@ export default function SitePlanTab({ ev }) {
     const r = await dialog.form({ title: 'Add room / area', fields: [{ name: 'name', label: 'Name', required: true, defaultValue: 'Terrace' }, { name: 'width', label: 'Width (m)', type: 'number', defaultValue: 30 }, { name: 'height', label: 'Depth (m)', type: 'number', defaultValue: 20 }] });
     r && act('SITE_ROOM_ADD', { eventId: ev.id, ...r });
   };
-  if (!room) return <Card><EmptyState>No floor plan yet.<div className="mt"><Button variant="primary" onClick={addRoom}>+ Add room</Button></div></EmptyState></Card>;
+  if (!room) return <Card><EmptyState>No floor plan yet.<div className="mt"><Button variant="primary" onClick={addRoom}>Add room</Button></div></EmptyState></Card>;
   return (
     <div className="grid" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(260px,1fr)' }}>
-      <Card title="Site plan" actions={<div className="row"><PillSelect options={rooms.map((r) => ({ id: r.id, label: r.name }))} value={room.id} onChange={(id) => { setRoomId(id); setSelId(null); }} /><Button size="sm" onClick={addRoom}>+ Room</Button><Button size="sm" onClick={() => window.print()}>Print</Button></div>}>
+      <Card title="Site plan" actions={<div className="row"><PillSelect options={rooms.map((r) => ({ id: r.id, label: r.name }))} value={room.id} onChange={(id) => { setRoomId(id); setSelId(null); }} /><Button size="sm" onClick={addRoom}>Add room</Button><Button size="sm" onClick={() => window.print()}>Print</Button></div>}>
         <SitePlan width={room.width} height={room.height} elements={elements} selectedId={selId} highlightIds={overfull}
           onSelect={(el) => setSelId(el?.id ?? null)}
           onMove={(el, x, y) => act('SITE_ELEMENT_UPDATE', { eventId: ev.id, roomId: room.id, elementId: el.id, patch: { x, y } })} />

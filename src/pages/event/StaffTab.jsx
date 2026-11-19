@@ -14,7 +14,7 @@ export default function StaffTab({ ev }) {
   return (
     <div>
       {conflicts.map(([a, b], i) => <Alert key={i} tone="danger">Schedule conflict: {state.staff.find((s) => s.id === a.staffId)?.name} is booked on {a.eventName} ({a.start}-{a.end}) and {b.eventName} ({b.start}-{b.end}) on {fmtDate(a.date)}.</Alert>)}
-      <Card title="Crew shifts" actions={<Button variant="primary" onClick={() => setAdd(true)}>+ Shift</Button>}>
+      <Card title="Crew shifts" actions={<Button variant="primary" onClick={() => setAdd(true)}>Add shift</Button>}>
         <table className="t">
           <thead><tr><th>Staff</th><th>Type</th><th>Role</th><th>Date</th><th>Shift</th><th>Clock in/out</th><th className="num">Hours</th><th>Rules</th><th className="num">Cost</th><th>Status</th><th /></tr></thead>
           <tbody>

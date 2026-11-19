@@ -42,7 +42,7 @@ function Tasks({ ev }) {
     <Card title={`Task & checklist — ${done}/${ev.tasks.length} done`} actions={<div className="row">
       <PillSelect options={[{ id: 'open', label: 'Open' }, { id: 'all', label: 'All' }, { id: 'client', label: 'Client' }, { id: 'vendor', label: 'Vendor' }, { id: 'staff', label: 'Staff' }]} value={filter} onChange={setFilter} />
       <Button onClick={() => act('TASKS_GENERATE', { eventId: ev.id })}>Apply template</Button>
-      <Button variant="primary" onClick={() => setAdd(true)}>+ Task</Button>
+      <Button variant="primary" onClick={() => setAdd(true)}>Add task</Button>
     </div>}>
       <div className="faint mb" style={{ fontSize: 12 }}>Due dates are relative to the event date (T-minus). When the event is postponed, every relative task shifts automatically.</div>
       <div className="table-wrap">
@@ -168,7 +168,7 @@ function Design({ ev }) {
         <Field label="Concept notes"><CommitInput value={d.notes} onCommit={(v) => act('DESIGN_UPDATE', { eventId: ev.id, patch: { notes: v } })} /></Field>
         <h4 className="mt">References</h4>
         {d.references.map((r, i) => <div key={i}>• {r}</div>)}
-        <Button size="sm" className="mt" onClick={async () => { const r = await dialog.prompt({ title: 'Add design reference', label: 'Link or description' }); r && act('DESIGN_UPDATE', { eventId: ev.id, patch: { references: [...d.references, r] } }); }}>+ Reference</Button>
+        <Button size="sm" className="mt" onClick={async () => { const r = await dialog.prompt({ title: 'Add design reference', label: 'Link or description' }); r && act('DESIGN_UPDATE', { eventId: ev.id, patch: { references: [...d.references, r] } }); }}>Add reference</Button>
       </Card>
       <Card title="Decor items on the board (linked to Decor Inventory)">
         <Moodboard itemIds={d.decorItemIds} />

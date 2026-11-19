@@ -358,3 +358,9 @@ table.fn-table input[type=number] { width: 72px; }
 .prio-row .btn { align-self: center; }
 .prio-danger .callout-icon { color: var(--color-danger); } .prio-warning .callout-icon { color: var(--color-warning); } .prio-info .callout-icon { color: var(--color-info); }
 @media (max-width: 560px) { .prio-row { grid-template-columns: 18px minmax(0, 1fr); padding: 14px 16px; } .prio-row .btn { grid-column: 2; justify-self: start; } }
+
+/* settings forms: label on the left, field on one aligned column — no ragged inline pairs */
+.settings-page .card .row:has(> input) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 220px); align-items: center; gap: 12px; padding: 4px 0; }
+.settings-page .card .row:has(> input) > input { width: 100%; }
+.settings-page .card .row:has(> input[type=checkbox]) { display: flex; flex-wrap: nowrap; }
+.settings-page .card .row > input[type=checkbox] { width: auto; }

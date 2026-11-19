@@ -40,7 +40,7 @@ export default function PostEventTab({ ev }) {
         <Card title="Final profitability">
           <KeyValue rows={[
             ['Revenue (excl. tax)', <Money value={f.revenueNet} currency={cur} />],
-            ['+ Commissions from vendors', <Money value={f.commissions} currency={cur} />],
+            ['Add commissions from vendors', <Money value={f.commissions} currency={cur} />],
             ['+ Damage / late fees billed', <Money value={f.damageCharges + f.lateFees} currency={cur} />],
             ['− Vendor costs', <Money value={-f.vendorCost} currency={cur} />],
             ['− Decor costs', <Money value={-f.decorCost} currency={cur} />],

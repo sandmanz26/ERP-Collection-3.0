@@ -64,7 +64,7 @@ export default function RunOfShowTab({ ev }) {
         <StatusBadge status={ev.ros.status} />
         <Button onClick={() => act('ROS_SET_STATUS', { eventId: ev.id, status: statusFlow[ev.ros.status] })}>{ev.ros.status === 'draft' ? 'Share with vendors' : ev.ros.status === 'shared' ? 'Mark FINAL' : 'Back to draft'}</Button>
         <Button onClick={() => setSheet(true)}>Call sheet</Button>
-        <Button variant="primary" onClick={() => setAdd(true)}>+ Item</Button>
+        <Button variant="primary" onClick={() => setAdd(true)}>Add item</Button>
       </div>}>
         {ev.ros.status === 'final' && <Alert tone="warning">Timeline is FINAL. Any change now notifies affected vendors and crew automatically.</Alert>}
         <div className="row mb mt">

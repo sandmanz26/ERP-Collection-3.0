@@ -21,8 +21,8 @@ export default function Settings() {
   const s = state.settings;
   const set = (key, value, label) => act('SETTINGS_SET', { key, value, label });
   return (
-    <div>
-      <div className="page-head"><div className="grow"><h1>Settings</h1><div className="muted">Segment differences (social vs corporate) are configuration on Event Types — not separate code.</div></div>
+    <div className="settings-page">
+      <div className="page-head"><div className="grow"><h1>Settings</h1><div className="muted">Company details, event types, pricing, taxes, payment terms, people and the rules the system enforces.</div></div>
         {(!ws || ws.isDemo) && <ConfirmButton variant="danger" message="Reset ALL demo data to the original seed? (The reset itself is logged.)" onConfirm={() => act('RESET_DEMO')}>Reset demo data</ConfirmButton>}
       </div>
       <Tabs tabs={[{ id: 'general', label: 'General & capacity' }, { id: 'types', label: 'Event types' }, { id: 'catalog', label: 'Service catalog' }, { id: 'tax', label: 'Tax jurisdictions' }, { id: 'policies', label: 'Payment & cancellation' }, { id: 'users', label: 'Users & roles' }].concat(ws && state.users.find((u) => u.id === state.currentUserId)?.role === 'admin' ? [{ id: 'billing', label: 'Plan & billing' }] : [])} value={tab} onChange={setTab} />
@@ -79,7 +79,7 @@ export default function Settings() {
               <Button size="sm" className="mt" onClick={async () => {
                 const r = await dialog.form({ title: `Add task to ${t.name} template`, fields: [{ name: 'title', label: 'Task', required: true }, { name: 'offsetDays', label: 'Days relative to event (e.g. -30)', type: 'number', required: true, defaultValue: -30 }, { name: 'assigneeType', label: 'Assignee', type: 'select', options: ['staff', 'client', 'vendor'], defaultValue: 'staff' }, { name: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high'], defaultValue: 'medium' }] });
                 r && act('EVENT_TYPE_UPDATE', { eventTypeId: t.id, patch: { taskTemplate: [...t.taskTemplate, { ...r, key: `k${Date.now()}`, category: 'general' }] } });
-              }}>+ Template task</Button>
+              }}>Add template task</Button>
             </div>
           </div>
         </Card>
@@ -88,7 +88,7 @@ export default function Settings() {
         <Card title={`Service catalog (prices in ${s.company.baseCurrency}, converted per proposal currency)`} actions={<Button variant="primary" onClick={async () => {
           const r = await dialog.form({ title: 'Add catalog item', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category', type: 'select', options: BUDGET_CATEGORIES, defaultValue: 'Other' }, { name: 'pricing', label: 'Pricing', type: 'select', options: [{ value: 'fixed', label: 'Fixed' }, { value: 'per_guest', label: 'Per guest' }, { value: 'percentage', label: 'Percentage of subtotal' }], defaultValue: 'fixed' }, { name: 'unitPrice', label: 'Unit price', type: 'number', defaultValue: 0 }, { name: 'unitCost', label: 'Unit cost', type: 'number', defaultValue: 0 }, { name: 'pct', label: 'Percent (percentage pricing)', type: 'number', defaultValue: 0 }] });
           r && act('CATALOG_ADD', { data: { ...r, isServiceFee: r.pricing === 'percentage' } });
-        }}>+ Item</Button>}>
+        }}>Add item</Button>}>
           <table className="t">
             <thead><tr><th>Service</th><th>Category</th><th>Pricing</th><th className="num">Unit price / %</th><th className="num">Unit cost / cost %</th><th>Decor item</th></tr></thead>
             <tbody>{s.catalog.map((c) => (
@@ -123,7 +123,7 @@ export default function Settings() {
         <Card title="Users & roles" actions={<Button variant="primary" onClick={async () => {
           const r = await dialog.form({ title: 'Invite user', fields: [{ name: 'name', label: 'Name', required: true }, { name: 'email', label: 'Email', type: 'email', required: true }, { name: 'role', label: 'Role', type: 'select', options: ROLES.map((x) => ({ value: x.id, label: x.label })), defaultValue: 'planner' }, { name: 'clientId', label: 'Client account (client role)', type: 'select', options: [{ value: '', label: '—' }, ...state.clients.map((c) => ({ value: c.id, label: c.name }))], defaultValue: '' }, { name: 'vendorId', label: 'Vendor (vendor role)', type: 'select', options: [{ value: '', label: '—' }, ...state.vendors.map((v) => ({ value: v.id, label: v.name }))], defaultValue: '' }] });
           r && act('USER_CREATE', { data: { ...r, clientId: r.clientId || undefined, vendorId: r.vendorId || undefined } });
-        }}>+ Invite user</Button>}>
+        }}>Add invite user</Button>}>
           <table className="t">
             <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Linked to</th><th>Portal permissions (clients)</th><th /></tr></thead>
             <tbody>{state.users.map((u) => (

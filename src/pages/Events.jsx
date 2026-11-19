@@ -22,7 +22,7 @@ export default function Events() {
   return (
     <div>
       <div className="page-head">
-        <div className="grow"><h1>Events</h1><div className="muted">Every deal from Lead to Archived. Open an event for its full planning workspace.</div></div>
+        <div className="grow"><h1>Events</h1><div className="muted">Every deal and booked event, from first inquiry to archive.</div></div>
       </div>
       <div className="row mb">
         <PillSelect options={[{ id: 'all', label: 'All segments' }, { id: 'social', label: 'Social' }, { id: 'corporate', label: 'Corporate' }]} value={seg} onChange={setSeg} />

@@ -24,7 +24,7 @@ export default function InquiryPublic() {
   };
   return (
     <PublicTemplate>
-      <div style={{ textAlign: 'center', fontFamily: 'var(--font-serif)' }}>
+      <div style={{ textAlign: 'center' }}>
         <div className="faint">{state.settings.company.name}</div>
         <h1 style={{ fontSize: 30 }}>Tell us about your event</h1>
         <div className="muted">We reply within one business day.</div>

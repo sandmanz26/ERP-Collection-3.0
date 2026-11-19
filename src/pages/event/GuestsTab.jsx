@@ -150,7 +150,7 @@ export default function GuestsTab({ ev, et }) {
         </Card>
       </div>
       <div className="mt"><AllergyCard ev={ev} /></div>
-      <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? '+ Register attendee' : '+ Household'}</Button>}>
+      <Card title={et.features.registration ? 'Attendee registrations' : 'Guest list (households / parties)'} className="mt" actions={<Button variant="primary" onClick={() => setAdd(true)}>{et.features.registration ? 'Register attendee' : 'Add household'}</Button>}>
         <div className="faint mb" style={{ fontSize: 12 }}>Click an RSVP badge to cycle pending → yes → no. Confirmed headcount feeds per-guest budget lines and guarantee warnings automatically.</div>
         <GuestTable ev={ev} />
       </Card>

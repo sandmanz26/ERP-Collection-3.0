@@ -18,7 +18,7 @@ export default function ActivityLog() {
   return (
     <div>
       <div className="page-head">
-        <div className="grow"><h1>Activity log (audit trail)</h1><div className="muted">Every action in the system — including rejected attempts and automation runs — is recorded here and can be exported as Markdown.</div></div>
+        <div className="grow"><h1>Activity log</h1><div className="muted">Every change, refusal and automation run, with who and when. Exportable as Markdown.</div></div>
         {canExport ? <Button variant="primary" onClick={() => download('activity-log.md', activityToMarkdown(log), 'text/markdown')}>Export .md</Button> : <Button disabled title="Audit log export is included in the Agency plan"><Icon name="lock" size={14} /> Export .md (Agency)</Button>}
       </div>
       <div className="row mb">

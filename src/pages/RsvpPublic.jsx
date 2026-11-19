@@ -18,7 +18,7 @@ export default function RsvpPublic() {
   return (
     <PublicTemplate>
       <div>
-        <div style={{ textAlign: 'center', fontFamily: 'Georgia, serif' }}>
+        <div style={{ textAlign: 'center' }}>
           <div className="faint">You're invited</div>
           <h1 style={{ fontSize: 32 }}>{ev.name}</h1>
           <div>{fmtDate(ev.date, { weekday: 'long' })} · {ev.venue?.name}</div>
@@ -26,11 +26,11 @@ export default function RsvpPublic() {
         {!hh && (
           <Card className="mt">
             <h3>Find your invitation</h3>
-            <div className="row"><input placeholder="RSVP code (e.g. on your invitation)" value={code} onChange={(e) => setCode(e.target.value)} /><Button variant="primary" onClick={() => { const h = ev.households.find((x) => x.code.toLowerCase() === code.trim().toLowerCase()); if (h) setHhId(h.id); else dialog.alert({ title: 'Code not found', message: 'Please check the code printed on your invitation.' }); }}>Continue</Button></div>
+            <form className="row" onSubmit={(e) => { e.preventDefault(); const h = ev.households.find((x) => x.code.toLowerCase() === code.trim().toLowerCase()); if (h) setHhId(h.id); else dialog.alert({ title: 'Code not found', message: 'Check the code printed on your invitation.' }); }}><input aria-label="RSVP code" autoComplete="off" placeholder="RSVP code (e.g. on your invitation)" value={code} onChange={(e) => setCode(e.target.value)} /><Button variant="primary" type="submit">Continue</Button></form>
           </Card>
         )}
         {hh && (
-          <Card className="mt" title={`Welcome, ${hh.name}`} actions={<QrCode value={hh.code} size={72} />}>
+          <Card className="mt" title={hh.name} actions={<QrCode value={hh.code} size={72} />}>
             <div className="faint mb" style={{ fontSize: 12 }}>Please respond by {fmtDate(addDays(ev.date, -state.settings.rsvpDeadlineDays))}. Show this QR code at the entrance for fast check-in.</div>
             {done && <Alert tone="success">Thank you — your response is saved! You can change it until the RSVP deadline.</Alert>}
             {hh.guests.map((g) => (
@@ -40,7 +40,7 @@ export default function RsvpPublic() {
                   <div key={s.id} className="row between mt">
                     <span>{s.name} <span className="faint">{fmtDate(s.date)} {s.start}</span></span>
                     <span className="row">
-                      {['yes', 'no'].map((val) => <Button key={val} size="sm" variant={g.rsvp[s.id] === val ? (val === 'yes' ? 'success' : 'danger-solid') : 'secondary'} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val, viaPublic: true }); setDone(true); }}>{val === 'yes' ? 'Joyfully accepts' : 'Regretfully declines'}</Button>)}
+                      {['yes', 'no'].map((val) => <Button key={val} size="sm" variant={g.rsvp[s.id] === val ? 'primary' : 'secondary'} aria-pressed={g.rsvp[s.id] === val} onClick={() => { act('RSVP_SET', { eventId: ev.id, guestId: g.id, subEventId: s.id, value: val, viaPublic: true }); setDone(true); }}>{val === 'yes' ? 'Attending' : 'Can’t attend'}</Button>)}
                     </span>
                   </div>
                 ))}
