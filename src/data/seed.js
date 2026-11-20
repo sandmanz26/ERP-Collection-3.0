@@ -663,7 +663,7 @@ export function buildSeed() {
   enrichCarter(events.find((e) => e.id === 'ev_carter'), today);
   enrichAcme(events.find((e) => e.id === 'ev_acme'), today);
   enrichRisk(events, today);
-  enrichObligations(events, today);
+  enrichObligations(events, today, vendors);
 
   const notifications = [
     { id: id('ntf'), ts: ts(today, 0, '08:00'), toRoles: ['planner', 'admin'], eventId: 'ev_carter', text: 'Vendor Groove Collective COI has EXPIRED — booking at risk for Carter–Walker Wedding.', read: false, level: 'danger' },
@@ -885,7 +885,7 @@ function synthHistory(ev, today) {
 }
 
 /** Room blocks, venue capacity, a severe allergy and permits — the obligations outside the client contract. */
-function enrichObligations(events, today) {
+function enrichObligations(events, today, vendorsRef) {
   const carter = events.find((e) => e.id === 'ev_carter');
   if (carter) {
     // destination-style block: 20 rooms × 2 nights, cutoff in 18 days, only 11 booked → 5 short of the 80% minimum
@@ -898,6 +898,10 @@ function enrichObligations(events, today) {
     if (seated) { seated.dietary = 'Peanut & tree-nut allergy (anaphylaxis, carries EpiPen)'; seated.allergySeverity = 'severe'; }
     carter.permits = [];
   }
+  // review history from past events, so reliability badges are earned from data in the demo
+  const review = (vid, rows) => { const v = vendorsRef?.find((x) => x.id === vid); if (v && !v.performance.length) v.performance.push(...rows.map(([onTime, quality, notes], i) => ({ eventId: 'ev_brightwave', onTime, quality, notes, at: `${addDays(today, -60 - i * 30)}T22:00:00.000Z`, by: 'u_planner' }))); };
+  review('vd_gourmet', [[5, 4.8, 'Kitchen ready 30 min early'], [4.8, 4.9, 'Handled 12 dietary plates perfectly'], [5, 4.7, 'Clean breakdown']]);
+  review('vd_lens', [[5, 5, 'Same-day edit delivered'], [4.7, 4.9, '']]);
   const acme = events.find((e) => e.id === 'ev_acme');
   if (acme) {
     acme.roomBlocks = [{ id: 'rb_a1', hotel: 'Pacific Hall Marriott', rooms: 120, nights: 2, rate: 249, currency: acme.currency, cutoffDate: addDays(today, 12), attritionPct: 85, auditClause: false, pickedUp: 108, outsideBookings: 6, status: 'open', log: [] }];

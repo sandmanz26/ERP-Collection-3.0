@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../store/AppStore.jsx';
 import { Card, Badge, Money, Alert, EmptyState, ProgressBar, ProgressRing, StatusBadge, Button, Icon, Callout, Avatar, Stepper, Timeline, JourneyMap, Gantt, dayTicks, KeyValue } from '../../design-system/index.js';
 import { weatherCall } from '../../lib/risk.js';
+import { recentMilestone } from '../../lib/growth.js';
 import { clientJourney, clientPosition, clientProgress, clientTimeline, clientRoadmap, clientAgenda, clientPrep, clientPayments, clientTeam, clientUpdates } from '../../lib/clientView.js';
 import { invoiceStatus, invoiceBalance, payerSummary } from '../../lib/derived.js';
 import { fmtMoney } from '../../lib/money.js';
@@ -94,6 +95,27 @@ function WeatherNote({ ev }) {
     : <Callout tone="info" icon="sun" title={`Weather plan for ${w.function}`}>Plan A: {w.planA}. If rain or wind is forecast we switch to Plan B: {w.planB}. Your planner makes the call by {fmtDateTime(w.due)} and lets you know here.</Callout>;
 }
 
+const MILESTONE_COPY = {
+  proposal: 'Your proposal is agreed.', contract: 'Your contract is signed — the date is yours.', secured: 'Deposit received. Your date is locked.',
+  planning: 'Planning is done. Details are being locked in.', final: 'Final details are confirmed.', ready: 'Everything is ready.', day: 'Today is the day.', wrap: 'All wrapped up. Thank you!',
+};
+/** Celebrates a step the client finished in the last two weeks — once, until they dismiss it. */
+function Milestone({ ev }) {
+  const { state, today } = useStore();
+  const m = recentMilestone(clientJourney(state, ev).steps, today);
+  const key = m ? `ms_${ev.id}_${m.id}` : null;
+  const [hidden, setHidden] = useState(() => { try { return key ? localStorage.getItem(key) === '1' : true; } catch { return false; } });
+  if (!m || hidden || !MILESTONE_COPY[m.id]) return null;
+  const hide = () => { try { localStorage.setItem(key, '1'); } catch { /* private mode */ } setHidden(true); };
+  return (
+    <div className="milestone" role="status">
+      <Icon name="star" size={18} />
+      <span className="grow"><b>{m.label}</b> — {MILESTONE_COPY[m.id]}</span>
+      <Button size="sm" variant="ghost" onClick={hide}>Dismiss</Button>
+    </div>
+  );
+}
+
 /** "Where we are": a road from proposal to wrap-up with a "You are here" pin, the status in plain words, and what is next. */
 function JourneyCard({ ev, setTab }) {
   const { state, user, today } = useStore();
@@ -103,6 +125,7 @@ function JourneyCard({ ev, setTab }) {
   const tone = { success: 'ok', warning: 'warn', danger: 'danger', info: 'info' }[p.status.tone];
   return (
     <Card title="Where we are" actions={<Badge tone={tone}>{p.status.label}</Badge>}>
+      <Milestone ev={ev} />
       <div className="cp-where">
         <div className="cp-where-text">
           <div className="cp-journey-title">{p.current.status === 'exit' ? p.current.label : <>You are in <em>{p.current.label}</em></>}</div>

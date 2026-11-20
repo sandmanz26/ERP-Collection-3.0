@@ -7,6 +7,7 @@ import { fmtMoney, round2 } from '../lib/money.js';
 import { stageIndex, isBookedOrLater } from '../lib/lifecycle.js';
 import { monthKey, fmtDate, addDays } from '../lib/dates.js';
 import { shiftHours } from '../lib/staff.js';
+import { agencyRecap, recapText } from '../lib/growth.js';
 
 const isWon = (e) => isBookedOrLater(e.stage) || e.stage === 'cancelled_client' || e.stage === 'cancelled_eo';
 
@@ -81,6 +82,7 @@ export default function Reports() {
         <span className="muted">Event date</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" /><span className="muted">→</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
         {(from || to || segment !== 'all') && <Button size="sm" variant="ghost" onClick={() => { setFrom(''); setTo(''); setSegment('all'); }}>Clear filters</Button>}
       </div>
+      <RecapCard />
       <Tabs tabs={[{ id: 'pipeline', label: 'Pipeline & conversion' }, { id: 'revenue', label: 'Contracted revenue' }, { id: 'profit', label: 'Profitability' }, { id: 'util', label: 'Utilization' }, { id: 'vendors', label: 'Vendor performance' }, { id: 'leak', label: `Leakage (${leaks.length})` }]} value={tab} onChange={setTab} />
       {tab === 'pipeline' && (
         <div className="grid g2">
@@ -158,5 +160,25 @@ export default function Reports() {
         </Card>
       )}
     </div>
+  );
+}
+
+/** The last 30 days in five numbers — something an owner is proud to share with the team or on social. */
+function RecapCard() {
+  const { state, today } = useStore();
+  const [copied, setCopied] = useState(false);
+  const r = agencyRecap(state, today);
+  const copy = async () => { try { await navigator.clipboard.writeText(recapText(state, r)); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { setCopied(false); } };
+  return (
+    <Card title="Your last 30 days" className="mb" actions={<Button size="sm" onClick={copy}>{copied ? 'Copied' : 'Copy summary'}</Button>}>
+      <div className="recap-list">
+        <div><b className="num-tabular">{r.held}</b><span>events delivered</span></div>
+        <div><b className="num-tabular">{r.booked}</b><span>new bookings</span></div>
+        <div><b className="num-tabular">{fmtMoney(r.collected, r.base, { whole: true })}</b><span>collected</span></div>
+        <div><b className="num-tabular">{r.onTimeRate === null ? '—' : `${r.onTimeRate}%`}</b><span>invoices paid on time{r.invoicesDue ? ` (${r.invoicesDue} due)` : ''}</span></div>
+        <div><b className="num-tabular">{r.avgHealth ?? '—'}</b><span>average health of {r.upcoming} upcoming event(s)</span></div>
+      </div>
+      {r.vendorCancels > 0 && <div className="faint text-sm">{r.vendorCancels} vendor cancellation(s) this period.</div>}
+    </Card>
   );
 }

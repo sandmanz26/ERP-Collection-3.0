@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/AppStore.jsx';
 import { Card, Badge, StatusBadge, Money, StatTile, PillSelect, Tabs, Button } from '../design-system/index.js';
-import { invoiceStatus, invoiceBalance, eventFinancials, toBase, baseCurrency } from '../lib/derived.js';
+import { invoiceStatus, invoiceBalance, eventFinancials, toBase, baseCurrency, clientOf } from '../lib/derived.js';
+import { WhatsAppButton } from '../components/Growth.jsx';
+import { paymentReminderText } from '../lib/growth.js';
 import { fmtDate, diffDays, monthKey } from '../lib/dates.js';
 import { fmtMoney, round2 } from '../lib/money.js';
 import { PayModal } from './event/FinanceTab.jsx';
@@ -50,7 +52,7 @@ export default function Finance() {
             <thead><tr><th>Invoice</th><th>Event</th><th>Description</th><th>Due</th><th className="num">Amount</th><th className="num">Balance</th><th>Status</th><th /></tr></thead>
             <tbody>{ar.map(({ i, e, st, bal }) => (
               <tr key={i.id}><td className="nowrap">{i.number}</td><td><Link to={`/events/${e.id}?tab=finance`}>{e.name}</Link></td><td>{i.label}</td><td className="nowrap">{fmtDate(i.dueDate)}{st === 'overdue' && <div style={{ color: 'var(--danger)', fontSize: 11 }}>{diffDays(i.dueDate, today)}d late</div>}</td><td className="num"><Money value={i.amount} currency={i.currency} /></td><td className="num"><Money value={bal} currency={i.currency} /></td><td><StatusBadge status={st} /></td>
-                <td><div className="row">{bal > 0 && st !== 'void' && <Button size="sm" onClick={() => setPay({ e, i })}>Record payment</Button>}{st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</Button>}</div></td></tr>
+                <td><div className="row">{bal > 0 && st !== 'void' && <Button size="sm" onClick={() => setPay({ e, i })}>Record payment</Button>}{bal > 0 && ['overdue', 'sent', 'partial'].includes(st) && <WhatsAppButton label="Remind" phone={clientOf(state, e)?.phone} text={paymentReminderText(state, e, i, today)} />}{st === 'overdue' && <Button variant="danger" size="sm" onClick={() => act('LATE_FEE_APPLY', { eventId: e.id, invoiceId: i.id })}>Late fee</Button>}</div></td></tr>
             ))}</tbody>
           </table>
         </Card>

@@ -5,6 +5,7 @@ import { Card, StageBadge, Badge, Money, PillSelect, SearchInput, Icon } from '.
 import { fmtDate } from '../lib/dates.js';
 import { eventFinancials, clientOf } from '../lib/derived.js';
 import { STAGES, EXIT_STAGES } from '../lib/lifecycle.js';
+import { HealthBadge } from '../components/Growth.jsx';
 
 export default function Events() {
   const { state, user } = useStore();
@@ -36,7 +37,7 @@ export default function Events() {
       <Card>
         <div className="table-wrap">
           <table className="t">
-            <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Stage</th><th>Planner</th><th className="num">Contract</th><th className="num">Margin</th></tr></thead>
+            <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Stage</th><th>Planner</th><th className="num">Contract</th><th className="num">Margin</th><th>Health</th></tr></thead>
             <tbody>
               {list.map((e) => {
                 const f = eventFinancials(state, e);
@@ -50,6 +51,7 @@ export default function Events() {
                     <td className="nowrap">{state.users.find((u) => u.id === e.plannerId)?.name ?? '—'}</td>
                     <td className="num nowrap"><Money value={f.contractTotal} currency={e.currency} />{f.contractTotal > 0 && <span className="cell-sub">{Math.round((f.paid / f.contractTotal) * 100)}% paid</span>}</td>
                     <td className="num nowrap">{f.revenueNet ? `${f.marginPct}%` : '—'}</td>
+                    <td><HealthBadge ev={e} compact /></td>
                   </tr>
                 );
               })}

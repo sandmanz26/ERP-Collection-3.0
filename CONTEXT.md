@@ -297,3 +297,11 @@ Entry format: `### [YYYY-MM-DD] #NNN — Title` followed by bullets: *Action*, *
 - Bugs fixed: RSVP code field was not a form (Enter did nothing); public RSVP/inquiry pages fell back to a Georgia/Times serif; Reports showed **0% conversion** for sources with nothing decided (now "—" / "none decided"); vendor rating said "0 reviews" next to a score; Settings company/rate fields were tiny ragged inline inputs (now one aligned label/field column); calendar printed "0/1" in every empty day (now only on days with bookings or holds, red when full); "Welcome, The Thomas" heading; declined RSVP turned into a solid red button.
 - Copy / anti-template: 24 `+ Label` buttons → verbs ("Add vendor", "Request a quote", "Add change order"); page subtitles say what the page holds instead of explaining the UI or the codebase ("Segment differences … not separate code" removed); titles shortened (Pipeline, Reports, Activity log); RSVP answers "Attending / Can't attend" with a neutral selected state.
 - Tests 59/59, build OK.
+
+### [2026-11-20] #043 — Competitive research applied: health score, vendor badges, WhatsApp, recap, milestones
+- Request: improve what we have using the competitor / gamification research. Strategy and sources: `docs/COMPETITIVE_STRATEGY.md`.
+- New `lib/growth.js`: `eventHealth`, `vendorBadges`, `whatsappLink`, `paymentReminderText`, `vendorConfirmText`, `agencyRecap`/`recapText`, `recentMilestone`. UI in `components/Growth.jsx` (HealthBadge, WhatsAppButton, VendorBadges); Reports `RecapCard`; client portal `Milestone`.
+- Health score on the event header and Events list; vendor badges in the directory (compliance is not a badge — it is table stakes and was on every row); WhatsApp "Remind" on open invoices and "Ask to confirm" on requested bookings; monthly recap with Copy summary; milestone banner in the client portal; Indonesian lead sources incl. Weddingku and TikTok.
+- Seed: past-event reviews for Gourmet Table and Lens & Light so badges are earned in the demo.
+- Found while testing: a portal crash from my own milestone code (fixed before commit); a test that silently skipped its assertion because of a wrong user id (now strict).
+- Tests `tests/growth.test.js` (+5) → 64/64. Playwright: all routes for admin/client/finance/vendor, 0 errors.

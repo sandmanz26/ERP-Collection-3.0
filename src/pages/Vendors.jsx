@@ -3,6 +3,7 @@ import { useStore } from '../store/AppStore.jsx';
 import { Card, Badge, Modal, Field, useForm, PillSelect, Money, Button, Icon } from '../design-system/index.js';
 import { vendorCompliance, vendorScore } from '../lib/derived.js';
 import { fmtDate } from '../lib/dates.js';
+import { VendorBadges } from '../components/Growth.jsx';
 
 export default function Vendors() {
   const { state, act, today } = useStore();
@@ -28,7 +29,7 @@ export default function Vendors() {
                 const issues = vendorCompliance(v, today);
                 return (
                   <tr key={v.id} onClick={() => setSel(v)} style={{ cursor: 'pointer' }}>
-                    <td><b>{v.name}</b><div className="faint">{v.contact} · {v.email}</div></td>
+                    <td><b>{v.name}</b><div className="faint">{v.contact} · {v.email}</div><VendorBadges v={v} /></td>
                     <td>{v.category}</td><td style={{ fontSize: 12 }}>{v.regions.join(', ')}</td><td>{v.priceRange}</td>
                     <td className="nowrap">{vendorScore(v)}<span className="cell-sub">{v.performance.length ? `${v.performance.length} event review${v.performance.length === 1 ? '' : 's'}` : 'not yet reviewed'}</span></td>
                     <td className="nowrap">{fmtDate(v.coiExpiry)}</td>

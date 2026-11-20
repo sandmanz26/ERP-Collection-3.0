@@ -27,6 +27,7 @@ import PeopleTab from './PeopleTab.jsx';
 import SitePlanTab from './SitePlanTab.jsx';
 import { productionIssues } from '../../lib/timeline.js';
 import { staffingSummary } from '../../lib/workforce.js';
+import { HealthBadge } from '../../components/Growth.jsx';
 
 export default function EventWorkspace() {
   const { id } = useParams();
@@ -82,6 +83,7 @@ export default function EventWorkspace() {
             <StageBadge stage={ev.stage} />
             <Badge tone={ev.segment === 'social' ? 'info' : 'brand'}>{ev.segment}</Badge>
             {ev.date && <Badge>{fmtDate(ev.date, { weekday: 'short' })}{ev.date >= today ? ` · T-${diffDays(today, ev.date)}` : ''}</Badge>}
+            <HealthBadge ev={ev} />
             {ev.dateStatus === 'locked' ? <Badge tone="ok"><Icon name="lock" size={12} /> Date locked</Badge> : ev.dateStatus === 'hold' ? <Badge tone="warn"><Icon name="hourglass" size={12} /> Date on hold until deposit</Badge> : null}
             <Badge>{ev.currency}</Badge>
             <span className="muted">{clientOf(state, ev)?.name}</span>

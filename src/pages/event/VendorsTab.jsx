@@ -6,6 +6,8 @@ import { fmtDate, fmtDateTime } from '../../lib/dates.js';
 import { round2, fmtMoney } from '../../lib/money.js';
 import { BUDGET_CATEGORIES } from '../../data/config.js';
 import { RoomBlocksCard } from './ObligationPanels.jsx';
+import { WhatsAppButton } from '../../components/Growth.jsx';
+import { vendorConfirmText } from '../../lib/growth.js';
 
 export default function VendorsTab({ ev }) {
   const dialog = useDialog();
@@ -37,6 +39,7 @@ export default function VendorsTab({ ev }) {
                       <td><div className="stack" style={{ gap: 4, alignItems: 'flex-start' }}>{issues.length ? issues.map((i) => <Badge key={i.text} tone={i.level}>{i.text}</Badge>) : <Badge tone="ok">OK</Badge>}</div></td>
                       <td><div className="stack" style={{ gap: 6, alignItems: 'flex-start' }}>
                         <StatusBadge status={b.status} />
+                        {b.status === 'requested' && <WhatsAppButton label="Ask to confirm" phone={v?.phone} text={vendorConfirmText(state, ev, b)} />}
                         <Button size="sm" variant="ghost" onClick={() => setOpen(open === b.id ? null : b.id)}>{open === b.id ? 'Hide payments' : 'Payments'}</Button>{b.status === 'requested' && <Button size="sm" onClick={() => act('BOOKING_CONFIRM', { eventId: ev.id, bookingId: b.id })}>Confirm</Button>}
                         {b.status === 'cancelled' && <div className="faint text-xs">{b.cancelledBy === 'eo' ? 'by us' : 'by vendor'}: {b.cancelReason}</div>}
                         {b.refundDue > 0 && (b.refundRecovered ? <Badge tone="ok">deposit recovered</Badge> : <Button size="sm" onClick={() => act('VENDOR_REFUND_RECOVERED', { eventId: ev.id, bookingId: b.id })}>Recovered {fmtMoney(b.refundDue, cur)}</Button>)}

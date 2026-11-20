@@ -30,7 +30,7 @@ function nicePrice(n) {
   return Math.round(n / mag) * mag;
 }
 
-const REGION_SOURCES = { ID: ['WhatsApp', 'Instagram', 'Bridestory', 'Referral', 'Website form', 'Wedding fair', 'Manual'] };
+const REGION_SOURCES = { ID: ['WhatsApp', 'Instagram', 'Bridestory', 'Weddingku', 'TikTok', 'Referral', 'Website form', 'Wedding fair', 'Manual'] };
 
 export const DEFAULT_PROFILE = {
   businessType: 'full_service',
