@@ -21,6 +21,11 @@ export default function AppShell({ children }) {
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState(null);
   useEffect(() => setDrawer(false), [loc.pathname]);
+  // browser tab names the page and the workspace ("Pipeline · Lumière Events Co.") — findable among many tabs
+  useEffect(() => {
+    const t = setTimeout(() => { const h = document.querySelector('.content h1')?.textContent?.trim(); document.title = [h, state.settings.company?.name ?? 'EventOS'].filter(Boolean).join(' · '); }, 60);
+    return () => clearTimeout(t);
+  }, [loc.pathname, loc.search, state.settings.company?.name]);
 
   useEffect(() => {
     if (state.lastError && Date.now() - state.lastError.ts < 3000) {

@@ -1,6 +1,7 @@
 /* ==========================================================================
    Design tokens — the single source of truth for every visual decision.
-   Layout concept (taste-skill app style "framed sheet"): one tinted L-shaped frame holds the sidebar
+   Layout concept: shadcn/ui design language (neutral zinc scale, inset sidebar, 8–10px radii, quiet borders)
+   with the EventOS brand — lagoon primary, Plus Jakarta Sans. Previously: taste-skill "framed sheet": one tinted L-shaped frame holds the sidebar
    and the top bar, the work sits on a white sheet with a hairline edge. Colour goes on data and status;
    the lagoon accent marks the brand, the active tab and the main data series; the primary action is ink.
    Light values on :root; dark values under prefers-color-scheme (unless data-theme="light")
@@ -8,34 +9,34 @@
    ========================================================================== */
 :root {
   /* surfaces — the frame is a low-chroma step of the lagoon hue; sheets and cards stay white */
-  --color-bg: #f3f6f7;
+  --color-bg: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-2: #f6f8f9;
-  --color-surface-sunken: #ebeef0;
-  --color-row-hover: #f8fafa;
-  --color-border: #e5e8ea;
-  --color-border-subtle: #eff1f2;
-  --color-control: #cdd1d4; /* control borders: one step stronger than panel edges */
-  --color-track: #e6eaec;
-  --color-overlay: rgba(15, 18, 20, 0.45);
+  --color-surface-2: #fafafa;
+  --color-surface-sunken: #f4f4f5;
+  --color-row-hover: #fafafa;
+  --color-border: #e4e4e7;
+  --color-border-subtle: #f0f0f2;
+  --color-control: #e4e4e7; /* control borders: one step stronger than panel edges */
+  --color-track: #ececee;
+  --color-overlay: rgba(9, 9, 11, 0.5);
   --color-paper: #ffffff;
-  --color-paper-border: #e5e8ea;
+  --color-paper-border: #e4e4e7;
 
   /* ink */
-  --color-ink: #131416;
-  --color-ink-2: #55585b;
-  --color-ink-3: #686b6e;
+  --color-ink: #09090b;
+  --color-ink-2: #52525b;
+  --color-ink-3: #686871;
   --color-ink-inverse: #ffffff;
   /* the one primary action is ink, not the accent (inverted on dark) */
-  --color-primary: #1d1f20;
+  --color-primary: #1b6c80;
   --color-primary-ink: #ffffff;
-  --color-primary-hover: #000000;
+  --color-primary-hover: #155a6b;
 
   /* brand (lagoon) — data, the active tab and the logo; workspaces may override it */
   --color-brand: #1b6c80;
-  --color-brand-soft: #e9f3f5;
+  --color-brand-soft: #ecf5f7;
   --color-brand-strong: #134f5e;
-  --color-brand-tint: #d3e7ec;
+  --color-brand-tint: #d3e8ed;
 
   /* status — reserved for state, never series colors */
   --color-success: #1e7b4f;
@@ -55,28 +56,28 @@
   --color-info-soft: #eaf2fb;
   --color-info-border: #c3d8f0;
   --color-info-ink: #1d4f8a;
-  --color-neutral-soft: #ebedee;
+  --color-neutral-soft: #f4f4f5;
 
   /* app chrome — the sidebar sits on the frame ground, never dark on a light screen */
   --color-sidebar: var(--color-bg);
-  --color-sidebar-hover: #e7ebed;
-  --color-sidebar-ink: #3f4245;
-  --color-sidebar-ink-strong: #131416;
-  --color-sidebar-muted: #686b6e;
-  --color-sidebar-border: #e1e5e7;
+  --color-sidebar-hover: #f0f0f2;
+  --color-sidebar-ink: #3f3f46;
+  --color-sidebar-ink-strong: #09090b;
+  --color-sidebar-muted: #71717a;
+  --color-sidebar-border: #e4e4e7;
   --color-toast-ok-bg: #131416;
   --color-toast-ok-ink: #e9f6ee;
   --color-toast-err-bg: #3a1012;
   --color-toast-err-ink: #ffe1de;
 
   /* domain surfaces */
-  --color-chip: #eef1f2;
+  --color-chip: #f4f4f5;
   --color-chip-child: #e6f3ff;
   --color-diet: #e3b14e;
   --color-cal-full: #ffefec;
   --color-cal-held: #fff8e6;
   --color-live: #e9f3f5;
-  --color-bubble: #eef1f2;
+  --color-bubble: #f4f4f5;
   --sp-floor: #ffffff;
   --sp-grid: #eceff1;
   --sp-grid-major: #d8dde0;
@@ -90,14 +91,14 @@
   --sp-power: #ffd6d6;
   --sp-seating: #f4f6f7;
   --sp-feature: #fde2ef;
-  --hero-bg: #131416;
-  --hero-ink: #f3f6f7;
-  --public-bg: #f3f6f7;
+  --hero-bg: #09090b;
+  --hero-ink: #fafafa;
+  --public-bg: #fafafa;
 
   /* typography */
-  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --text-xs: 12px;
   --text-sm: 13px;
@@ -108,7 +109,7 @@
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --weight-bold: 600; /* Plex is loaded at 400/500/600 */
+  --weight-bold: 700;
 
   /* spacing scale (4px base) */
   --space-1: 4px;
@@ -122,13 +123,13 @@
   /* radius, elevation, motion, layers */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
   --radius-pill: 999px;
-  --shadow-sm: none;
-  --shadow-lg: 0 16px 48px rgba(15, 18, 20, 0.18);
+  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.05);
+  --shadow-lg: 0 10px 38px -10px rgba(9, 9, 11, 0.25), 0 10px 20px -15px rgba(9, 9, 11, 0.2);
   --shadow-toast: 0 8px 24px rgba(15, 18, 20, 0.16);
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-brand) 28%, transparent);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-brand) 35%, transparent);
   --duration-fast: 120ms;
   --z-sticky: 20;
   --z-popover: 50;
@@ -147,43 +148,43 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #0e0f10; --color-surface: #161718; --color-surface-2: #1c1d1f; --color-surface-sunken: #121314; --color-row-hover: #1b1c1e;
-    --color-border: #2a2c2e; --color-border-subtle: #212325; --color-control: #3c3f42; --color-track: #26282a; --color-overlay: rgba(0, 0, 0, 0.6);
+    --color-bg: #09090b; --color-surface: #111113; --color-surface-2: #18181b; --color-surface-sunken: #18181b; --color-row-hover: #18181b;
+    --color-border: #27272a; --color-border-subtle: #1f1f23; --color-control: #3f3f46; --color-track: #27272a; --color-overlay: rgba(0, 0, 0, 0.6);
     --color-paper: #161718; --color-paper-border: #2a2c2e;
-    --color-ink: #f1f2f3; --color-ink-2: #b6b9bc; --color-ink-3: #95999c; --color-ink-inverse: #ffffff;
-    --color-brand: #5fb3c7; --color-brand-soft: #13272c; --color-brand-strong: #a6d6e1; --color-brand-tint: #1c3a42;
+    --color-ink: #fafafa; --color-ink-2: #b4b4bb; --color-ink-3: #9a9aa3; --color-ink-inverse: #ffffff;
+    --color-brand: #55b8cc; --color-brand-soft: #0f2a30; --color-brand-strong: #a9dde8; --color-brand-tint: #173f48;
     --color-success: #3fc07a; --color-success-soft: #14261b; --color-success-border: #24472f; --color-success-ink: #8fe0b2;
     --color-warning: #e3b04b; --color-warning-strong: #c9971f; --color-warning-soft: #2b2312; --color-warning-border: #4f3f1a; --color-warning-ink: #f1d48e;
     --color-danger: #ec6a70; --color-danger-soft: #2c1719; --color-danger-border: #5a2a2e; --color-danger-ink: #ffb6b9;
     --color-info: #6fa9e8; --color-info-soft: #13212f; --color-info-border: #24405e; --color-info-ink: #b8d5f4;
-    --color-neutral-soft: #26282a;
-    --color-chip: #232527; --color-chip-child: #1b2c3d; --color-diet: #c9971f; --color-cal-full: #2c1719; --color-cal-held: #2b2312; --color-live: #13272c; --color-bubble: #232527;
+    --color-neutral-soft: #27272a;
+    --color-chip: #27272a; --color-chip-child: #1b2c3d; --color-diet: #c9971f; --color-cal-full: #2c1719; --color-cal-held: #2b2312; --color-live: #13272c; --color-bubble: #27272a;
     --sp-floor: #161718; --sp-grid: #232527; --sp-grid-major: #34373a; --sp-element: #1c3a42; --sp-stage: #285a66; --sp-dance: #24251f; --sp-table: #1f2022;
     --sp-bar: #5a4516; --sp-service: #1d3550; --sp-entry: #1f4a2c; --sp-power: #5a2228; --sp-seating: #1c1d1f; --sp-feature: #4f2340;
-    --hero-bg: #161718; --public-bg: #0e0f10;
-    --shadow-sm: none;
-    --color-sidebar-hover: #1c1d1f; --color-sidebar-ink: #b6b9bc; --color-sidebar-ink-strong: #ffffff; --color-sidebar-muted: #95999c; --color-sidebar-border: #222426;
-    --color-primary: #f1f2f3; --color-primary-ink: #131416; --color-primary-hover: #ffffff;
+    --hero-bg: #111113; --public-bg: #09090b;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --color-sidebar-hover: #18181b; --color-sidebar-ink: #d4d4d8; --color-sidebar-ink-strong: #ffffff; --color-sidebar-muted: #a1a1aa; --color-sidebar-border: #27272a;
+    --color-primary: #55b8cc; --color-primary-ink: #09090b; --color-primary-hover: #7ccadb;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --color-bg: #0e0f10; --color-surface: #161718; --color-surface-2: #1c1d1f; --color-surface-sunken: #121314; --color-row-hover: #1b1c1e;
-  --color-border: #2a2c2e; --color-border-subtle: #212325; --color-control: #3c3f42; --color-track: #26282a; --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-bg: #09090b; --color-surface: #111113; --color-surface-2: #18181b; --color-surface-sunken: #18181b; --color-row-hover: #18181b;
+  --color-border: #27272a; --color-border-subtle: #1f1f23; --color-control: #3f3f46; --color-track: #27272a; --color-overlay: rgba(0, 0, 0, 0.6);
   --color-paper: #161718; --color-paper-border: #2a2c2e;
-  --color-ink: #f1f2f3; --color-ink-2: #b6b9bc; --color-ink-3: #95999c; --color-ink-inverse: #ffffff;
-  --color-brand: #5fb3c7; --color-brand-soft: #13272c; --color-brand-strong: #a6d6e1; --color-brand-tint: #1c3a42;
+  --color-ink: #fafafa; --color-ink-2: #b4b4bb; --color-ink-3: #9a9aa3; --color-ink-inverse: #ffffff;
+  --color-brand: #55b8cc; --color-brand-soft: #0f2a30; --color-brand-strong: #a9dde8; --color-brand-tint: #173f48;
   --color-success: #3fc07a; --color-success-soft: #14261b; --color-success-border: #24472f; --color-success-ink: #8fe0b2;
   --color-warning: #e3b04b; --color-warning-strong: #c9971f; --color-warning-soft: #2b2312; --color-warning-border: #4f3f1a; --color-warning-ink: #f1d48e;
   --color-danger: #ec6a70; --color-danger-soft: #2c1719; --color-danger-border: #5a2a2e; --color-danger-ink: #ffb6b9;
   --color-info: #6fa9e8; --color-info-soft: #13212f; --color-info-border: #24405e; --color-info-ink: #b8d5f4;
-  --color-neutral-soft: #26282a;
-  --color-chip: #232527; --color-chip-child: #1b2c3d; --color-diet: #c9971f; --color-cal-full: #2c1719; --color-cal-held: #2b2312; --color-live: #13272c; --color-bubble: #232527;
+  --color-neutral-soft: #27272a;
+  --color-chip: #27272a; --color-chip-child: #1b2c3d; --color-diet: #c9971f; --color-cal-full: #2c1719; --color-cal-held: #2b2312; --color-live: #13272c; --color-bubble: #27272a;
   --sp-floor: #161718; --sp-grid: #232527; --sp-grid-major: #34373a; --sp-element: #1c3a42; --sp-stage: #285a66; --sp-dance: #24251f; --sp-table: #1f2022;
   --sp-bar: #5a4516; --sp-service: #1d3550; --sp-entry: #1f4a2c; --sp-power: #5a2228; --sp-seating: #1c1d1f; --sp-feature: #4f2340;
-  --hero-bg: #161718; --public-bg: #0e0f10;
-  --shadow-sm: none;
-  --color-sidebar-hover: #1c1d1f; --color-sidebar-ink: #b6b9bc; --color-sidebar-ink-strong: #ffffff; --color-sidebar-muted: #95999c; --color-sidebar-border: #222426;
-  --color-primary: #f1f2f3; --color-primary-ink: #131416; --color-primary-hover: #ffffff;
+  --hero-bg: #111113; --public-bg: #09090b;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --color-sidebar-hover: #18181b; --color-sidebar-ink: #d4d4d8; --color-sidebar-ink-strong: #ffffff; --color-sidebar-muted: #a1a1aa; --color-sidebar-border: #27272a;
+  --color-primary: #55b8cc; --color-primary-ink: #09090b; --color-primary-hover: #7ccadb;
   color-scheme: dark;
 }

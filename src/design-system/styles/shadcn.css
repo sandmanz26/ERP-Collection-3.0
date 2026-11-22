@@ -1,0 +1,143 @@
+/* ==========================================================================
+   shadcn/ui component layer — the specs of shadcn's Button, Input, Card, Badge, Tabs, Table,
+   Sidebar (inset variant), Dialog and Sonner toast, applied to the existing atomic components so every
+   screen inherits them. Loaded last: it is the single place where component geometry is decided.
+   Brand on top of shadcn's neutral base: lagoon primary + Plus Jakarta Sans.
+   ========================================================================== */
+
+/* ---------- type ---------- */
+html { font-size: 14px; letter-spacing: -0.003em; }
+body { font-feature-settings: 'cv11', 'ss01'; }
+h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
+h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
+h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+/* ---------- Button (shadcn: h-9 px-4 rounded-md text-sm font-medium) ---------- */
+.btn { min-height: 36px; padding: 0 16px; gap: 8px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-ink); box-shadow: var(--shadow-sm); transition: background-color 120ms, border-color 120ms, color 120ms; }
+.btn:hover { background: var(--color-surface-sunken); }
+.btn.primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-ink); }
+.btn.primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.btn.ghost { box-shadow: none; border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--color-surface-sunken); }
+.btn.danger { color: var(--color-danger); }
+.btn.danger:hover { background: var(--color-danger-soft); }
+.btn.danger.solid { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+.btn.ok { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+.btn.sm { min-height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; }
+.btn.lg { min-height: 40px; padding: 0 24px; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; pointer-events: none; box-shadow: none; }
+.btn:focus-visible { box-shadow: var(--focus-ring); border-color: var(--color-brand); }
+a.btn { text-decoration: none; }
+
+/* ---------- Input / Select / Textarea (shadcn: h-9 rounded-md border px-3 shadow-xs) ---------- */
+
+input:where(:not([type=checkbox]):not([type=radio]):not([type=range])), select { min-height: 36px; padding: 4px 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 14px; }
+textarea { padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); font-size: 14px; }
+input.inline { min-height: 32px; padding: 2px 8px; }
+input:focus, select:focus, textarea:focus { border-color: var(--color-brand); box-shadow: var(--focus-ring); }
+input::placeholder, textarea::placeholder { color: var(--color-ink-3); }
+input[type=checkbox], input[type=radio] { width: 16px; height: 16px; accent-color: var(--color-brand); }
+.field > span { font-size: 13px; font-weight: 500; color: var(--color-ink); }
+
+/* ---------- Card (shadcn: rounded-xl border shadow-sm, 24px rhythm) ---------- */
+.card { border-radius: var(--radius-xl); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); padding: 24px; }
+.card-head { margin-bottom: 18px; min-height: 32px; }
+.card-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.card.compact { padding: 16px; }
+
+/* ---------- Badge (shadcn: rounded-md px-2 py-0.5 text-xs font-medium) ---------- */
+.badge { border-radius: var(--radius-sm); padding: 2px 8px; font-size: 12px; font-weight: 500; line-height: 1.4; border: 1px solid transparent; }
+.badge:not(.ok):not(.success):not(.warn):not(.warning):not(.danger):not(.info):not(.brand) { background: var(--color-surface); border-color: var(--color-border); color: var(--color-ink-2); }
+
+/* ---------- Tabs (shadcn: TabsList bg-muted rounded-lg p-[3px]; active trigger bg-background shadow-sm) ---------- */
+.tabs { display: inline-flex; gap: 2px; padding: 3px; border: none; border-radius: var(--radius-lg); background: var(--color-surface-sunken); max-width: 100%; overflow-x: auto; margin-bottom: 20px; }
+.tabs button { padding: 0 12px; min-height: 30px; border: 1px solid transparent; border-radius: var(--radius-md); font-size: 13.5px; font-weight: 500; color: var(--color-ink-2); }
+.tabs button:hover { color: var(--color-ink); }
+.tabs button.active { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-border); box-shadow: var(--shadow-sm); font-weight: 500; }
+.phase-nav .tabs { margin: 8px 0 0; }
+/* toggle group (filters) uses the same segmented language */
+.pill-select { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: var(--radius-lg); background: var(--color-surface-sunken); }
+.pill-select button { border: 1px solid transparent; background: transparent; border-radius: var(--radius-md); padding: 4px 10px; font-size: 13px; font-weight: 500; color: var(--color-ink-2); }
+.pill-select button.on { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-border); box-shadow: var(--shadow-sm); }
+/* event phases: the page's primary navigation, a quiet underline */
+.phase { font-size: 14px; padding: 8px 4px 10px; margin-right: 16px; }
+.phase.on { border-bottom-color: var(--color-ink); }
+
+/* ---------- Table (shadcn: text-sm, h-10 muted header, border-b rows, hover:bg-muted/50) ---------- */
+table.t { font-size: 13.5px; }
+table.t th { height: 40px; padding: 0 12px; font-size: 13px; font-weight: 500; color: var(--color-ink-3); border-bottom: 1px solid var(--color-border); background: transparent; }
+table.t td { padding: 12px; border-bottom: 1px solid var(--color-border-subtle); }
+table.t tbody tr:last-child td { border-bottom: none; }
+table.t tr:hover td { background: color-mix(in srgb, var(--color-surface-sunken) 55%, transparent); }
+
+/* ---------- Sidebar, inset variant ---------- */
+.app { background: var(--color-bg); }
+.sidebar { background: var(--color-bg); padding: 12px 8px; }
+.sidebar .brand { padding: 6px 8px 16px; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.sidebar .brand .logo { width: 30px; height: 30px; border-radius: 8px; font-weight: 700; }
+.sidebar .nav-group { font-size: 12px; font-weight: 500; color: var(--color-sidebar-muted); padding: 0 8px 6px; }
+.sidebar nav a { min-height: 32px; padding: 0 8px; border-radius: var(--radius-md); font-size: 14px; color: var(--color-sidebar-ink); }
+.sidebar nav a:hover { background: var(--color-sidebar-hover); }
+.sidebar nav a.active { background: var(--color-surface); color: var(--color-ink); font-weight: 600; box-shadow: var(--shadow-sm), 0 0 0 1px var(--color-border); }
+.main { padding: 8px 8px 8px 0; }
+.topbar { background: transparent; padding: 4px 16px 10px 24px; min-height: 48px; position: static; }
+.content { border-radius: var(--radius-xl); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); padding: 32px 40px 56px; }
+.search-box { height: 36px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+@media (max-width: 960px) {
+  .main { padding: 0; }
+  .topbar { position: sticky; background: var(--color-bg); padding: 8px 16px; }
+  .content { border: none; border-radius: 0; box-shadow: none; padding: 20px 16px 32px; }
+}
+
+/* ---------- Page header ---------- */
+.page-head { margin-bottom: 24px; gap: 16px; }
+.page-head .muted { margin-top: 4px; font-size: 14px; }
+
+/* ---------- Dialog (shadcn: rounded-xl, p-6, title text-lg semibold, footer right-aligned) ---------- */
+.modal-back { background: rgba(9, 9, 11, 0.5); backdrop-filter: none; }
+.modal { border-radius: var(--radius-xl); border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); }
+.modal-head { padding: 20px 24px 12px; border-bottom: none; }
+.modal-head h3 { font-size: 18px; font-weight: 600; }
+.modal-body { padding: 8px 24px 20px; }
+.modal-foot { padding: 16px 24px; border-top: 1px solid var(--color-border-subtle); background: var(--color-surface); }
+
+/* ---------- Toast (shadcn Sonner: surface, border, icon carries the tone) ---------- */
+.toast { background: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 14px 16px; font-size: 14px; }
+.toast.ok, .toast.err { background: var(--color-surface); color: var(--color-ink); }
+.toast.ok .icon { color: var(--color-success); }
+.toast.err .icon { color: var(--color-danger); }
+.toast.err { border-color: var(--color-danger-border); }
+
+/* ---------- Alert (shadcn Alert: rounded-lg border px-4 py-3) ---------- */
+.alert { border-radius: var(--radius-lg); padding: 12px 16px; font-size: 14px; }
+
+/* ---------- Popovers & menus (shadcn DropdownMenu) ---------- */
+.popover { border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.menu-row { min-height: 32px; border-radius: var(--radius-sm); font-size: 14px; }
+
+/* ---------- KPI strip and stat ---------- */
+.stat .label { font-size: 13px; font-weight: 500; color: var(--color-ink-2); }
+.stat .value { font-size: 26px; font-weight: 600; letter-spacing: -0.025em; }
+.kpis, .grid:has(> .stat) { border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+
+/* ---------- Kanban ---------- */
+.kcol { background: var(--color-surface-sunken); border-radius: var(--radius-xl); padding: 12px; }
+.kcard { border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.kcard:hover { border-color: var(--color-control); box-shadow: 0 2px 8px rgba(9, 9, 11, 0.06); }
+
+/* ---------- Brand moments: lagoon only where it means something ---------- */
+.progress { height: 8px; background: var(--color-surface-sunken); }
+a { color: var(--color-brand); }
+.sidebar nav a.active .icon { color: var(--color-brand); }
+
+/* fixes from the UX review */
+.search-box input, .search-box input:focus { border: none; box-shadow: none; min-height: 32px; padding: 0; background: transparent; }
+.search-box:focus-within { border-color: var(--color-brand); box-shadow: var(--focus-ring); }
+.card.prio { padding: 0; }
+.modal:focus { outline: none; box-shadow: var(--shadow-lg); }
+/* top bar on a phone: icon buttons are square (shadcn size="icon"), search takes what is left */
+.btn.icon-btn { padding: 0; width: 36px; justify-content: center; }
+.topbar .search-box { flex: 1 1 auto; min-width: 0; }
+.user-chip { flex: none; }
+@media (max-width: 560px) { .topbar { gap: 8px; } .topbar .search-box { padding: 0 8px; } }
